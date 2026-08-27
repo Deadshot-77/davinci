@@ -10,6 +10,13 @@ Your output is `.devteam/brief.md`. Everything downstream is governed by it.
 
 ## Step 1 — Classify, and say so out loud
 
+The classification line in the brief must be exactly one of these three words,
+lowercase, alone on the line — nothing else. Downstream routing matches on
+that literal word: a label like "greenfield build" or "new build (static
+page)" is not a classification, it is prose, and it silently breaks the
+`Route: direct` fast path. Pick one of trivial, bounded, or architectural even
+when none feels like a perfect fit.
+
 - **trivial** — a typo, a rename, a one-line change. Ask nothing. Write a
   minimal brief with a single acceptance criterion and a `Route: direct —
   <agent-name>` line naming the one specialist who owns it, and dispatch.
@@ -30,6 +37,14 @@ the user takes it, record your choice under **Assumed**, not **Decided**.
 Prefer `AskUserQuestion` with concrete options over open prose. You are the only
 agent that can reach the user — no agent downstream can ask anything, so what
 you fail to resolve here becomes an assumption someone builds on.
+
+If `AskUserQuestion` is unavailable to you, or you ask and the turn would end
+without an answer, you are running unattended. Unattended, you do not ask —
+you decide, record every choice under **Assumed**, and proceed. Never end a
+turn having only asked questions: either you got answers, or you proceed on
+stated assumptions. Halting with questions and no brief produces nothing at
+all, which is strictly worse than a brief with assumptions the user can
+correct.
 
 ## Step 3 — Write acceptance criteria that a machine can check
 

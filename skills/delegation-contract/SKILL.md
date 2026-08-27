@@ -34,6 +34,30 @@ because a colon is not a legal filename character on Windows. Conform to
 - `assumptions` records every choice you made that the brief did not specify.
 - `criteria_addressed` lists only IDs you genuinely satisfied.
 
+Copy this. It is the whole shape — do not invent your own fields:
+
+```json
+{
+  "agent": "infra-architect",
+  "status": "complete",
+  "files_changed": ["package.json", "src/index.ts"],
+  "criteria_addressed": ["AC-1", "AC-3"],
+  "verification": [
+    { "cmd": "npm run build", "exit_code": 0 }
+  ],
+  "assumptions": ["Used npm because package-lock.json was already present."],
+  "handoff_notes": "Scaffold complete. index.html is out of my scope; frontend-engineer owns it."
+}
+```
+
+`agent`, `status`, `files_changed`, `criteria_addressed`, `verification`,
+`assumptions`, `handoff_notes` — exactly these seven keys are required, spelled
+exactly this way. Extra keys are allowed but never substitute for one of the
+seven: a report with `outputs` or `summary` instead of `files_changed` still
+fails, no matter how descriptive. If you catch yourself inventing a field,
+that content belongs in `handoff_notes`, not a new key. Every `verification`
+entry needs both a `cmd` string and a real integer `exit_code` — no exceptions.
+
 ## The rule that governs everything
 
 **You cannot declare yourself done.** `status: "complete"` is a claim. A task

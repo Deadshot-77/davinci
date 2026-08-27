@@ -85,7 +85,10 @@ function main() {
     }
   }
 
-  if (errors.length) block(errors.map((e) => '- ' + e).join('\n'));
+  if (errors.length) {
+    const reminder = 'Required shape: agent, status, files_changed, criteria_addressed, verification, assumptions, handoff_notes.';
+    block(errors.map((e) => '- ' + e).join('\n') + '\n' + reminder);
+  }
   process.exit(0);
 }
 

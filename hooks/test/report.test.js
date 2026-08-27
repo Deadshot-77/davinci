@@ -1,5 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const { validateReport, validateGateReport } = require('../lib/report.js');
 
 function valid() {
@@ -88,4 +90,13 @@ test('a gate report with a valid verdict passes', () => {
   const r = valid();
   r.verdict = 'pass';
   assert.deepStrictEqual(validateGateReport(r), []);
+});
+
+test('the example report in delegation-contract SKILL.md validates cleanly', () => {
+  const skillPath = path.join(__dirname, '..', '..', 'skills', 'delegation-contract', 'SKILL.md');
+  const skillText = fs.readFileSync(skillPath, 'utf8');
+  const match = skillText.match(/```json\r?\n([\s\S]*?)```/);
+  assert.ok(match, 'SKILL.md must contain a fenced ```json example block');
+  const example = JSON.parse(match[1]);
+  assert.deepStrictEqual(validateReport(example, example.agent), []);
 });

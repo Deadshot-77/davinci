@@ -19,7 +19,10 @@ skip the chain of command. Everything is delegated.
 ## Sequence
 
 1. Read `.devteam/brief.md`. If it has no acceptance criteria, stop and report
-   back that the brief is unusable.
+   back that the brief is unusable. If its classification is not one of
+   `trivial`, `bounded`, or `architectural`, treat it as `bounded` — run the
+   full sequence below, foundation gate included — and note the unrecognised
+   label in your report.
 2. Build a task list. Assign every acceptance criterion to exactly one task.
    A criterion owned by nobody will never be verified.
 3. **Foundation first.** Dispatch `infra-architect`. When it returns, dispatch
