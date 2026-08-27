@@ -17,7 +17,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "infra-architect|backend-engineer|frontend-engineer|security-engineer|code-reviewer",
+        "matcher": "davinci:infra-architect|davinci:backend-engineer|davinci:frontend-engineer|davinci:security-engineer|davinci:code-reviewer|infra-architect|backend-engineer|frontend-engineer|security-engineer|code-reviewer",
         "hooks": [
           {
             "type": "command",

@@ -6,6 +6,7 @@ const path = require('path');
 const { validateReport, validateGateReport } = require('./lib/report.js');
 const { validateFoundation } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
+const { normalizeAgentType } = require('./lib/agents.js');
 
 const GOVERNED = [
   'davinci', 'tech-lead', 'infra-architect',
@@ -36,7 +37,7 @@ function main() {
   let input;
   try { input = parseJson(fs.readFileSync(0, 'utf8')); } catch (err) { process.exit(0); }
 
-  const agent = input.agent_type;
+  const agent = normalizeAgentType(input.agent_type);
   if (!agent || !GOVERNED.includes(agent)) process.exit(0);
   if (agent === 'davinci' || agent === 'tech-lead') process.exit(0); // control plane files no report
 

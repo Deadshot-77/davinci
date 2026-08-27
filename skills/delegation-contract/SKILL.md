@@ -23,7 +23,10 @@ Your dispatch names four things. If any is missing, write a report with
 ## Reporting results
 
 Write `.devteam/reports/<your-agent-name>-<n>.json`, where `<n>` starts at 1 and
-increments per dispatch. Conform to `schema/report.schema.json`.
+increments per dispatch, and `<your-agent-name>` is your bare agent name with
+any `plugin:` prefix stripped (`infra-architect`, never `davinci:infra-architect`)
+because a colon is not a legal filename character on Windows. Conform to
+`schema/report.schema.json`.
 
 - `verification` must contain commands you actually ran, with their real exit
   codes. Never fabricate an entry. If you ran nothing, use an empty array and

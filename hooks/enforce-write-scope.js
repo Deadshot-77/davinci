@@ -6,6 +6,7 @@ const path = require('path');
 const { decideScope } = require('./lib/scope.js');
 const { decideBash } = require('./lib/bash.js');
 const { parseJson } = require('./lib/json.js');
+const { knownAgents } = require('./lib/agents.js');
 
 function main() {
   let input;
@@ -26,7 +27,8 @@ function main() {
   const ti = (input && input.tool_input) || {};
   const isBashShaped = Object.prototype.hasOwnProperty.call(ti, 'command') ||
     Object.prototype.hasOwnProperty.call(ti, 'script');
-  const decision = isBashShaped ? decideBash(input, scopeMap) : decideScope(input, scopeMap);
+  const known = knownAgents();
+  const decision = isBashShaped ? decideBash(input, scopeMap, known) : decideScope(input, scopeMap, known);
   if (!decision) process.exit(0);
 
   process.stdout.write(JSON.stringify({

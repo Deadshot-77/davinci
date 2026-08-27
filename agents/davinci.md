@@ -4,7 +4,7 @@ description: The entry point to the Davinci development team. Takes a request, c
 model: opus
 effort: high
 color: purple
-tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, AskUserQuestion, Agent(tech-lead)
+tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, AskUserQuestion, Agent(davinci:tech-lead, tech-lead)
 skills:
   - delegation-contract
   - intake-brief

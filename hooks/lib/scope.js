@@ -2,15 +2,26 @@
 
 const path = require('path');
 const { matchAny, globToRegExp } = require('./glob.js');
+const { normalizeAgentType } = require('./agents.js');
 
 function toRepoRelative(filePath, cwd) {
   const rel = path.relative(cwd, filePath);
   return rel.split(path.sep).join('/');
 }
 
-function decideScope(input, scopeMap) {
-  const agent = input && input.agent_type;
-  if (!agent || !Object.prototype.hasOwnProperty.call(scopeMap, agent)) return null;
+function decideScope(input, scopeMap, known) {
+  const agent = normalizeAgentType(input && input.agent_type);
+  if (!agent) return null;
+  if (!Object.prototype.hasOwnProperty.call(scopeMap, agent)) {
+    if (known && known.has(agent)) {
+      return {
+        deny:
+          `${agent} is a Davinci agent but has no entry in scope-map.json, so its write scope ` +
+          `cannot be checked. Refusing rather than allowing an ungoverned write.`,
+      };
+    }
+    return null;
+  }
 
   const ti = input.tool_input || {};
   const filePath = ti.file_path || ti.path || ti.notebook_path;

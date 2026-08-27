@@ -5,7 +5,7 @@ model: opus
 effort: xhigh
 color: blue
 maxTurns: 40
-tools: Read, Glob, Grep, Bash, TodoWrite, Agent(infra-architect, backend-engineer, frontend-engineer, security-engineer, code-reviewer)
+tools: Read, Glob, Grep, Bash, TodoWrite, Agent(davinci:infra-architect, davinci:backend-engineer, davinci:frontend-engineer, davinci:security-engineer, davinci:code-reviewer, infra-architect, backend-engineer, frontend-engineer, security-engineer, code-reviewer)
 disallowedTools: Write, Edit, NotebookEdit
 skills:
   - delegation-contract
