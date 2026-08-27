@@ -369,7 +369,7 @@ established, and, in equal weight, what it did not.
   one stylesheet link, zero network calls, no `@font-face`, photo-free,
   correct file shape.
 - `frontend-craft`'s accessibility floor was honoured without being asked:
-  `prefers-reduced-motion` handled and focus states defined. 13 CSS custom
+  `prefers-reduced-motion` handled and focus states defined. 19 CSS custom
   properties, 3 breakpoints, 9 headings, 5 sections.
 - `infra-architect` scaffolded into the project tree (not an isolated
   worktree) and, unprompted, wrote an inline Node preview server into
