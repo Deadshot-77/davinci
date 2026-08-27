@@ -28,7 +28,7 @@ task-by-task history and every ruling this note draws on.
 
 ## Verified, with real command output
 
-All commands were re-run from `X:/Projects/xpandrix-playground` on
+All commands were re-run from `<plugin-dir>` on
 2026-08-27 against commit `HEAD` of `davinci/increment-1` (working tree also
 carries one unrelated pre-existing uncommitted edit to
 `docs/superpowers/plans/2026-08-27-davinci-increment-1.md`, not touched by
