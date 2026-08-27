@@ -226,6 +226,50 @@ test('the real scope map denies security-engineer a write-intent Bash command, b
   assert.strictEqual(read, null);
 });
 
+test('each gate may write its own report against the real scope map', () => {
+  for (const agent of ['security-engineer', 'code-reviewer']) {
+    assert.strictEqual(decideScope(
+      { agent_type: agent, cwd: '/r', tool_input: { file_path: '/r/.devteam/reports/' + agent + '-1.json' } },
+      REAL_MAP), null, agent + ' should be able to write its own report');
+  }
+});
+
+test('each gate may not write the other gate report against the real scope map', () => {
+  const pairs = [
+    ['security-engineer', 'code-reviewer'],
+    ['code-reviewer', 'security-engineer'],
+  ];
+  for (const [agent, other] of pairs) {
+    const d = decideScope(
+      { agent_type: agent, cwd: '/r', tool_input: { file_path: '/r/.devteam/reports/' + other + '-1.json' } },
+      REAL_MAP);
+    assert.ok(d && /read-only/.test(d.deny), agent + ' should not be able to write ' + other + "'s report");
+  }
+});
+
+test('each gate may not write an ordinary source path against the real scope map', () => {
+  for (const agent of ['security-engineer', 'code-reviewer']) {
+    const d = decideScope(
+      { agent_type: agent, cwd: '/r', tool_input: { file_path: '/r/src/x.ts' } },
+      REAL_MAP);
+    assert.ok(d && /read-only/.test(d.deny), agent + ' should be denied a write to src/x.ts');
+  }
+});
+
+test('each gate is still denied a write-intent Bash command, while git diff is still allowed', () => {
+  for (const agent of ['security-engineer', 'code-reviewer']) {
+    const write = decideBash(
+      { agent_type: agent, cwd: '/r', tool_input: { command: "sed -i 's/a/b/' src/x.ts" } },
+      REAL_MAP);
+    assert.ok(write && /read-only/.test(write.deny), agent + ' should be denied a write-intent Bash command');
+
+    const read = decideBash(
+      { agent_type: agent, cwd: '/r', tool_input: { command: 'git diff --stat HEAD~1' } },
+      REAL_MAP);
+    assert.strictEqual(read, null, agent + ' should still be allowed git diff');
+  }
+});
+
 test('no path is allowed for more than one scoped agent in the real map', () => {
   // Behavioural check, not a glob-string comparison: two agents can own
   // scopes that overlap in practice (e.g. one agent's "src/**" swallowing
