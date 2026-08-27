@@ -109,8 +109,8 @@ test('the real scope map actually governs infra-architect', () => {
   assert.ok(d, 'infra-architect is absent from the scope map, or its scope is too wide');
 });
 
-test('the real scope map lets infra-architect scaffold ordinary web files', () => {
-  for (const f of ['index.html', 'styles.css', 'robots.txt', 'favicon.svg', 'package.json', 'src/a.ts']) {
+test('the real scope map lets infra-architect scaffold ordinary config and structure files', () => {
+  for (const f of ['robots.txt', 'package.json', 'src/a.ts']) {
     assert.strictEqual(decideScope(
       { agent_type: 'davinci:infra-architect', cwd: '/p', tool_input: { file_path: '/p/' + f } },
       REAL_MAP), null, f + ' should be writable by the scaffolder');
@@ -121,4 +121,37 @@ test('widening the scaffolder scope did not let it reach another agent report', 
   assert.ok(decideScope(
     { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/.devteam/reports/tech-lead-1.json' } },
     REAL_MAP));
+});
+
+test('the real scope map lets frontend-engineer write markup and styling', () => {
+  for (const f of ['index.html', 'src/components/Hero.tsx', 'src/styles/a.css', 'public/img.svg']) {
+    assert.strictEqual(decideScope(
+      { agent_type: 'frontend-engineer', cwd: '/p', tool_input: { file_path: '/p/' + f } },
+      REAL_MAP), null, f + ' should be writable by frontend-engineer');
+  }
+});
+
+test('the real scope map no longer lets infra-architect write markup', () => {
+  const d = decideScope(
+    { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/index.html' } },
+    REAL_MAP);
+  assert.ok(d, 'infra-architect should no longer own index.html now that frontend-engineer exists');
+});
+
+test('the real scope map still lets infra-architect write structure and config', () => {
+  for (const f of ['package.json', 'src/lib/x.ts']) {
+    assert.strictEqual(decideScope(
+      { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/' + f } },
+      REAL_MAP), null, f + ' should still be writable by infra-architect');
+  }
+});
+
+test('infra-architect and frontend-engineer scopes are disjoint', () => {
+  const infra = REAL_MAP['infra-architect'];
+  const frontend = REAL_MAP['frontend-engineer'];
+  const overlap = infra.filter((glob) => frontend.includes(glob));
+  assert.deepStrictEqual(
+    overlap, [],
+    'infra-architect and frontend-engineer share identical glob(s): ' + overlap.join(', ') +
+    ' — two agents on one glob breaks the disjoint-scope guarantee.');
 });

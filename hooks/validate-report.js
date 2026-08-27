@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { validateReport, validateGateReport } = require('./lib/report.js');
-const { validateFoundation } = require('./lib/foundation.js');
+const { validateFoundation, requiresStackProfile } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType } = require('./lib/agents.js');
 
@@ -59,7 +59,7 @@ function main() {
   const GATES = ['security-engineer', 'code-reviewer'];
   if (GATES.includes(agent)) errors.push(...validateGateReport(report));
 
-  if (agent === 'infra-architect') {
+  if (agent === 'infra-architect' && requiresStackProfile(report)) {
     let profileText = null;
     let pkgText = null;
     try { profileText = fs.readFileSync(path.join(cwd, '.devteam', 'stack-profile.md'), 'utf8'); } catch (err) { profileText = null; }

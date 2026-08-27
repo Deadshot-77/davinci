@@ -81,4 +81,17 @@ function validateFoundation(profileText, packageJsonText) {
   return errors;
 }
 
-module.exports = { validateFoundation, REQUIRED_SECTIONS, parseSections };
+// A stack profile is only a builder's contract when there was scaffolding to
+// govern. If a report touched nothing outside .devteam/ (e.g. it only wrote
+// its own report or the brief), there is no code for the profile to describe.
+function isUnderDevteam(filePath) {
+  const norm = String(filePath).split('\\').join('/').replace(/^\.\//, '');
+  return norm === '.devteam' || norm.startsWith('.devteam/');
+}
+
+function requiresStackProfile(report) {
+  const files = Array.isArray(report && report.files_changed) ? report.files_changed : [];
+  return files.some((f) => typeof f === 'string' && !isUnderDevteam(f));
+}
+
+module.exports = { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile };

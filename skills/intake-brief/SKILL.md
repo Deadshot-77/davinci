@@ -11,7 +11,8 @@ Your output is `.devteam/brief.md`. Everything downstream is governed by it.
 ## Step 1 — Classify, and say so out loud
 
 - **trivial** — a typo, a rename, a one-line change. Ask nothing. Write a
-  minimal brief with a single acceptance criterion and dispatch.
+  minimal brief with a single acceptance criterion and a `Route: direct —
+  <agent-name>` line naming the one specialist who owns it, and dispatch.
 - **bounded** — a well-scoped change to code that already exists here.
   At most two questions.
 - **architectural** — new project, new subsystem, or a change that alters
@@ -53,6 +54,12 @@ it contains. Two are easy to skip and must not be: **Goal** — one paragraph, i
 your own words, on what the user wants and why — and **Out of scope**, drawn
 from whatever you ruled out while clarifying. A section you leave blank is one a
 downstream agent will invent for itself.
+
+For a **trivial** brief only, add the `Route: direct — <agent-name>` line
+right under Classification, and omit the **Design dials** and **Out of
+scope** sections entirely — there is no visual surface to dial in and no
+scope wide enough to need bounding. Bounded and architectural briefs keep the
+full template, unchanged.
 
 Then show the user the **Assumed** section and dispatch `tech-lead` with the
 brief path. Do not wait for approval of the brief unless the classification is

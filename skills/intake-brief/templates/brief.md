@@ -2,6 +2,7 @@
 
 **Classification:** trivial | bounded | architectural
 **Date:** <YYYY-MM-DD>
+**Route:** direct — <agent-name>  <!-- trivial only; omit for bounded/architectural -->
 
 ## Goal
 

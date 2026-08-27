@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { validateFoundation, REQUIRED_SECTIONS, parseSections } = require('../lib/foundation.js');
+const { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile } = require('../lib/foundation.js');
 
 function profile(overrides) {
   const body = {
@@ -66,4 +66,24 @@ test('the last section keeps its full body', () => {
 test('a present but malformed package.json is reported, not silently skipped', () => {
   const errs = validateFoundation(profile(), '{ this is not json');
   assert.ok(errs.some((e) => /could not be parsed/.test(e)));
+});
+
+test('requiresStackProfile is false when every changed file is under .devteam/', () => {
+  assert.strictEqual(requiresStackProfile({
+    files_changed: ['.devteam/reports/infra-architect-1.json', '.devteam/brief.md'],
+  }), false);
+});
+
+test('requiresStackProfile is false for a report that changed no files', () => {
+  assert.strictEqual(requiresStackProfile({ files_changed: [] }), false);
+});
+
+test('requiresStackProfile is true when files_changed includes package.json', () => {
+  assert.strictEqual(requiresStackProfile({ files_changed: ['package.json'] }), true);
+});
+
+test('requiresStackProfile is true for a genuine scaffold with mixed files', () => {
+  assert.strictEqual(requiresStackProfile({
+    files_changed: ['package.json', 'src/app/page.tsx', '.devteam/stack-profile.md'],
+  }), true);
 });

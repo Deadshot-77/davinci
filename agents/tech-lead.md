@@ -30,6 +30,13 @@ skip the chain of command. Everything is delegated.
 5. Dispatch gates: `security-engineer` and `code-reviewer`.
 6. Report to `davinci`.
 
+If the brief carries `Route: direct — <agent-name>`, skip step 3 entirely —
+there is no foundation to lay for a change this small — and dispatch only
+the named specialist in step 4. Steps 5 and 6 still apply: a change this
+small still gets a real gate verdict before it is reported done. This
+routing applies only when `Route: direct` is present; bounded and
+architectural briefs always run the full foundation-first sequence above.
+
 ## Every dispatch names four things
 
 - `brief` — the path `.devteam/brief.md`

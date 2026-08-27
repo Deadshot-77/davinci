@@ -17,15 +17,11 @@
     "scripts/**",
     "src/**",
     ".devteam/stack-profile.md",
-    "public/**",
     "app/**",
     "tests/**",
     ".github/**",
     "docs/**",
-    "*.html",
-    "*.css",
     "*.txt",
-    "*.svg",
     ".editorconfig",
     ".nvmrc",
     "LICENSE"
@@ -42,7 +38,10 @@
     "src/components/**",
     "src/styles/**",
     "public/**",
-    "tests/ui/**"
+    "tests/ui/**",
+    "*.html",
+    "*.css",
+    "*.svg"
   ],
   "security-engineer": [],
   "code-reviewer": []
