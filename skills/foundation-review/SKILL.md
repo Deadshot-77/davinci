@@ -31,8 +31,19 @@ inconsistent work across three agents who never see each other's output.
 Every blocking finding cites a criterion from the brief. Craft concerns that map
 to no criterion are `advisory` — real, worth saying, but they do not stop the run.
 
-The one exception is an exposed secret, credential, or key: cite it as
-`criterion: "SECURITY"` and block regardless of the brief.
+## The reserved `SECURITY` criterion
+
+`SECURITY` blocks regardless of the brief, but only for exactly these three:
+
+1. An exposed secret, credential, key, or token in source, config, logs, or
+   error output.
+2. Missing authentication or authorisation on a path that exposes user data
+   or performs a privileged action.
+3. Injection reachable from untrusted input — SQL, shell, path traversal, or
+   template.
+
+Cite it as `criterion: "SECURITY"`. Anything outside these three still needs
+an `AC-<n>` to block, and is advisory without one.
 
 Do not fix anything. You have no write tools. Name the file, name the problem,
 and let `infra-architect` fix it.

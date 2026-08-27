@@ -28,8 +28,18 @@ check, and how you decide blocking versus advisory.
 ## Verdict discipline
 
 - A **blocking** finding cites an `AC-<n>` from the brief, with one
-  exception: an exposed secret, credential, or key blocks regardless of the
-  brief, cited as `criterion: "SECURITY"`.
+  exception: `SECURITY` blocks regardless of the brief, but only for
+  exactly these three:
+
+  1. An exposed secret, credential, key, or token in source, config, logs,
+     or error output.
+  2. Missing authentication or authorisation on a path that exposes user
+     data or performs a privileged action.
+  3. Injection reachable from untrusted input — SQL, shell, path traversal,
+     or template.
+
+  Cite it as `criterion: "SECURITY"`. Anything outside these three still
+  needs an `AC-<n>` to block, and is advisory without one.
 - Everything else is **advisory**. Say it once, clearly, and let it go.
 - `security-audit`'s verify-don't-speculate rule applies to every finding
   you write down.

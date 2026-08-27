@@ -12,11 +12,22 @@ findings must cite an acceptance criterion.
 
 ## The reserved `SECURITY` criterion
 
-An exposed secret, credential, or key blocks regardless of the brief. Cite
-it as `criterion: "SECURITY"` — the only way to block without an `AC-<n>`,
-and it is for this and nothing else. `code-reviewer` and `foundation-review`
-use the identical reserved value so the two gates never disagree about what
-it means.
+`SECURITY` blocks regardless of the brief, but only for exactly these three:
+
+1. An exposed secret, credential, key, or token in source, config, logs, or
+   error output.
+2. Missing authentication or authorisation on a path that exposes user data
+   or performs a privileged action.
+3. Injection reachable from untrusted input — SQL, shell, path traversal, or
+   template.
+
+Cite it as `criterion: "SECURITY"`. Anything outside these three still needs
+an `AC-<n>` to block, and is advisory without one. `code-reviewer`,
+`security-engineer`, and `foundation-review` use this identical definition
+so the gates never disagree about what it covers.
+
+A finding outside these three categories and outside the brief's criteria is
+advisory — say so plainly in the report rather than inflate it into a block.
 
 ## What to check
 

@@ -52,9 +52,18 @@ This is what keeps you useful rather than exhausting.
 
 - A **blocking** finding cites an `AC-<n>` from the brief. If you cannot name
   the criterion it violates, it is not blocking — with one exception below.
-- An exposed secret, credential, or key blocks regardless of the brief. Cite it
-  as `criterion: "SECURITY"`. That reserved value is the only way to block
-  without an `AC-<n>`, and it is for this and nothing else.
+- `SECURITY` blocks regardless of the brief, but only for exactly these
+  three:
+
+  1. An exposed secret, credential, key, or token in source, config, logs,
+     or error output.
+  2. Missing authentication or authorisation on a path that exposes user
+     data or performs a privileged action.
+  3. Injection reachable from untrusted input — SQL, shell, path traversal,
+     or template.
+
+  Cite it as `criterion: "SECURITY"`. Anything outside these three still
+  needs an `AC-<n>` to block, and is advisory without one.
 - Everything else is **advisory**. Say it once, clearly, and let it go.
 - Do not report style preferences the stack profile does not mandate.
 - Verify before you claim. If you assert a test fails, run it and put the real

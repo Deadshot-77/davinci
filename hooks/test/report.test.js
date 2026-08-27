@@ -75,6 +75,34 @@ test('a blocking finding without a criterion is reported', () => {
   assert.ok(validateReport(r, 'infra-architect').some((e) => /criterion/.test(e)));
 });
 
+test('a blocking finding citing the reserved SECURITY criterion passes validation', () => {
+  const r = valid();
+  r.verdict = 'fail';
+  r.findings = [{ severity: 'blocking', criterion: 'SECURITY', description: 'exposed API token in source' }];
+  assert.deepStrictEqual(validateReport(r, 'infra-architect'), []);
+});
+
+test('a blocking finding citing an AC-<n> criterion passes validation', () => {
+  const r = valid();
+  r.verdict = 'fail';
+  r.findings = [{ severity: 'blocking', criterion: 'AC-3', description: 'does not meet acceptance criterion' }];
+  assert.deepStrictEqual(validateReport(r, 'infra-architect'), []);
+});
+
+test('a blocking finding with a missing criterion is rejected', () => {
+  const r = valid();
+  r.verdict = 'fail';
+  r.findings = [{ severity: 'blocking', description: 'looks wrong' }];
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /criterion/.test(e)));
+});
+
+test('an advisory finding with no criterion is accepted', () => {
+  const r = valid();
+  r.verdict = 'pass';
+  r.findings = [{ severity: 'advisory', description: 'nice to have, not blocking' }];
+  assert.deepStrictEqual(validateReport(r, 'infra-architect'), []);
+});
+
 test('paths and commands are exempt from the placeholder scan', () => {
   const r = valid();
   r.files_changed = ['src/fixtures/placeholder.png'];
