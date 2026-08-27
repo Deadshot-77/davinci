@@ -459,7 +459,7 @@ not a substitute for the interactive run Increment 2 actually performed.
   effort — APIs, server logic, the data layer) and `security-engineer`
   (Opus 5, xhigh effort — a read-only security gate that audits `git diff`
   and reports, never patches).
-- The `security-review` skill, governing what `security-engineer` checks
+- The `security-audit` skill, governing what `security-engineer` checks
   and how it decides blocking versus advisory findings.
 - An ownership move resolving the collision `backend-engineer`'s addition
   exposed: `src/lib/**` (plus `src/types/**` and `src/index.ts`) moved from

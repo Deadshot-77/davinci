@@ -1,5 +1,5 @@
 ---
-name: security-review
+name: security-audit
 description: The lens for auditing changed code for vulnerabilities before it ships. Use when dispatched as the security gate.
 user-invocable: false
 ---

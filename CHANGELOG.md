@@ -19,7 +19,7 @@ agents are wired into `hooks/scope-map.json`, into `davinci`'s `Agent(...)`
 roster (the session-wide allowlist every downstream dispatch draws from),
 and into the `SubagentStop` matcher in `hooks/hooks.json`.
 
-**Skills.** `security-review` — governs what `security-engineer` checks and
+**Skills.** `security-audit` — governs what `security-engineer` checks and
 how it decides blocking versus advisory findings.
 
 **Ownership collision resolved.** Adding `backend-engineer` exposed a genuine
