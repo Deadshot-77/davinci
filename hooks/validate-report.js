@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { validateReport, validateGateReport, nextGateAttempt } = require('./lib/report.js');
+const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles } = require('./lib/report.js');
 const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType, knownAgents } = require('./lib/agents.js');
@@ -137,9 +137,7 @@ function reject(cwd, agent, errors, reminder) {
 function latestReport(dir, agent) {
   let names = [];
   try { names = fs.readdirSync(dir); } catch (err) { return null; }
-  const mine = names
-    .filter((n) => new RegExp('^' + agent + '-\\d+\\.json$').test(n))
-    .sort((a, b) => parseInt(a.match(/-(\d+)\./)[1], 10) - parseInt(b.match(/-(\d+)\./)[1], 10));
+  const mine = matchReportFiles(agent, names);
   return mine.length ? path.join(dir, mine[mine.length - 1]) : null;
 }
 
@@ -170,7 +168,7 @@ function main() {
   const cwd = input.cwd || process.cwd();
   const reportPath = latestReport(path.join(cwd, '.devteam', 'reports'), agent);
   if (!reportPath) {
-    reject(cwd, agent, [`No report found at .devteam/reports/${agent}-<n>.json. Write one before finishing.`]);
+    reject(cwd, agent, [`No report found at .devteam/reports/${agent}-<label>-<n>.json (or the older ${agent}-<n>.json). Write one before finishing.`]);
   }
 
   let report;

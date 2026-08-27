@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { validateReport, validateGateReport, nextGateAttempt } = require('../lib/report.js');
+const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles } = require('../lib/report.js');
 
 function valid() {
   return {
@@ -187,4 +187,82 @@ test('the example report in delegation-contract SKILL.md validates cleanly', () 
   assert.ok(match, 'SKILL.md must contain a fenced ```json example block');
   const example = JSON.parse(match[1]);
   assert.deepStrictEqual(validateReport(example, example.agent), []);
+});
+
+// --- matchReportFiles: which report files belong to which agent ---
+//
+// Four concurrent review-lens instances raced on the old single-instance
+// filename convention (<agent>-<n>.json), each choosing <n> by looking at
+// what existed on disk, and collided. They disambiguated themselves with
+// <agent>-<label>-<n>.json instead -- a sensible instinct the validator's
+// regex (^<agent>-\d+\.json$) could not see, so it reported "No report
+// found" and bounced them anyway. matchReportFiles is the pure filename
+// decision pulled out of that regex: given an agent name and a directory
+// listing already read by the caller, which names belong to this agent, in
+// oldest-to-newest order. It touches no filesystem itself, so every case
+// below is a plain array in, array out.
+
+test('matchReportFiles matches the original single-instance form <agent>-<n>.json', () => {
+  const files = ['infra-architect-1.json', 'infra-architect-2.json', 'security-engineer-1.json'];
+  assert.deepStrictEqual(
+    matchReportFiles('infra-architect', files),
+    ['infra-architect-1.json', 'infra-architect-2.json']
+  );
+});
+
+test('matchReportFiles matches the labeled concurrency-safe form <agent>-<label>-<n>.json', () => {
+  const files = ['review-lens-secrets-1.json', 'review-lens-correctness-1.json'];
+  assert.deepStrictEqual(
+    matchReportFiles('review-lens', files).sort(),
+    ['review-lens-correctness-1.json', 'review-lens-secrets-1.json']
+  );
+});
+
+test('matchReportFiles matches both the plain and labeled forms together', () => {
+  const files = ['review-lens-1.json', 'review-lens-secrets-2.json'];
+  const result = matchReportFiles('review-lens', files);
+  assert.ok(result.includes('review-lens-1.json'));
+  assert.ok(result.includes('review-lens-secrets-2.json'));
+});
+
+test('matchReportFiles accepts a label containing hyphens', () => {
+  // The label is free text ("the lens you were told to run, the component
+  // you were assigned, or similar"), so it may itself contain hyphens --
+  // review-lens's own "silent-failure" lens is exactly this shape.
+  assert.deepStrictEqual(
+    matchReportFiles('review-lens', ['review-lens-silent-failure-2.json']),
+    ['review-lens-silent-failure-2.json']
+  );
+  assert.deepStrictEqual(
+    matchReportFiles('review-lens', ['review-lens-extra-agent-1.json']),
+    ['review-lens-extra-agent-1.json']
+  );
+});
+
+test('matchReportFiles sorts by trailing number, not string order, so -10 comes after -9', () => {
+  const files = ['review-lens-secrets-10.json', 'review-lens-secrets-9.json', 'review-lens-secrets-2.json'];
+  assert.deepStrictEqual(
+    matchReportFiles('review-lens', files),
+    ['review-lens-secrets-2.json', 'review-lens-secrets-9.json', 'review-lens-secrets-10.json']
+  );
+});
+
+test('matchReportFiles never matches a different agent\'s reports', () => {
+  const files = ['code-reviewer-1.json', 'security-engineer-1.json'];
+  assert.deepStrictEqual(matchReportFiles('review-lens', files), []);
+});
+
+// code-reviewer is a real agent shipped in agents/ whose name has "code" as
+// a literal string prefix. A shorter agent name that happens to be a prefix
+// of a longer, distinct agent's name must not swallow that longer agent's
+// reports by misreading the rest of its name as a label -- the exact
+// mistake naive prefix matching makes.
+test('matchReportFiles does not let a prefix agent name pick up a longer, distinct agent\'s reports', () => {
+  assert.deepStrictEqual(matchReportFiles('code', ['code-reviewer-1.json']), []);
+  assert.deepStrictEqual(matchReportFiles('code-reviewer', ['code-reviewer-1.json']), ['code-reviewer-1.json']);
+});
+
+test('matchReportFiles returns an empty list when nothing matches', () => {
+  assert.deepStrictEqual(matchReportFiles('review-lens', []), []);
+  assert.deepStrictEqual(matchReportFiles('review-lens', ['unrelated.json', 'review-lens-GATE-FAILED.json']), []);
 });

@@ -1,5 +1,7 @@
 'use strict';
 
+const { knownAgents } = require('./agents.js');
+
 const REQUIRED = [
   'agent', 'status', 'files_changed', 'criteria_addressed',
   'verification', 'assumptions', 'handoff_notes',
@@ -105,4 +107,42 @@ function validateGateReport(report) {
   return errors;
 }
 
-module.exports = { validateReport, validateGateReport, nextGateAttempt, PLACEHOLDER };
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Which report filenames belong to `agentName`, oldest-to-newest. Supports
+// both the original single-instance form (<agent>-<n>.json) and the
+// concurrency-safe form several instances of the same agent type use to
+// avoid colliding on <n> (<agent>-<label>-<n>.json, where <label> is free
+// text and may itself contain hyphens -- review-lens's own "silent-failure"
+// lens is exactly this shape). Pure: the caller (validate-report.js) does
+// the actual fs.readdirSync of .devteam/reports/; this function only
+// filters and sorts an already-read list of names.
+//
+// A shorter agent name can be a literal string prefix of a longer, distinct
+// agent's name -- "code" of "code-reviewer", a real agent shipped in
+// agents/. Naive prefix matching would let "code" swallow
+// "code-reviewer-1.json" by misreading "reviewer" as its own label. Two
+// prefixes of the same string always have one containing the other, so
+// whenever a strictly longer known agent name also prefixes the filename,
+// that longer agent is the more specific owner and this agent's match is
+// suppressed.
+function matchReportFiles(agentName, filenames) {
+  const pattern = new RegExp('^' + escapeRegExp(agentName) + '(?:-.+)?-(\\d+)\\.json$');
+  const longerAgents = Array.from(knownAgents()).filter(
+    (a) => a !== agentName && a.length > agentName.length
+  );
+
+  const matches = [];
+  for (const name of filenames) {
+    const m = pattern.exec(name);
+    if (!m) continue;
+    if (longerAgents.some((a) => name.startsWith(a + '-'))) continue;
+    matches.push({ name, n: parseInt(m[1], 10) });
+  }
+
+  return matches.sort((a, b) => a.n - b.n).map((x) => x.name);
+}
+
+module.exports = { validateReport, validateGateReport, nextGateAttempt, matchReportFiles, PLACEHOLDER };

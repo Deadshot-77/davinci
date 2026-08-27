@@ -28,11 +28,19 @@ anyway and record the conflict in `handoff_notes` — the report is how work is
 accounted for, and an agent that finishes without one has done work nobody
 can verify.
 
-Write `.devteam/reports/<your-agent-name>-<n>.json`, where `<n>` starts at 1 and
-increments per dispatch, and `<your-agent-name>` is your bare agent name with
-any `plugin:` prefix stripped (`infra-architect`, never `davinci:infra-architect`)
-because a colon is not a legal filename character on Windows. Conform to
-`schema/report.schema.json`.
+Write `.devteam/reports/<your-agent-name>-<label>-<n>.json`, where
+`<your-agent-name>` is your bare agent name with any `plugin:` prefix stripped
+(`infra-architect`, never `davinci:infra-architect`) because a colon is not a
+legal filename character on Windows. Conform to `schema/report.schema.json`.
+
+- `<label>` is a short identifier for **this dispatch** — the lens you were
+  told to run, the component you were assigned, or similar. Lowercase,
+  hyphen-separated, no spaces. When a dispatch gives you no natural label,
+  use `main`.
+- `<n>` starts at 1 and increments per dispatch **under your own label**.
+  Never choose `<n>` by counting existing files: several instances of your
+  agent type may be running at the same moment and will collide if they pick
+  numbers that way.
 
 The copyable example below is authoritative for the report shape; the schema
 file is a reference for humans, not something you are expected to read —

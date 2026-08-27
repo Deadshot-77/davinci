@@ -45,6 +45,12 @@ This is the same rule the delegation contract applies to any missing
 dispatch field, and the same rule `code-reviewer` already applies to its own
 two lenses.
 
+Your report's `<label>` (per the delegation contract) is the lens you were
+told to run — `correctness`, `silent-failure`, `types`, `tests`, or
+`secrets`. A parent gate spawns several of you at once, all sharing the
+agent name `review-lens`; labeling by lens is what keeps your report from
+colliding with the other instances running alongside you.
+
 ## Scope
 
 Scope to what changed: `git diff` against the base your dispatch names. Read
