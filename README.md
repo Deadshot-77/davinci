@@ -129,7 +129,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     98 tests, zero dependencies
+│  └─ test/                     115 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -147,15 +147,18 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, both hooks, and 98 passing tests. Increment 2's
+Increment 3. Seven agents, both hooks, and 115 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
-`backend-engineer` and `security-engineer` complete the
-roster and are wired into the scope map, the roster allowlists, and the
-`SubagentStop` matcher — but neither has been dispatched in a live session yet.
-Built and governed is not the same claim as exercised; treat their behavior as
-unverified until a run actually routes work through them.
+`backend-engineer` and `security-engineer` complete the roster and have both
+now been dispatched. `backend-engineer` built a working endpoint with fifteen
+passing tests; `security-engineer` audited it and returned `verdict: fail`,
+blocking on two deliberately planted credentials and reporting ten further
+findings nobody planted. Neither has yet run through the full chain from
+`davinci` — both were dispatched directly to fit a time budget. The full record,
+including three defects that run exposed, is in
+[docs/increment-3-run.md](docs/increment-3-run.md).
 
 **Confirmed working in a real session.** The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer` runs, and produced a real single-page site: `index.html` (11.6KB) and `styles.css` (12.4KB). The brief that run actually used carried **thirteen** acceptance criteria, AC-1 through AC-13. Only the first five were ever checked, and they passed mechanically — exactly one stylesheet link, zero network calls, no `@font-face`, photo-free, correct file shape. The remaining eight, AC-6 through AC-13, were never checked; AC-13 (the `package.json` script actually serving the page) is recorded in the run's own report as explicitly not addressed, because every command that would have proven the script ran was denied. That report is the only one the run filed, and it carries `"status": "blocked"`. `frontend-craft`'s accessibility floor was honoured without being asked: `prefers-reduced-motion` handled and focus states defined, 19 CSS custom properties, 3 breakpoints, 9 headings, 5 sections. `infra-architect` scaffolded into the project tree (not an isolated worktree) and, unprompted, wrote an inline Node preview server into `package.json`'s `start` script. Two of the three enforcement layers are corroborated as having fired against a real agent in this run. The report gate bounced a malformed report repeatedly. The write-scope hook denied two genuine write attempts by `infra-architect` — one to a path outside the project directory entirely, one out-of-scope inside it — both carrying the exact denial text `hooks/lib/scope.js` produces, glob list included. The Bash guard was not exercised in this run; it remains verified only by direct invocation in increment 1.
 
