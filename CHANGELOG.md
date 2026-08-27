@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+Parallel review fan-out. Adds a `review-lens` agent that the gates dispatch several
+of at once — correctness, silent-failure, types, tests, secrets — then synthesise.
+`tech-lead` now dispatches the two builders together, their scopes being provably
+disjoint. The report validator derives its governed-agent list from `agents/` on disk
+instead of a hardcoded array, so a new agent can no longer slip past it. Built and
+unit-tested; not yet exercised in a live run.
+
 ## 0.3.0
 
 `backend-engineer` and `security-engineer` complete the roster, plus the
