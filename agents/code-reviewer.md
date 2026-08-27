@@ -4,7 +4,7 @@ description: Read-only review gate. Invoked twice per run — once as the founda
 model: opus
 effort: high
 color: red
-tools: Read, Glob, Grep, Bash, TodoWrite, Write
+tools: Read, Glob, Grep, Bash, TodoWrite, Write, Agent(davinci:review-lens, review-lens)
 disallowedTools: Edit, NotebookEdit
 skills:
   - delegation-contract
@@ -45,6 +45,15 @@ Check, in order of what actually costs users:
 4. **Test coverage** — are the new branches actually exercised? Behavioural
    coverage, not line count.
 5. **Secrets** — anything credential-shaped that should not be committed.
+
+## Fanning out
+
+When the diff is large enough to warrant it, dispatch several `review-lens`
+agents — correctness, silent-failure, types, and tests — in a single message
+so they run concurrently, then synthesise their findings into one verdict.
+Issuing the calls one at a time serialises agents that have no reason to
+wait on each other and wastes the entire point of splitting the review into
+lenses.
 
 ## Verdict discipline
 

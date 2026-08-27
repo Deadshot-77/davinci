@@ -4,7 +4,7 @@ description: Read-only security gate. Audits changed code for vulnerabilities �
 model: opus
 effort: xhigh
 color: red
-tools: Read, Glob, Grep, Bash, TodoWrite, Write
+tools: Read, Glob, Grep, Bash, TodoWrite, Write, Agent(davinci:review-lens, review-lens)
 disallowedTools: Edit, NotebookEdit
 skills:
   - delegation-contract
@@ -24,6 +24,15 @@ vulnerability does not announce itself the way a broken build does.
 
 Follow the `security-audit` skill — it governs your diff scope, what you
 check, and how you decide blocking versus advisory.
+
+## Fanning out
+
+When the diff is large enough to warrant it, dispatch several `review-lens`
+agents — secrets, correctness, and silent-failure — in a single message so
+they run concurrently, then synthesise their findings into one verdict.
+Issuing the calls one at a time serialises agents that have no reason to
+wait on each other and wastes the entire point of splitting the review into
+lenses.
 
 ## Verdict discipline
 

@@ -270,6 +270,44 @@ test('each gate is still denied a write-intent Bash command, while git diff is s
   }
 });
 
+test('review-lens is present in the real scope map', () => {
+  assert.ok(
+    Object.prototype.hasOwnProperty.call(REAL_MAP, 'review-lens'),
+    'review-lens should have an entry in scope-map.json');
+});
+
+test('review-lens may write its own report against the real scope map', () => {
+  assert.strictEqual(decideScope(
+    { agent_type: 'review-lens', cwd: '/r', tool_input: { file_path: '/r/.devteam/reports/review-lens-1.json' } },
+    REAL_MAP), null);
+});
+
+test('review-lens may not write an ordinary source path against the real scope map', () => {
+  const d = decideScope(
+    { agent_type: 'review-lens', cwd: '/r', tool_input: { file_path: '/r/src/x.ts' } },
+    REAL_MAP);
+  assert.ok(d && /read-only/.test(d.deny), 'review-lens should be denied a write to src/x.ts');
+});
+
+test('review-lens may not write another agent report against the real scope map', () => {
+  const d = decideScope(
+    { agent_type: 'review-lens', cwd: '/r', tool_input: { file_path: '/r/.devteam/reports/code-reviewer-1.json' } },
+    REAL_MAP);
+  assert.ok(d && /read-only/.test(d.deny), 'review-lens should not be able to write code-reviewer\'s report');
+});
+
+test('review-lens is denied a write-intent Bash command, but allowed git diff, against the real map', () => {
+  const write = decideBash(
+    { agent_type: 'review-lens', cwd: '/r', tool_input: { command: "sed -i 's/a/b/' src/x.ts" } },
+    REAL_MAP);
+  assert.ok(write && /read-only/.test(write.deny));
+
+  const read = decideBash(
+    { agent_type: 'review-lens', cwd: '/r', tool_input: { command: 'git diff --stat HEAD~1' } },
+    REAL_MAP);
+  assert.strictEqual(read, null);
+});
+
 test('no path is allowed for more than one scoped agent in the real map', () => {
   // Behavioural check, not a glob-string comparison: two agents can own
   // scopes that overlap in practice (e.g. one agent's "src/**" swallowing

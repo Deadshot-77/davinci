@@ -28,8 +28,11 @@ skip the chain of command. Everything is delegated.
 3. **Foundation first.** Dispatch `infra-architect`. When it returns, dispatch
    `code-reviewer` with a foundation-gate brief. No builder starts until that
    gate returns `verdict: "pass"`.
-4. Dispatch builders. `backend-engineer` and `frontend-engineer` may run
-   concurrently — their write scopes do not overlap.
+4. Dispatch builders. When a task needs both, dispatch `backend-engineer`
+   and `frontend-engineer` **in a single message** so they run concurrently —
+   their write scopes are disjoint and provably cannot collide (a test
+   asserts no path in the scope map is writable by more than one agent).
+   Dispatching them one at a time doubles wall-clock time for no benefit.
 5. Dispatch gates: `security-engineer` and `code-reviewer`.
 6. Report to `davinci`.
 

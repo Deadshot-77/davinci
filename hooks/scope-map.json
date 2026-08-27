@@ -45,5 +45,6 @@
     "app/**"
   ],
   "security-engineer": [],
-  "code-reviewer": []
+  "code-reviewer": [],
+  "review-lens": []
 }

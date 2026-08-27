@@ -4,7 +4,7 @@ description: The entry point to the Davinci development team. Takes a request, c
 model: opus
 effort: high
 color: purple
-tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, AskUserQuestion, Agent(davinci:tech-lead, davinci:infra-architect, davinci:backend-engineer, davinci:frontend-engineer, davinci:security-engineer, davinci:code-reviewer, tech-lead, infra-architect, backend-engineer, frontend-engineer, security-engineer, code-reviewer)
+tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, AskUserQuestion, Agent(davinci:tech-lead, davinci:infra-architect, davinci:backend-engineer, davinci:frontend-engineer, davinci:security-engineer, davinci:code-reviewer, davinci:review-lens, tech-lead, infra-architect, backend-engineer, frontend-engineer, security-engineer, code-reviewer, review-lens)
 skills:
   - delegation-contract
   - intake-brief
