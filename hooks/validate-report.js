@@ -7,7 +7,7 @@ const { execFileSync } = require('child_process');
 const { validateReport, validateGateReport, nextGateAttempt } = require('./lib/report.js');
 const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
-const { normalizeAgentType } = require('./lib/agents.js');
+const { normalizeAgentType, knownAgents } = require('./lib/agents.js');
 
 // stdio: silence git's own stderr ("fatal: not a git repository" is expected
 // noise outside a repo, not a real failure -- letting it leak makes every
@@ -47,10 +47,16 @@ function gitPorcelainLines(cwd) {
   }
 }
 
-const GOVERNED = [
-  'davinci', 'tech-lead', 'infra-architect',
-  'backend-engineer', 'frontend-engineer', 'security-engineer', 'code-reviewer',
-];
+// davinci only relays to the user and writes the brief; tech-lead only
+// orchestrates dispatches. Neither produces a change or a judgement, so
+// neither files a report -- everything else knownAgents() finds on disk
+// does, and is governed by this gate. This used to be a second
+// hand-maintained list (GOVERNED) alongside scope-map.json and agents/
+// itself; review-lens shipped in agents/ but was never added to it, so the
+// gate silently let it finish without ever filing a report. Deriving
+// governance from knownAgents() instead means a newly shipped agent is
+// governed the moment its file lands, with nothing else to remember to update.
+const NO_REPORT = new Set(['davinci', 'tech-lead']);
 
 function block(reason) {
   process.stdout.write(JSON.stringify({
@@ -158,8 +164,8 @@ function main() {
   try { input = parseJson(fs.readFileSync(0, 'utf8')); } catch (err) { process.exit(0); }
 
   const agent = normalizeAgentType(input.agent_type);
-  if (!agent || !GOVERNED.includes(agent)) process.exit(0);
-  if (agent === 'davinci' || agent === 'tech-lead') process.exit(0); // control plane files no report
+  if (!agent || !knownAgents().has(agent)) process.exit(0);
+  if (NO_REPORT.has(agent)) process.exit(0); // control plane: files no report
 
   const cwd = input.cwd || process.cwd();
   const reportPath = latestReport(path.join(cwd, '.devteam', 'reports'), agent);
@@ -176,7 +182,12 @@ function main() {
 
   const errors = validateReport(report, agent);
 
-  const GATES = ['security-engineer', 'code-reviewer'];
+  // Gates: agents whose report is a judgement (a verdict and findings) on
+  // work someone else did, rather than a change to the codebase. This is
+  // the only hand-maintained list left in this file -- it cannot be derived
+  // from knownAgents() the way GOVERNED was, because "governed" and "is a
+  // gate" are different questions the disk alone can't answer.
+  const GATES = ['security-engineer', 'code-reviewer', 'review-lens'];
   if (GATES.includes(agent)) errors.push(...validateGateReport(report));
 
   if (agent === 'infra-architect') {
@@ -204,6 +215,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  main, gitPorcelainLines, foundationErrors, latestReport, block, GOVERNED,
+  main, gitPorcelainLines, foundationErrors, latestReport, block, NO_REPORT,
   reject, gateAttemptsPath, readGateAttempts, writeGateAttempts, clearGateAttempts, writeGateFailed,
 };

@@ -5,6 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { foundationErrors, gitPorcelainLines } = require('../validate-report.js');
+const { knownAgents } = require('../lib/agents.js');
 
 // --- foundationErrors: the report gate's actual stack-profile decision ---
 //
@@ -240,6 +241,87 @@ test('a successful validation clears any prior attempt counter', () => {
     const result = runHookOnce(cwd, 'frontend-engineer');
     assert.strictEqual(result.status, 0);
     assert.ok(!fs.existsSync(counterPath), 'a passing report must clear the attempt counter');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+// --- governance is derived from knownAgents(), not a hand-maintained list ---
+//
+// validate-report.js used to hardcode which agents it governs in a GOVERNED
+// array -- a third source of truth alongside scope-map.json and the agents/
+// directory that knownAgents() already reads. review-lens shipped in
+// agents/ but nobody remembered to add it to that array, so the report gate
+// silently let it finish without ever filing a report. These tests run the
+// real hook process against every agent knownAgents() actually finds on
+// disk, so a regression back to a hand-maintained list -- which leaves any
+// newly shipped agent ungoverned -- fails the suite instead of shipping
+// quietly again.
+
+const NO_REPORT_EXCEPTIONS = new Set(['davinci', 'tech-lead']);
+
+test('every agent in knownAgents() except davinci and tech-lead is governed by the report validator', () => {
+  for (const agent of knownAgents()) {
+    if (NO_REPORT_EXCEPTIONS.has(agent)) continue;
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-governance-'));
+    try {
+      fs.mkdirSync(path.join(cwd, '.devteam', 'reports'), { recursive: true });
+      const result = runHookOnce(cwd, agent);
+      assert.strictEqual(result.status, 2,
+        `${agent} is shipped in agents/ but the report gate did not demand a report from it ` +
+        `(exit ${result.status}) -- it has fallen through the governance check.`);
+    } finally {
+      fs.rmSync(cwd, { recursive: true, force: true });
+    }
+  }
+});
+
+test('davinci and tech-lead filing no report at all remain fine', () => {
+  for (const agent of NO_REPORT_EXCEPTIONS) {
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-governance-'));
+    try {
+      fs.mkdirSync(path.join(cwd, '.devteam', 'reports'), { recursive: true });
+      const result = runHookOnce(cwd, agent);
+      assert.strictEqual(result.status, 0, `${agent} is control-plane and should not be required to file a report`);
+    } finally {
+      fs.rmSync(cwd, { recursive: true, force: true });
+    }
+  }
+});
+
+function writeReviewLensReport(cwd, overrides) {
+  fs.mkdirSync(path.join(cwd, '.devteam', 'reports'), { recursive: true });
+  const report = Object.assign({
+    agent: 'review-lens',
+    status: 'complete',
+    files_changed: [],
+    criteria_addressed: ['AC-1'],
+    verification: [{ cmd: 'git diff --stat HEAD~1', exit_code: 0 }],
+    assumptions: [],
+    handoff_notes: 'Reviewed the correctness lens.',
+  }, overrides);
+  fs.writeFileSync(path.join(cwd, '.devteam', 'reports', 'review-lens-1.json'), JSON.stringify(report));
+}
+
+test('review-lens filing a report with no verdict is rejected', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-lens-'));
+  try {
+    writeReviewLensReport(cwd, {});
+    const result = runHookOnce(cwd, 'review-lens');
+    assert.strictEqual(result.status, 2, 'a review-lens report with no verdict should be rejected');
+    const ctx = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.match(ctx, /verdict/);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('review-lens filing a report with verdict "pass" is accepted', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-lens-'));
+  try {
+    writeReviewLensReport(cwd, { verdict: 'pass', findings: [] });
+    const result = runHookOnce(cwd, 'review-lens');
+    assert.strictEqual(result.status, 0, 'a well-formed review-lens report should be accepted');
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
