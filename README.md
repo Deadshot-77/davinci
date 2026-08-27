@@ -15,17 +15,20 @@ The name is the architecture: Leonardo ran a *bottega*, a workshop where the mas
 | `davinci` | Opus 5 | high | Clarifies your request, writes the brief, delegates | the brief only |
 | `tech-lead` | Opus 5 | xhigh | Dispatches specialists, arbitrates verdicts, re-routes | nothing |
 | `infra-architect` | Fable 5 | high | Scaffolding and the conventions everyone obeys | scoped |
+| `backend-engineer` | Opus 5 | high | APIs, server logic, data layer | scoped |
 | `frontend-engineer` | Opus 5 | high | Art direction and build — owns markup, components, styles | scoped |
+| `security-engineer` | Opus 5 | xhigh | Audits changed code; reports, never patches | nothing |
 | `code-reviewer` | Opus 5 | high | Foundation gate, then code review | nothing |
-
-`backend-engineer` and `security-engineer` still don't exist, so no backend or security work is routed yet.
 
 ## How it works
 
 ```
 you → davinci → tech-lead → infra-architect → code-reviewer (foundation gate)
                                                     ↓
-                                          frontend-engineer → code-reviewer (code review)
+                                  backend-engineer ─┤
+                                  frontend-engineer ┘
+                                                    ↓
+                                    security-engineer, code-reviewer (gates)
                                                     ↓
                                               back to tech-lead
 ```
@@ -104,13 +107,13 @@ Prompts are advisory; hooks are not. Two hooks enforce the rules the harness can
 davinci/
 ├─ .claude-plugin/plugin.json   plugin manifest
 ├─ settings.json                declares davinci as the main thread
-├─ agents/                      the five agent definitions
-├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft
+├─ agents/                      the seven agent definitions
+├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft, security review
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     90 tests, zero dependencies
+│  └─ test/                     98 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -128,7 +131,13 @@ claude plugin validate .
 
 ## Status
 
-Increment 2, verified by a live end-to-end run. The five agents above, both hooks, and 90 passing tests.
+Increment 3. Seven agents, both hooks, and 98 passing tests. Increments 1 and 2
+verified the chain through `infra-architect` and `frontend-engineer` in a live
+end-to-end run (below). `backend-engineer` and `security-engineer` complete the
+roster and are wired into the scope map, the roster allowlists, and the
+`SubagentStop` matcher — but neither has been dispatched in a live session yet.
+Built and governed is not the same claim as exercised; treat their behavior as
+unverified until a run actually routes work through them.
 
 **Confirmed working in a real session.** The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer` runs, and produced a real single-page site: `index.html` (11.6KB) and `styles.css` (12.4KB). The brief that run actually used carried **thirteen** acceptance criteria, AC-1 through AC-13. Only the first five were ever checked, and they passed mechanically — exactly one stylesheet link, zero network calls, no `@font-face`, photo-free, correct file shape. The remaining eight, AC-6 through AC-13, were never checked; AC-13 (the `package.json` script actually serving the page) is recorded in the run's own report as explicitly not addressed, because every command that would have proven the script ran was denied. That report is the only one the run filed, and it carries `"status": "blocked"`. `frontend-craft`'s accessibility floor was honoured without being asked: `prefers-reduced-motion` handled and focus states defined, 19 CSS custom properties, 3 breakpoints, 9 headings, 5 sections. `infra-architect` scaffolded into the project tree (not an isolated worktree) and, unprompted, wrote an inline Node preview server into `package.json`'s `start` script. Two of the three enforcement layers are corroborated as having fired against a real agent in this run. The report gate bounced a malformed report repeatedly. The write-scope hook denied two genuine write attempts by `infra-architect` — one to a path outside the project directory entirely, one out-of-scope inside it — both carrying the exact denial text `hooks/lib/scope.js` produces, glob list included. The Bash guard was not exercised in this run; it remains verified only by direct invocation in increment 1.
 
@@ -138,7 +147,7 @@ Increment 2, verified by a live end-to-end run. The five agents above, both hook
 - A full chain run took upwards of fifteen minutes and was truncated more than once.
 - `frontend-engineer` filed no report in the run that produced the page above; it was most likely still being bounced by the report gate when the run was cut off.
 - Browser-MCP access under a `tools:` allowlist is confirmed by mechanism — an explicit allowlist drops unnamed MCP tools, so named ones are kept — but has never been directly sighted, because no test environment so far has had that server connected. The `claude` CLI itself carries no browser MCP at all.
-- `backend-engineer` and `security-engineer` still don't exist, so no backend or security work has ever been routed.
+- `backend-engineer` and `security-engineer` are built and wired — scope map, roster allowlists, `SubagentStop` matcher — but have never run. No backend or security work has been routed through a live session, so nothing about their actual behavior is confirmed yet, only their governance.
 
 And `davinci` itself, running as the main thread, is still **not** governed by the write-scope hook: a main-thread agent presents no agent identity to hooks, so its "brief only" restriction is protocol, not enforcement.
 

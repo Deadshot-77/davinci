@@ -3,6 +3,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const { decideScope } = require('../lib/scope.js');
+const { decideBash } = require('../lib/bash.js');
 
 const REAL_MAP = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'scope-map.json'), 'utf8'));
 
@@ -110,7 +111,7 @@ test('the real scope map actually governs infra-architect', () => {
 });
 
 test('the real scope map lets infra-architect scaffold ordinary config and structure files', () => {
-  for (const f of ['robots.txt', 'package.json', 'src/lib/a.ts']) {
+  for (const f of ['robots.txt', 'package.json', 'scripts/build.js']) {
     assert.strictEqual(decideScope(
       { agent_type: 'davinci:infra-architect', cwd: '/p', tool_input: { file_path: '/p/' + f } },
       REAL_MAP), null, f + ' should be writable by the scaffolder');
@@ -139,11 +140,90 @@ test('the real scope map no longer lets infra-architect write markup', () => {
 });
 
 test('the real scope map still lets infra-architect write structure and config', () => {
-  for (const f of ['package.json', 'src/lib/x.ts']) {
+  for (const f of ['package.json', 'config/app.yml']) {
     assert.strictEqual(decideScope(
       { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/' + f } },
       REAL_MAP), null, f + ' should still be writable by infra-architect');
   }
+});
+
+test('the real scope map no longer lets infra-architect write into src/lib', () => {
+  const d = decideScope(
+    { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/src/lib/db/client.ts' } },
+    REAL_MAP);
+  assert.ok(d, 'infra-architect should no longer own src/lib/** now that backend-engineer exists');
+});
+
+test('the real scope map no longer lets infra-architect write app/**', () => {
+  const d = decideScope(
+    { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/app/layout.tsx' } },
+    REAL_MAP);
+  assert.ok(d, 'infra-architect should no longer own app/** now that frontend-engineer owns it');
+});
+
+test('the real scope map lets backend-engineer write the application data layer', () => {
+  for (const f of ['src/api/users.ts', 'src/server/app.ts', 'src/lib/db/client.ts',
+    'src/types/user.ts', 'src/index.ts', 'prisma/schema.prisma', 'tests/api/x.test.ts']) {
+    assert.strictEqual(decideScope(
+      { agent_type: 'backend-engineer', cwd: '/p', tool_input: { file_path: '/p/' + f } },
+      REAL_MAP), null, f + ' should be writable by backend-engineer');
+  }
+});
+
+test('the real scope map lets frontend-engineer write app/**', () => {
+  assert.strictEqual(decideScope(
+    { agent_type: 'frontend-engineer', cwd: '/p', tool_input: { file_path: '/p/app/layout.tsx' } },
+    REAL_MAP), null, 'app/layout.tsx should be writable by frontend-engineer');
+});
+
+test('an unowned path under src/ is denied for every agent, on purpose', () => {
+  // Fail-closed is intended: some paths under src/ (e.g. src/utils/**) are
+  // not claimed by any agent. An unowned path must be denied, not silently
+  // routed to the nearest plausible owner.
+  for (const agent of Object.keys(REAL_MAP)) {
+    if (REAL_MAP[agent].length === 0) continue;
+    const d = decideScope(
+      { agent_type: agent, cwd: '/p', tool_input: { file_path: '/p/src/utils/x.ts' } },
+      REAL_MAP);
+    assert.ok(d, agent + ' unexpectedly claims src/utils/x.ts');
+  }
+});
+
+test('every agent shipped on disk is governed by the real scope map', () => {
+  // The check that would have caught this increment's new agents being
+  // added and left ungoverned: every agents/*.md on disk must have a key
+  // in scope-map.json, or its writes are never checked at all.
+  const agentsDir = path.join(__dirname, '..', '..', 'agents');
+  const shipped = fs.readdirSync(agentsDir)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => f.slice(0, -3));
+  assert.ok(shipped.length > 0, 'expected to find agent definitions on disk');
+  for (const agent of shipped) {
+    assert.ok(
+      Object.prototype.hasOwnProperty.call(REAL_MAP, agent),
+      agent + ' is shipped in agents/ but has no entry in scope-map.json');
+  }
+});
+
+test('both gates are denied a write to an ordinary source path against the real map', () => {
+  for (const agent of ['security-engineer', 'code-reviewer']) {
+    const d = decideScope(
+      { agent_type: agent, cwd: '/proj', tool_input: { file_path: '/proj/src/api/users.ts' } },
+      REAL_MAP);
+    assert.ok(d && /read-only/.test(d.deny), agent + ' should be denied a write to src/api/users.ts');
+  }
+});
+
+test('the real scope map denies security-engineer a write-intent Bash command, but allows git diff', () => {
+  const write = decideBash(
+    { agent_type: 'security-engineer', cwd: '/proj', tool_input: { command: "sed -i 's/a/b/' src/api/users.ts" } },
+    REAL_MAP);
+  assert.ok(write && /read-only/.test(write.deny));
+
+  const read = decideBash(
+    { agent_type: 'security-engineer', cwd: '/proj', tool_input: { command: 'git diff --stat HEAD~1' } },
+    REAL_MAP);
+  assert.strictEqual(read, null);
 });
 
 test('no path is allowed for more than one scoped agent in the real map', () => {
@@ -155,7 +235,9 @@ test('no path is allowed for more than one scoped agent in the real map', () => 
   const paths = [
     'index.html', 'styles.css', 'src/app/page.tsx', 'src/components/Hero.tsx',
     'src/styles/a.css', 'tests/ui/a.test.js', 'package.json', 'src/lib/db.ts',
-    'tsconfig.json',
+    'tsconfig.json', 'src/api/users.ts', 'src/server/app.ts', 'src/lib/db/client.ts',
+    'src/types/user.ts', 'src/index.ts', 'prisma/schema.prisma', 'tests/api/x.test.ts',
+    'app/layout.tsx',
   ];
   const scopedAgents = Object.keys(REAL_MAP).filter((a) => REAL_MAP[a].length > 0);
 

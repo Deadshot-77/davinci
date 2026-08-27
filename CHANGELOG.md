@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.3.0
+
+`backend-engineer` and `security-engineer` complete the roster, plus the
+ownership collision their addition exposed.
+
+**Agents.** `backend-engineer` (Opus 5, high effort) — APIs, server logic, and
+the data layer, scoped to `src/api`, `src/server`, `src/lib`, `src/types`,
+`src/index.ts`, `prisma/**`, `tests/api/**`. `security-engineer` (Opus 5, xhigh
+effort) — a read-only security gate, `disallowedTools: Write, Edit,
+NotebookEdit`, that audits changed code via `git diff` and reports; it never
+patches. Both are wired into `hooks/scope-map.json`, into `davinci`'s
+`Agent(...)` roster (the session-wide allowlist every downstream dispatch
+draws from), and into the `SubagentStop` matcher in `hooks/hooks.json`.
+
+**Skills.** `security-review` — governs what `security-engineer` checks and
+how it decides blocking versus advisory findings.
+
+**Ownership collision resolved.** Adding `backend-engineer` exposed a genuine
+overlap: `src/lib/**` was claimed by both `infra-architect` and
+`backend-engineer`, and `app/**` sat on `infra-architect` despite being a
+frontend directory layout. `src/lib/**` (plus `src/types/**` and
+`src/index.ts`) moved fully to `backend-engineer` — it's application code, not
+scaffolding. `app/**` moved fully to `frontend-engineer` — it's the
+non-`src/` Next.js convention for the same territory `frontend-engineer`
+already owns under `src/app/**`. `infra-architect` no longer claims either
+glob. Some paths under `src/` (e.g. `src/utils/**`) are now unowned by design:
+an unowned path is denied rather than guessed at, the agent reports blocked,
+and the lead routes it. Fail-closed beats a silent overlap.
+
+**Tests.** `hooks/test/scope.test.js`'s disjointness check now routes the new
+territory (`src/api/**`, `src/server/**`, `src/lib/**`, `src/types/**`,
+`src/index.ts`, `prisma/**`, `tests/api/**`, `app/**`) through `decideScope`
+alongside the existing frontend and infra paths. New coverage: every
+`agents/*.md` shipped on disk has a key in the real `scope-map.json` (the
+check that would have caught this exact class of gap — a new agent added and
+left ungoverned); both gates (`security-engineer`, `code-reviewer`) are denied
+an ordinary write against the real map; `security-engineer` is denied a
+write-intent Bash command via `decideBash` against the real map and still
+allowed `git diff`. The overlap above was captured as a genuine failing test
+before the scope-map fix landed, not asserted after the fact.
+
+Test suite: 98 passing (up from 90 at the start of this increment).
+
+**Known gap, carried forward.** `backend-engineer` and `security-engineer` are
+built and governed but have never been dispatched in a live session — their
+wiring is verified, their runtime behavior is not. See `docs/verification-status.md`.
+
 ## 0.2.0
 
 `frontend-engineer` and its governing skill, `frontend-craft`, plus three defects

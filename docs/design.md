@@ -230,3 +230,23 @@ Design changes the live run forced, recorded here because they revise decisions 
 - **Static web files moved builders.** `*.html`, `*.css`, `*.svg` moved from `infra-architect`'s scope (§3, Builders) to `frontend-engineer`'s. Scaffolding and markup/styling are different concerns, and leaving them on infra meant two agents could plausibly both own the same file. Scopes must stay disjoint. `hooks/test/scope.test.js` now asserts, for a representative set of paths, that no path is allowed for more than one scoped agent in `scope-map.json` — checked behaviourally by running `decideScope` against the real map for every scoped agent, not by comparing glob strings for equality — so a future grant that reintroduces an overlap fails the suite instead of surfacing as a runtime collision.
 - **`frontend-engineer` uses an exhaustive `tools:` allowlist, deliberately, not `disallowedTools`.** A live probe showed `disallowedTools: Agent` inherits *every* MCP tool connected in whatever installation runs the plugin — in the probe environment that meant desktop control with arbitrary PowerShell/registry access, Cloudways server and DNS management, and Notion/Slack writes, none of it named in `scope-map.json` and none of it covered by the write-scope hook, which only matches `Write|Edit|NotebookEdit|Bash`. An allowlist is the only mechanism that keeps a builder confined to the surface it's actually meant to build; the cost is that new browser-MCP tools must be added to the list by name.
 - **The stack-profile requirement (§5, `validate-report.js`) is no longer unconditional.** It now fires only on evidence of an actual scaffold: `requiresStackProfile()` inspects the report's own `files_changed`, unioned with independent evidence from `git status --porcelain` (`scaffoldEvidence()` in `hooks/lib/foundation.js`). The git cross-check exists because the report being graded is written by the agent being gated — trusting `files_changed` alone would let an agent under-report its way past the requirement.
+
+## 12. Increment 3: the `src/lib` and `app` ownership collision
+
+Adding `backend-engineer` to the scope map exposed a real overlap on
+`src/lib/**`, claimed by both `infra-architect` (as generic `*.ts` structure)
+and `backend-engineer` (as its data layer, via `src/lib/db/**`), plus a
+misplaced grant of `app/**` sitting on `infra-architect` despite being purely
+a frontend directory convention. Both moved fully to their obvious owner:
+`src/lib/**` (with `src/types/**` and `src/index.ts` alongside it) to
+`backend-engineer`, since it's application code, not scaffolding; `app/**` to
+`frontend-engineer`, since it's the non-`src` Next.js layout for the same
+territory `frontend-engineer` already owns under `src/app/**`. Neither move
+introduced a catch-all — some paths under `src/` (`src/utils/**` and
+anything else nobody explicitly claims) are now unowned on purpose. An
+unowned path is denied outright: the agent reports `blocked`, and `tech-lead`
+routes it, rather than the write-scope hook guessing at the nearest plausible
+owner. A guessed grant is exactly how the original overlap happened;
+fail-closed on an unowned path is strictly safer than a second overlap, and
+cheap to fix later by naming the path explicitly once someone actually needs
+to write it.
