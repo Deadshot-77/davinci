@@ -65,7 +65,7 @@ claude plugin validate .
 Result:
 
 ```
-Validating plugin manifest: X:\Projects\xpandrix-playground\.claude-plugin\plugin.json
+Validating plugin manifest: <plugin-dir>\.claude-plugin\plugin.json
 
 ✔ Validation passed
 ```
