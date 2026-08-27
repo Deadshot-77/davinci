@@ -363,8 +363,8 @@ established, and, in equal weight, what it did not.
 ## Verified, from a real session
 
 - The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer`
-  ran and produced a real single-page site: `index.html` (11.8KB) and
-  `styles.css` (12.7KB).
+  ran and produced a real single-page site: `index.html` (11.6KB) and
+  `styles.css` (12.4KB).
 - All five of the brief's acceptance criteria passed mechanically: exactly
   one stylesheet link, zero network calls, no `@font-face`, photo-free,
   correct file shape.
