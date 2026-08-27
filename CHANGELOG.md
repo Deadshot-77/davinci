@@ -26,7 +26,8 @@ sequence instead of skipping steps.
 
 **Scope move.** `*.html`, `*.css`, `*.svg` moved from `infra-architect` to
 `frontend-engineer` — scaffolding and markup/styling are different concerns.
-`hooks/test/scope.test.js` now asserts no two scoped agents share a glob, so
+`hooks/test/scope.test.js` now routes representative paths through `decideScope` for
+every scoped agent and asserts no path is writable by more than one, so
 the two scopes can't drift back into overlap unnoticed.
 
 **MCP allowlist security fix.** `frontend-engineer` ships with an exhaustive
@@ -51,7 +52,7 @@ unconditional — it fires only on evidence of an actual scaffold, cross-checked
 against `git status --porcelain` rather than trusting the self-reported
 `files_changed` alone.
 
-Test suite: 81 passing (up from 67 at the start of this increment).
+Test suite: 90 passing (up from 67 at the start of this increment).
 
 **Known gap, carried forward.** The browser pane does not composite headlessly,
 so the one real page this increment produced was verified structurally (DOM

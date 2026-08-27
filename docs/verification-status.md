@@ -383,12 +383,7 @@ established, and, in equal weight, what it did not.
 - `infra-architect` scaffolded into the project tree (not an isolated
   worktree) and, unprompted, wrote an inline Node preview server into
   `package.json`'s `start` script.
-- Of the three enforcement hooks, only the report gate is corroborated as
-  having fired against a real agent in this run — it is what bounced and
-  then accepted the report above. The write-scope hook and the Bash guard
-  were verified in increment 1, but by direct invocation of the hook
-  scripts against hand-built input, not against a live agent; this run did
-  not independently confirm either one firing at runtime.
+- Two of the three enforcement layers are corroborated as having fired against a real agent in this run. The report gate bounced a malformed report repeatedly. The write-scope hook denied two genuine write attempts by `infra-architect` — one to a path outside the project directory entirely, one out-of-scope inside it — both carrying the exact denial text `hooks/lib/scope.js` produces, glob list included. The Bash guard was not exercised in this run; it remains verified only by direct invocation in increment 1.
 
 ## Not verified — stated plainly
 
