@@ -43,16 +43,17 @@ Three properties do the real work:
 
 ## Install
 
-**Globally, for every project** — copy this directory into your skills directory and it loads automatically on the next session, with no marketplace or install step:
+**Globally, for every project** — clone into your skills directory and it loads automatically on the next session, with no marketplace and no install step:
 
 ```bash
-cp -r davinci ~/.claude/skills/davinci
+git clone https://github.com/Deadshot-77/davinci.git ~/.claude/skills/davinci
 ```
 
-**For a single project**, without installing anything:
+**For a single project**, without installing globally:
 
 ```bash
-claude --plugin-dir /path/to/davinci
+git clone https://github.com/Deadshot-77/davinci.git
+claude --plugin-dir ./davinci
 ```
 
 After editing any agent, skill, or hook, run `/reload-plugins` to pick up changes without restarting.
