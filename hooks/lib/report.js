@@ -61,19 +61,14 @@ function validateReport(report, agentName) {
     });
   }
 
-  // files_changed entries are paths and verification[].cmd entries are shell
-  // commands; both legitimately contain words like FILL/TODO/placeholder and
-  // must not be scanned for placeholder text.
+  // files_changed entries are paths, and the whole verification array is
+  // machine output -- shell commands and runner output, not prose. Both
+  // legitimately contain words like FILL/TODO/placeholder (node --test's own
+  // summary prints a "todo" count) and must not be scanned for placeholder
+  // text. handoff_notes and assumptions are prose and stay scanned.
   const scanTarget = Object.assign({}, report);
   delete scanTarget.files_changed;
-  if (Array.isArray(scanTarget.verification)) {
-    scanTarget.verification = scanTarget.verification.map((v) => {
-      if (!v || typeof v !== 'object') return v;
-      const copy = Object.assign({}, v);
-      delete copy.cmd;
-      return copy;
-    });
-  }
+  delete scanTarget.verification;
 
   for (const s of collectStrings(scanTarget, [])) {
     if (PLACEHOLDER.test(s)) {

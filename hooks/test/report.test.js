@@ -110,6 +110,34 @@ test('paths and commands are exempt from the placeholder scan', () => {
   assert.deepStrictEqual(validateReport(r, 'infra-architect'), []);
 });
 
+// node --test prints a "todo" count in its own summary output. An agent
+// quoting that genuine runner output in a verification note was getting its
+// report rejected by the placeholder scan -- a false positive that once led
+// an agent to elide a runner label just to get past the gate, corrupting
+// real evidence to satisfy a false alarm. The whole verification array is
+// machine output, not prose, so it is exempt the same way files_changed is.
+test('a verification note containing runner output like "todo 0" and "skipped 1" is exempt from the placeholder scan', () => {
+  const r = valid();
+  r.verification = [{
+    cmd: 'node --test "hooks/test/**/*.test.js"',
+    exit_code: 0,
+    note: 'tests 113 pass 113 fail 0 cancelled 0 skipped 1 todo 0',
+  }];
+  assert.deepStrictEqual(validateReport(r, 'infra-architect'), []);
+});
+
+test('TODO in handoff_notes is still rejected even though verification is exempt', () => {
+  const r = valid();
+  r.verification = [{
+    cmd: 'node --test',
+    exit_code: 0,
+    note: 'tests 1 pass 1 fail 0 todo 0 skipped 0',
+  }];
+  r.handoff_notes = 'TODO: still need to wire this up';
+  const errors = validateReport(r, 'infra-architect');
+  assert.ok(errors.some((e) => /placeholder/i.test(e)));
+});
+
 test('a gate report without a verdict is rejected', () => {
   assert.ok(validateGateReport(valid()).some((e) => /verdict/.test(e)));
 });

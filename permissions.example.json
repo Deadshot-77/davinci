@@ -1,0 +1,32 @@
+{
+  "//": "Verification-only permission profile for Davinci agents. Grants exactly the commands agents need to prove their own work -- running tests, builds, lint, typecheck, and reading git/filesystem state. Deliberately excludes npm install, git commit, git push, and anything that deploys: agents do not need them to verify, and granting them widens the blast radius of a mistake. See README.md, 'Letting agents verify their own work', for how to apply this.",
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(pnpm test:*)",
+      "Bash(yarn test:*)",
+      "Bash(node --test:*)",
+      "Bash(node --version)",
+      "Bash(npx tsc:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git ls-files:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(test -f:*)",
+      "Bash(test -d:*)"
+    ]
+  }
+}

@@ -34,6 +34,10 @@ any `plugin:` prefix stripped (`infra-architect`, never `davinci:infra-architect
 because a colon is not a legal filename character on Windows. Conform to
 `schema/report.schema.json`.
 
+The copyable example below is authoritative for the report shape; the schema
+file is a reference for humans, not something you are expected to read —
+agents have been denied `Read` on it by scope, so do not try to open it.
+
 - `verification` must contain commands you actually ran, with their real exit
   codes. Never fabricate an entry. If you ran nothing, use an empty array and
   `status` other than `"complete"`.

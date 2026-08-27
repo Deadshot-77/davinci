@@ -101,12 +101,28 @@ Prompts are advisory; hooks are not. Two hooks enforce the rules the harness can
 
 **One honest limitation.** The Bash guard is best effort. An arbitrary shell cannot be made safe by pattern matching — it stops a read-only agent casually routing around its scope, not a determined one. Treat the enforcement as a strong seatbelt, not a sandbox.
 
+## Letting agents verify their own work
+
+**Why it matters.** The design's central rule is that no agent may declare itself done, and every report must carry real commands with real exit codes. Without a permission profile in place, that rule is unenforceable: every Bash call an agent makes is denied, so reports come back with `status: "blocked"` and an empty `verification` array — "I ran the tests" cannot be satisfied by assertion, but neither can it be satisfied at all. This is a real limitation, not a footnote: it went unnoticed for two full increments of live runs before the cause was understood.
+
+`permissions.example.json`, at the root of this repository, is a permission profile scoped to verification only — `npm test`, `npm run build`/`lint`/`typecheck`, `node --test`, `git status`/`diff`/`log`, and read-only commands like `ls`, `cat`, `grep`. It deliberately omits `npm install`, `git commit`, `git push`, and anything that deploys: agents do not need them to verify, and granting them widens the blast radius of a mistake.
+
+Apply it one of two ways:
+
+- Copy its `permissions.allow` entries into the project's `.claude/settings.json`.
+- Pass it directly on the command line, without touching the project's own settings: `claude --settings "$(cat permissions.example.json)"`.
+
+**The trust requirement.** A project's `.claude/settings.json` permissions are silently ignored until the workspace is trusted: Claude Code prints `Ignoring N permissions.allow entries from .claude/settings.json: this workspace has not been trusted.` and proceeds as if the file weren't there. Trust the workspace by running Claude Code interactively in that directory once and accepting the trust dialog — there is no headless equivalent. Skip this step and the profile does nothing, silently, which is exactly how this went unnoticed. The `--settings` flag bypasses the trust requirement entirely, which makes it the reliable choice for headless or first-run dispatches.
+
+**Two command shapes are refused regardless of the profile.** Compound commands joined with `;` or `&&` are refused per clause — `npm test; echo "exit=$?"` fails on the `echo` half even though `npm test` alone is allowed. Commands containing shell globs are refused with `Contains expansion`. Agents should run one plain command at a time.
+
 ## Layout
 
 ```
 davinci/
 ├─ .claude-plugin/plugin.json   plugin manifest
 ├─ settings.json                declares davinci as the main thread
+├─ permissions.example.json     verification-only permission profile for agents
 ├─ agents/                      the seven agent definitions
 ├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft, security review
 ├─ hooks/
@@ -142,6 +158,8 @@ Built and governed is not the same claim as exercised; treat their behavior as
 unverified until a run actually routes work through them.
 
 **Confirmed working in a real session.** The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer` runs, and produced a real single-page site: `index.html` (11.6KB) and `styles.css` (12.4KB). The brief that run actually used carried **thirteen** acceptance criteria, AC-1 through AC-13. Only the first five were ever checked, and they passed mechanically — exactly one stylesheet link, zero network calls, no `@font-face`, photo-free, correct file shape. The remaining eight, AC-6 through AC-13, were never checked; AC-13 (the `package.json` script actually serving the page) is recorded in the run's own report as explicitly not addressed, because every command that would have proven the script ran was denied. That report is the only one the run filed, and it carries `"status": "blocked"`. `frontend-craft`'s accessibility floor was honoured without being asked: `prefers-reduced-motion` handled and focus states defined, 19 CSS custom properties, 3 breakpoints, 9 headings, 5 sections. `infra-architect` scaffolded into the project tree (not an isolated worktree) and, unprompted, wrote an inline Node preview server into `package.json`'s `start` script. Two of the three enforcement layers are corroborated as having fired against a real agent in this run. The report gate bounced a malformed report repeatedly. The write-scope hook denied two genuine write attempts by `infra-architect` — one to a path outside the project directory entirely, one out-of-scope inside it — both carrying the exact denial text `hooks/lib/scope.js` produces, glob list included. The Bash guard was not exercised in this run; it remains verified only by direct invocation in increment 1.
+
+**Agents can now verify their own work.** For two increments, every report came back with empty `verification` because every Bash call an agent made was denied — the AC-13 line above is a direct record of that. The cause was found and fixed: see "Letting agents verify their own work" above. Passing `permissions.example.json` via `claude --settings` to a subagent let it genuinely run `npm test`, and its report came back with `npm test -> exit 0` — the first time an agent in this project confirmed its own work instead of reporting `blocked`. That exit code was inferred from the test runner's own summary output, not printed directly: a compound command like `npm test; echo "exit=$?"` is still refused on the `echo` half, so agents read success from what the runner itself prints rather than echoing the shell's exit status back.
 
 **Known limits, stated plainly.**
 
