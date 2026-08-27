@@ -1,17 +1,48 @@
 {
-  "davinci": [".devteam/brief.md"],
+  "davinci": [
+    ".devteam/brief.md"
+  ],
   "tech-lead": [],
   "infra-architect": [
-    "*.json", "*.js", "*.mjs", "*.ts", "*.md", "*.yml", "*.yaml",
-    ".gitignore", ".env.example", "config/**", "scripts/**", "src/**",
+    "*.json",
+    "*.js",
+    "*.mjs",
+    "*.ts",
+    "*.md",
+    "*.yml",
+    "*.yaml",
+    ".gitignore",
+    ".env.example",
+    "config/**",
+    "scripts/**",
+    "src/**",
     ".devteam/stack-profile.md",
-    "public/**", "app/**", "tests/**", ".github/**", "docs/**"
+    "public/**",
+    "app/**",
+    "tests/**",
+    ".github/**",
+    "docs/**",
+    "*.html",
+    "*.css",
+    "*.txt",
+    "*.svg",
+    ".editorconfig",
+    ".nvmrc",
+    "LICENSE"
   ],
   "backend-engineer": [
-    "src/api/**", "src/server/**", "src/lib/db/**", "prisma/**", "tests/api/**"
+    "src/api/**",
+    "src/server/**",
+    "src/lib/db/**",
+    "prisma/**",
+    "tests/api/**"
   ],
   "frontend-engineer": [
-    "src/app/**", "src/components/**", "src/styles/**", "public/**", "tests/ui/**"
+    "src/app/**",
+    "src/components/**",
+    "src/styles/**",
+    "public/**",
+    "tests/ui/**"
   ],
   "security-engineer": [],
   "code-reviewer": []

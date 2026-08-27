@@ -108,3 +108,17 @@ test('the real scope map actually governs infra-architect', () => {
     { agent_type: 'infra-architect', cwd: '/proj', tool_input: { file_path: '/proj/.devteam/brief.md' } }, REAL_MAP);
   assert.ok(d, 'infra-architect is absent from the scope map, or its scope is too wide');
 });
+
+test('the real scope map lets infra-architect scaffold ordinary web files', () => {
+  for (const f of ['index.html', 'styles.css', 'robots.txt', 'favicon.svg', 'package.json', 'src/a.ts']) {
+    assert.strictEqual(decideScope(
+      { agent_type: 'davinci:infra-architect', cwd: '/p', tool_input: { file_path: '/p/' + f } },
+      REAL_MAP), null, f + ' should be writable by the scaffolder');
+  }
+});
+
+test('widening the scaffolder scope did not let it reach another agent report', () => {
+  assert.ok(decideScope(
+    { agent_type: 'infra-architect', cwd: '/p', tool_input: { file_path: '/p/.devteam/reports/tech-lead-1.json' } },
+    REAL_MAP));
+});
