@@ -351,3 +351,80 @@ Increment 2 (`backend-engineer`, `frontend-engineer` with the taste stack
 and Higgsfield, `security-engineer`, `gate-completion.js`) should not begin
 until a human has run steps 1–6 above and this file has been updated with
 real observations in place of expectations.
+
+---
+
+# Increment 2 run notes — 2026-08-27
+
+`frontend-engineer` and `frontend-craft` shipped, and — unlike Increment 1 —
+a live chain run actually produced output. What follows is what that run
+established, and, in equal weight, what it did not.
+
+## Verified, from a real session
+
+- The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer`
+  ran and produced a real single-page site: `index.html` (11.8KB) and
+  `styles.css` (12.7KB).
+- All five of the brief's acceptance criteria passed mechanically: exactly
+  one stylesheet link, zero network calls, no `@font-face`, photo-free,
+  correct file shape.
+- `frontend-craft`'s accessibility floor was honoured without being asked:
+  `prefers-reduced-motion` handled and focus states defined. 13 CSS custom
+  properties, 3 breakpoints, 9 headings, 5 sections.
+- `infra-architect` scaffolded into the project tree (not an isolated
+  worktree) and, unprompted, wrote an inline Node preview server into
+  `package.json`'s `start` script.
+- The write-scope hook, the Bash guard, and the report gate all fired
+  against real agents.
+
+## Not verified — stated plainly
+
+- **Nobody has seen the page with their own eyes in an automated session.**
+  The browser pane does not composite headlessly, so verification was
+  structural (the rendered DOM read back), not visual. `frontend-craft`'s
+  perception loop has a third tier for exactly this — say so rather than
+  imply you looked — and it applies to the tooling used to check this run
+  as much as it applies to the agent that built the page.
+- A full chain run took upwards of fifteen minutes and was truncated more
+  than once.
+- `frontend-engineer` filed no report in the run that produced the page
+  above; it was most likely still being bounced by the report gate when the
+  run was cut off.
+- Browser-MCP access under a `tools:` allowlist is confirmed by mechanism —
+  an explicit allowlist drops unnamed MCP tools, so named ones are kept —
+  but has never been directly sighted, because no test environment so far
+  has had that server connected. The `claude` CLI itself carries no browser
+  MCP at all.
+- `backend-engineer` and `security-engineer` still do not exist, so no
+  backend or security work has ever been routed.
+
+## Defects the run found and fixed
+
+1. **Reports didn't match the contract.** `infra-architect` invented its own
+   report schema — adding fields like `dispatch`, `summary`,
+   `criteria_not_addressed`, `hook_denials` — while omitting the required
+   `files_changed` and `handoff_notes`, and its `verification` entries
+   carried no `cmd`. The `SubagentStop` gate correctly bounced it, but
+   repeatedly and without converging, burning the run's time budget on
+   retries that never fixed the shape. Root cause: `delegation-contract`
+   described the report fields in prose but never gave a literal example to
+   copy, and agents conform to a template far more reliably than to a
+   description. Fixed by adding a copy-pasteable minimal example JSON report
+   to the skill, plus a unit test that runs that exact example through the
+   validator to keep the doc and the gate from drifting apart again.
+2. **Classification invented labels outside the three the skill defines.**
+   `davinci` announced "Classification: greenfield build" in one run — not
+   `trivial`, `bounded`, or `architectural` — so the `Route: direct` fast
+   path could never trigger for it. Fixed by mandating the classification
+   line be exactly one of the three values, lowercase, alone on the line,
+   with an explicit wrong-example in the skill, and by having `tech-lead`
+   treat any unrecognised label as `bounded` (full sequence, foundation gate
+   included) rather than silently skipping steps.
+3. **No way to detect unattended operation.** `intake-brief`'s "you decide"
+   escape hatch only covers ambiguity the agent chooses to resolve itself;
+   it had no rule for the case where `AskUserQuestion` cannot be answered by
+   anyone at all. A headless run asked three genuinely good clarifying
+   questions and then blocked forever, producing nothing. Fixed with an
+   explicit unattended rule: when there is no way to get an answer, decide,
+   record the choice under `assumptions`, and proceed — never end a turn
+   having only asked questions.

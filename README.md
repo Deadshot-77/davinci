@@ -15,16 +15,19 @@ The name is the architecture: Leonardo ran a *bottega*, a workshop where the mas
 | `davinci` | Opus 5 | high | Clarifies your request, writes the brief, delegates | the brief only |
 | `tech-lead` | Opus 5 | xhigh | Dispatches specialists, arbitrates verdicts, re-routes | nothing |
 | `infra-architect` | Fable 5 | high | Scaffolding and the conventions everyone obeys | scoped |
+| `frontend-engineer` | Opus 5 | high | Art direction and build — owns markup, components, styles | scoped |
 | `code-reviewer` | Opus 5 | high | Foundation gate, then code review | nothing |
 
-`backend-engineer`, `frontend-engineer` and `security-engineer` arrive in the next increment.
+`backend-engineer` and `security-engineer` still don't exist, so no backend or security work is routed yet.
 
 ## How it works
 
 ```
 you → davinci → tech-lead → infra-architect → code-reviewer (foundation gate)
                                                     ↓
-                                            builders → gates → back to tech-lead
+                                          frontend-engineer → code-reviewer (code review)
+                                                    ↓
+                                              back to tech-lead
 ```
 
 Three properties do the real work:
@@ -60,6 +63,20 @@ After editing any agent, skill, or hook, run `/reload-plugins` to pick up change
 
 **To share it with a team**, publish the containing repository as a plugin marketplace by adding a `.claude-plugin/marketplace.json` at the *repository* root — not inside this directory, where it would shadow the plugin's own manifest — with an entry whose `source` points at `./davinci`. Teammates then run `claude plugin marketplace add <owner>/<repo>`.
 
+## Companion skills
+
+Davinci works standalone — `frontend-craft` carries its own design judgment (a named direction, the three dials, ten banned defaults, an accessibility floor) and needs nothing else installed. It gets better with [`taste-skill`](https://github.com/Leonxlnx/taste-skill) alongside: a large, actively-maintained design rulebook with a mechanical pre-flight that goes well beyond what fits in one bundled skill file. Install it once, globally:
+
+```bash
+git clone https://github.com/Leonxlnx/taste-skill.git ~/.claude/skills/taste-skill
+```
+
+`frontend-craft` invokes it when present and follows what it says; when it's absent, `frontend-craft` falls back to its own guidance. `taste-skill` is a separate MIT-licensed project, not part of Davinci.
+
+## Generated media (optional)
+
+`frontend-engineer` can drive a media MCP server to produce imagery or video. The server identifier is per-installation and can't be shipped in this repository, so the block is commented out by default — uncomment and fill in the `mcpServers:` block at the top of `agents/frontend-engineer.md` with your own connected server's name. Without it, the agent produces static design instead; nothing breaks either way.
+
 ## Use
 
 Start Claude Code in the project you want to work on. Davinci is the agent you talk to — everything else is delegated. Describe the work in plain language:
@@ -87,13 +104,13 @@ Prompts are advisory; hooks are not. Two hooks enforce the rules the harness can
 davinci/
 ├─ .claude-plugin/plugin.json   plugin manifest
 ├─ settings.json                declares davinci as the main thread
-├─ agents/                      the four agent definitions
-├─ skills/                      intake, delegation contract, stack profile, foundation review
+├─ agents/                      the five agent definitions
+├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     65 tests, zero dependencies
+│  └─ test/                     81 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -111,11 +128,19 @@ claude plugin validate .
 
 ## Status
 
-Increment 1, verified by a live end-to-end run. The four agents above, both hooks, and 65 passing tests.
+Increment 2, verified by a live end-to-end run. The five agents above, both hooks, and 81 passing tests.
 
-**Confirmed working in a real session:** the dispatch chain from `davinci` through `tech-lead` to `infra-architect`; the write-scope hook denying an out-of-scope write with its exact message; the Bash guard blocking a read-only agent from mutating commands while still allowing it to read; the report gate rejecting an agent’s completion and sending it back to try again; and `skills:` preloading driving the intake protocol unattended.
+**Confirmed working in a real session.** The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer` runs, and produced a real single-page site: `index.html` (11.8KB) and `styles.css` (12.7KB). All five of the brief's acceptance criteria passed mechanically — exactly one stylesheet link, zero network calls, no `@font-face`, photo-free, correct file shape. `frontend-craft`'s accessibility floor was honoured without being asked: `prefers-reduced-motion` handled and focus states defined, 13 CSS custom properties, 3 breakpoints, 9 headings, 5 sections. `infra-architect` scaffolded into the project tree (not an isolated worktree) and, unprompted, wrote an inline Node preview server into `package.json`'s `start` script. The write-scope hook, the Bash guard, and the report gate all fired against real agents.
 
-**Known limits, stated plainly.** No builder agents exist yet, so no complete feature has been built end to end — only the foundation stage. A full run takes upwards of nine minutes. And `davinci` itself, running as the main thread, is **not** governed by the write-scope hook: a main-thread agent presents no agent identity to hooks, so its “brief only” restriction is protocol, not enforcement.
+**Known limits, stated plainly.**
+
+- Nobody has seen the page with their own eyes in an automated session. The browser pane does not composite headlessly, so verification here was structural — the rendered DOM read back — not visual. `frontend-craft`'s perception loop has a third tier for exactly this case: say so rather than imply you looked. That applies to the tooling used in this run as much as it applies to the agent.
+- A full chain run took upwards of fifteen minutes and was truncated more than once.
+- `frontend-engineer` filed no report in the run that produced the page above; it was most likely still being bounced by the report gate when the run was cut off.
+- Browser-MCP access under a `tools:` allowlist is confirmed by mechanism — an explicit allowlist drops unnamed MCP tools, so named ones are kept — but has never been directly sighted, because no test environment so far has had that server connected. The `claude` CLI itself carries no browser MCP at all.
+- `backend-engineer` and `security-engineer` still don't exist, so no backend or security work has ever been routed.
+
+And `davinci` itself, running as the main thread, is still **not** governed by the write-scope hook: a main-thread agent presents no agent identity to hooks, so its "brief only" restriction is protocol, not enforcement.
 
 Design rationale and the decisions behind the architecture are in [docs/design.md](docs/design.md); what was found by the live run is in [docs/verification-status.md](docs/verification-status.md).
 

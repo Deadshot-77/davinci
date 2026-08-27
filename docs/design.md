@@ -220,3 +220,13 @@ This exercises the entire mechanism *including a gate and a bounce-back*. Adding
 - Agent teams / peer-to-peer messaging (see D1).
 - Deploying anything. Davinci builds and gates; shipping stays manual.
 - Multi-project orchestration. One repo per run.
+
+---
+
+## 11. Increment 2 corrections
+
+Design changes the live run forced, recorded here because they revise decisions made earlier in this document rather than merely extending them.
+
+- **Static web files moved builders.** `*.html`, `*.css`, `*.svg` moved from `infra-architect`'s scope (§3, Builders) to `frontend-engineer`'s. Scaffolding and markup/styling are different concerns, and leaving them on infra meant two agents could plausibly both own the same file. Scopes must stay disjoint. `hooks/test/scope.test.js` now asserts that no two scoped agents in `scope-map.json` share a glob, so a future grant that reintroduces an overlap fails the suite instead of surfacing as a runtime collision.
+- **`frontend-engineer` uses an exhaustive `tools:` allowlist, deliberately, not `disallowedTools`.** A live probe showed `disallowedTools: Agent` inherits *every* MCP tool connected in whatever installation runs the plugin — in the probe environment that meant desktop control with arbitrary PowerShell/registry access, Cloudways server and DNS management, and Notion/Slack writes, none of it named in `scope-map.json` and none of it covered by the write-scope hook, which only matches `Write|Edit|NotebookEdit|Bash`. An allowlist is the only mechanism that keeps a builder confined to the surface it's actually meant to build; the cost is that new browser-MCP tools must be added to the list by name.
+- **The stack-profile requirement (§5, `validate-report.js`) is no longer unconditional.** It now fires only on evidence of an actual scaffold: `requiresStackProfile()` inspects the report's own `files_changed`, unioned with independent evidence from `git status --porcelain` (`scaffoldEvidence()` in `hooks/lib/foundation.js`). The git cross-check exists because the report being graded is written by the agent being gated — trusting `files_changed` alone would let an agent under-report its way past the requirement.
