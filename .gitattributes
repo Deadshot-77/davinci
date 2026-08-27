@@ -1,0 +1,5 @@
+# Hooks are executed by node and read as text. Keep line endings stable so the
+# plugin behaves identically on Windows, macOS and Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

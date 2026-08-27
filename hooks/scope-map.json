@@ -1,0 +1,18 @@
+{
+  "davinci": [".devteam/brief.md"],
+  "tech-lead": [],
+  "infra-architect": [
+    "*.json", "*.js", "*.mjs", "*.ts", "*.md", "*.yml", "*.yaml",
+    ".gitignore", ".env.example", "config/**", "scripts/**", "src/**",
+    ".devteam/stack-profile.md",
+    "public/**", "app/**", "tests/**", ".github/**", "docs/**"
+  ],
+  "backend-engineer": [
+    "src/api/**", "src/server/**", "src/lib/db/**", "prisma/**", "tests/api/**"
+  ],
+  "frontend-engineer": [
+    "src/app/**", "src/components/**", "src/styles/**", "public/**", "tests/ui/**"
+  ],
+  "security-engineer": [],
+  "code-reviewer": []
+}
