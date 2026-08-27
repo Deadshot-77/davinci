@@ -403,8 +403,13 @@ established, and, in equal weight, what it did not.
   but has never been directly sighted, because no test environment so far
   has had that server connected. The `claude` CLI itself carries no browser
   MCP at all.
-- `backend-engineer` and `security-engineer` still do not exist, so no
-  backend or security work has ever been routed.
+- `backend-engineer` and `security-engineer` did not exist as of this
+  Increment 2 run, so no backend or security work had been routed through
+  them yet. Both were added in Increment 3 — see the Increment 3 section
+  below for their current, still-unexercised status; the "no backend or
+  security work has ever been routed" gap described here was not closed by
+  their addition, only by an actual dispatch, which still has not
+  happened.
 - The three defect fixes below, made in response to what this live run
   found, have not themselves been re-verified by another live run — only
   by unit tests and direct invocation.
@@ -439,3 +444,65 @@ established, and, in equal weight, what it did not.
    explicit unattended rule: when there is no way to get an answer, decide,
    record the choice under `assumptions`, and proceed — never end a turn
    having only asked questions.
+
+---
+
+# Increment 3 run notes — 2026-08-27
+
+No live chain run happened this increment. This section is a direct
+invocation and static-analysis pass, the same kind Increment 1 relied on —
+not a substitute for the interactive run Increment 2 actually performed.
+
+## What was added
+
+- Two new agents completing the roster: `backend-engineer` (Opus 5, high
+  effort — APIs, server logic, the data layer) and `security-engineer`
+  (Opus 5, xhigh effort — a read-only security gate that audits `git diff`
+  and reports, never patches).
+- The `security-review` skill, governing what `security-engineer` checks
+  and how it decides blocking versus advisory findings.
+- An ownership move resolving the collision `backend-engineer`'s addition
+  exposed: `src/lib/**` (plus `src/types/**` and `src/index.ts`) moved from
+  `infra-architect` to `backend-engineer`; `app/**` moved from
+  `infra-architect` to `frontend-engineer`.
+
+## Verified, by direct invocation
+
+- Every agent shipped on disk under `agents/*.md` has a corresponding key
+  in the real `hooks/scope-map.json` — proved by a test that reads the
+  `agents/` directory from disk and checks each file's name against the
+  map, so a new agent left ungoverned fails the suite instead of shipping
+  silently.
+- No path in the scope map is writable by more than one agent — `decideScope`
+  run behaviourally against the real map for representative paths in every
+  agent's territory, including the new `backend-engineer` and
+  `frontend-engineer` grants.
+- Both gates — `security-engineer` and `code-reviewer` — are denied an
+  ordinary write against the real map, and `security-engineer` is
+  additionally denied a write-intent Bash command via `decideBash` while
+  still allowed `git diff`.
+- 98 tests pass (`node --test "hooks/test/**/*.test.js"`), up from 90 at
+  the start of this increment.
+
+## Not verified — stated plainly
+
+- **Neither new agent has ever been dispatched.** `backend-engineer` and
+  `security-engineer` exist, are governed by the scope map, and are wired
+  into `davinci`'s roster and the `SubagentStop` matcher — but no live
+  session has ever routed a task through either of them. Built and
+  governed is not the same claim as exercised.
+- **No backend or security work has ever been routed.** The scope grants
+  and the gate wiring are proved correct in isolation; nobody has watched
+  `backend-engineer` write a route and prove it with a real test run, or
+  watched `security-engineer` receive a real diff and decide.
+- **The security gate's findings discipline has never been exercised
+  against real code.** Whether `security-engineer` actually scopes to
+  `git diff`, cites `AC-<n>` or the reserved `SECURITY` value correctly,
+  and holds the line between blocking and advisory when facing a genuine
+  vulnerability in a genuine diff — none of that has been observed. Only
+  the prompt and the skill that govern it have been read, not watched in
+  use.
+- Increment 1's interactive end-to-end run was never performed at all —
+  its hooks were verified only by direct invocation, and that gap was
+  never closed by a later live run the way Increment 2 closed the
+  equivalent gap for `infra-architect` and `frontend-engineer`.

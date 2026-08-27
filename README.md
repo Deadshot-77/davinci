@@ -131,9 +131,11 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, both hooks, and 98 passing tests. Increments 1 and 2
-verified the chain through `infra-architect` and `frontend-engineer` in a live
-end-to-end run (below). `backend-engineer` and `security-engineer` complete the
+Increment 3. Seven agents, both hooks, and 98 passing tests. Increment 2's
+live end-to-end run verified the chain through `infra-architect` and
+`frontend-engineer` (below); increment 1's interactive run was never
+performed, and its hooks were verified only by direct invocation.
+`backend-engineer` and `security-engineer` complete the
 roster and are wired into the scope map, the roster allowlists, and the
 `SubagentStop` matcher — but neither has been dispatched in a live session yet.
 Built and governed is not the same claim as exercised; treat their behavior as

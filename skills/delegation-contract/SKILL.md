@@ -40,7 +40,7 @@ Copy this. It is the whole shape — do not invent your own fields:
 {
   "agent": "infra-architect",
   "status": "complete",
-  "files_changed": ["package.json", "src/index.ts"],
+  "files_changed": ["package.json", "scripts/build.js"],
   "criteria_addressed": ["AC-1", "AC-3"],
   "verification": [
     { "cmd": "npm run build", "exit_code": 0 }

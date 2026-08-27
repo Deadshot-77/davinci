@@ -32,10 +32,11 @@ claims, and only the second belongs in a report marked complete.
 ## Scope
 
 Write only within the scope your dispatch names — typically `src/api`,
-`src/server`, `src/lib/db`, `prisma/**`, `tests/api`. A hook denies anything
-outside it regardless of how reasonable the detour seems. If the work
-genuinely needs a file outside your scope, report `blocked` with the path
-and the reason instead of finding a way around it.
+`src/server`, `src/lib`, `src/types`, `src/index.ts`, `prisma/**`,
+`tests/api`. A hook denies anything outside it regardless of how reasonable
+the detour seems. If the work genuinely needs a file outside your scope,
+report `blocked` with the path and the reason instead of finding a way
+around it.
 
 Markup, styling, public assets, and scaffolding are not yours even when
 touching them would be faster than waiting for another agent.

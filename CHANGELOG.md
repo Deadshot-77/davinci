@@ -8,11 +8,16 @@ ownership collision their addition exposed.
 **Agents.** `backend-engineer` (Opus 5, high effort) — APIs, server logic, and
 the data layer, scoped to `src/api`, `src/server`, `src/lib`, `src/types`,
 `src/index.ts`, `prisma/**`, `tests/api/**`. `security-engineer` (Opus 5, xhigh
-effort) — a read-only security gate, `disallowedTools: Write, Edit,
-NotebookEdit`, that audits changed code via `git diff` and reports; it never
-patches. Both are wired into `hooks/scope-map.json`, into `davinci`'s
-`Agent(...)` roster (the session-wide allowlist every downstream dispatch
-draws from), and into the `SubagentStop` matcher in `hooks/hooks.json`.
+effort) — a read-only security gate that audits changed code via `git diff`
+and reports; it never patches. Its read-only confinement comes from the
+exhaustive `tools: Read, Glob, Grep, Bash, TodoWrite` allowlist in
+`agents/security-engineer.md`, not from its `disallowedTools: Write, Edit,
+NotebookEdit` line — per `docs/design.md` §11, a denylist inherits the
+entire connected MCP surface (desktop control, server management,
+messaging, deploy), so the allowlist is what actually confines it. Both new
+agents are wired into `hooks/scope-map.json`, into `davinci`'s `Agent(...)`
+roster (the session-wide allowlist every downstream dispatch draws from),
+and into the `SubagentStop` matcher in `hooks/hooks.json`.
 
 **Skills.** `security-review` — governs what `security-engineer` checks and
 how it decides blocking versus advisory findings.
