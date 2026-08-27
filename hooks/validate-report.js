@@ -3,10 +3,24 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { validateReport, validateGateReport } = require('./lib/report.js');
-const { validateFoundation, requiresStackProfile } = require('./lib/foundation.js');
+const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType } = require('./lib/agents.js');
+
+// Independent evidence for scaffoldEvidence(): the working tree itself,
+// not the self-reported files_changed. A failure here (no git, not a repo,
+// git not installed) must not crash the hook -- an enforcement hook that
+// throws stops enforcing entirely -- so it degrades to no evidence.
+function gitPorcelainLines(cwd) {
+  try {
+    const out = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' });
+    return out.split(/\r?\n/).filter((l) => l.length > 0);
+  } catch (err) {
+    return [];
+  }
+}
 
 const GOVERNED = [
   'davinci', 'tech-lead', 'infra-architect',
@@ -59,7 +73,7 @@ function main() {
   const GATES = ['security-engineer', 'code-reviewer'];
   if (GATES.includes(agent)) errors.push(...validateGateReport(report));
 
-  if (agent === 'infra-architect' && requiresStackProfile(report)) {
+  if (agent === 'infra-architect' && scaffoldEvidence(report.files_changed, gitPorcelainLines(cwd))) {
     let profileText = null;
     let pkgText = null;
     try { profileText = fs.readFileSync(path.join(cwd, '.devteam', 'stack-profile.md'), 'utf8'); } catch (err) { profileText = null; }

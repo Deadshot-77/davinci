@@ -94,4 +94,22 @@ function requiresStackProfile(report) {
   return files.some((f) => typeof f === 'string' && !isUnderDevteam(f));
 }
 
-module.exports = { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile };
+// The report is written by the agent being gated, so it cannot be the only
+// evidence. Anything the working tree shows as changed outside .devteam/ means
+// a scaffold happened, whether or not the report admitted it.
+//
+// Classification (trivial/bounded/architectural) is deliberately not
+// consulted here: the hook has no reliable access to the brief's
+// classification, and today's routing rule (tech-lead never dispatches
+// infra-architect on a `Route: direct` brief) already makes it redundant.
+function scaffoldEvidence(reportFilesChanged, gitPorcelainLines) {
+  const outside = (p) => p && !p.replace(/^\.\//, '').startsWith('.devteam/');
+  const fromReport = (reportFilesChanged || []).some(outside);
+  const fromGit = (gitPorcelainLines || []).some((l) => outside(l.slice(3).trim()));
+  return fromReport || fromGit;
+}
+
+module.exports = {
+  validateFoundation, REQUIRED_SECTIONS, parseSections,
+  requiresStackProfile, scaffoldEvidence,
+};

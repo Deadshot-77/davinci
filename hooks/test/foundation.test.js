@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile } = require('../lib/foundation.js');
+const { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile, scaffoldEvidence } = require('../lib/foundation.js');
 
 function profile(overrides) {
   const body = {
@@ -86,4 +86,35 @@ test('requiresStackProfile is true for a genuine scaffold with mixed files', () 
   assert.strictEqual(requiresStackProfile({
     files_changed: ['package.json', 'src/app/page.tsx', '.devteam/stack-profile.md'],
   }), true);
+});
+
+test('scaffoldEvidence is false when both report and git show only .devteam/', () => {
+  assert.strictEqual(scaffoldEvidence(['.devteam/reports/infra-architect-1.json'], []), false);
+});
+
+test('scaffoldEvidence is true when the report under-reports but git shows a scaffold', () => {
+  // The hole this closes: an agent whose report names only its own report
+  // file, while the working tree shows package.json actually changed.
+  assert.strictEqual(
+    scaffoldEvidence(['.devteam/reports/infra-architect-1.json'], [' M package.json']),
+    true);
+});
+
+test('scaffoldEvidence is true when the report names a scaffolded file even with no git evidence', () => {
+  assert.strictEqual(scaffoldEvidence(['package.json'], []), true);
+});
+
+test('scaffoldEvidence parses git porcelain status prefixes rather than treating lines as raw paths', () => {
+  // Untracked and modified prefixes both strip correctly...
+  assert.strictEqual(scaffoldEvidence([], ['?? src/index.ts']), true);
+  assert.strictEqual(scaffoldEvidence([], [' M package.json']), true);
+  // ...and a porcelain line for a file actually under .devteam/ is not
+  // mistaken for "outside" just because the raw line (with its status
+  // prefix) doesn't start with ".devteam/".
+  assert.strictEqual(scaffoldEvidence([], ['M  .devteam/stack-profile.md']), false);
+});
+
+test('scaffoldEvidence tolerates an undefined or empty git line array', () => {
+  assert.strictEqual(scaffoldEvidence(['.devteam/brief.md'], undefined), false);
+  assert.strictEqual(scaffoldEvidence(['.devteam/brief.md']), false);
 });
