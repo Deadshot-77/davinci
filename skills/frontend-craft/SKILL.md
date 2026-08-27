@@ -32,13 +32,24 @@ that question belongs to intake, not to you.
 
 CSS written and never viewed is a guess, not a design. An agent styling
 blind is the single most common way this goes wrong, and shipping unlooked-at
-work is the failure mode this section exists to prevent. Run the loop, don't
-skip steps, and don't stop after one pass:
+work is the failure mode this section exists to prevent. Verify in this
+order, don't skip steps, and don't stop after one pass:
 
-`preview_start` → screenshot → critique against the checks below → revise →
-repeat until it actually passes. Then `resize_window` for a mobile pass, and
-`read_console_messages` for what's silently broken — a missing font, a failed
-request, a hydration warning rarely throws where you're looking.
+1. **Browser preview tools available** (`preview_start`, `computer`,
+   `resize_window`, `read_console_messages`, or equivalent): `preview_start`
+   → screenshot → critique against the checks below → revise → repeat until
+   it actually passes. Then `resize_window` for a mobile pass, and
+   `read_console_messages` for what's silently broken — a missing font, a
+   failed request, a hydration warning rarely throws where you're looking.
+2. **No browser preview tools, but a shell is available**: render headlessly
+   from `Bash` and read the result back — a headless Chrome or Playwright
+   screenshot into a temp PNG, then the `Read` tool to actually view it.
+   Same critique-and-revise loop, same mobile-width pass.
+3. **Neither is possible**: say so. State in the report's `assumptions`,
+   explicitly, that the work was not visually verified and why not. Never
+   report visual work as done in a way that implies it was looked at when it
+   was not — an agent that quietly stops looking is exactly the failure this
+   loop exists to prevent, and a false claim is worse than an honest gap.
 
 ## 4. Companion skills
 
@@ -82,7 +93,8 @@ Mechanical checks, not vibes — run through this before writing the report:
 
 - [ ] direction named and recorded in `assumptions`
 - [ ] all three dials present in the report, inferred or read from the brief
-- [ ] the perception loop actually ran — a screenshot exists, not just code
+- [ ] the perception loop actually ran — a screenshot exists, or the report
+      records that visual verification was impossible and why
 - [ ] a mobile-width screenshot was taken
 - [ ] console checked and clear of errors introduced by this change
 - [ ] none of the banned defaults in section 5 are present
