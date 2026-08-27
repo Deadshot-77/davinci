@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { validateReport, validateGateReport } = require('./lib/report.js');
+const { validateReport, validateGateReport, nextGateAttempt } = require('./lib/report.js');
 const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType } = require('./lib/agents.js');
@@ -63,6 +63,71 @@ function block(reason) {
   process.exit(2);
 }
 
+// Loop bound: a rejection this gate cannot resolve (e.g. a dispatch that
+// forbids the agent from writing anything at all) must not bounce forever.
+// A small per-agent counter under .devteam/ tracks consecutive rejections;
+// nextGateAttempt() (hooks/lib/report.js) is the pure decision of when to
+// stop. This wrapper owns all the filesystem I/O and degrades safely --
+// a write failure here must not crash the hook or hang the loop bound.
+function gateAttemptsPath(cwd, agent) {
+  return path.join(cwd, '.devteam', `.gate-attempts-${agent}.json`);
+}
+
+function readGateAttempts(cwd, agent) {
+  try {
+    const data = parseJson(fs.readFileSync(gateAttemptsPath(cwd, agent), 'utf8'));
+    return Number.isInteger(data.attempts) ? data.attempts : 0;
+  } catch (err) {
+    return 0;
+  }
+}
+
+function writeGateAttempts(cwd, agent, attempts) {
+  try {
+    fs.mkdirSync(path.join(cwd, '.devteam'), { recursive: true });
+    fs.writeFileSync(gateAttemptsPath(cwd, agent), JSON.stringify({ attempts }));
+  } catch (err) { /* best-effort; a lost counter just restarts the count at 0 */ }
+}
+
+function clearGateAttempts(cwd, agent) {
+  try { fs.unlinkSync(gateAttemptsPath(cwd, agent)); } catch (err) { /* nothing to clear */ }
+}
+
+function writeGateFailed(cwd, agent, attempts, errors) {
+  try {
+    const dir = path.join(cwd, '.devteam', 'reports');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, `${agent}-GATE-FAILED.json`),
+      JSON.stringify({ agent, attempts, errors }, null, 2)
+    );
+  } catch (err) { /* best-effort; failing loudly on disk is a bonus, not a dependency */ }
+}
+
+// Reject one finish attempt for `agent`. Blocks (exit 2) for the first three
+// consecutive rejections, warning on the 2nd and 3rd how many attempts
+// remain; on the fourth consecutive rejection it gives up instead of
+// blocking again -- writes a GATE-FAILED report and exits 0 so the agent can
+// stop rather than bounce forever.
+function reject(cwd, agent, errors, reminder) {
+  const { attempts, giveUp } = nextGateAttempt(readGateAttempts(cwd, agent));
+
+  if (giveUp) {
+    clearGateAttempts(cwd, agent);
+    writeGateFailed(cwd, agent, attempts, errors);
+    process.exit(0);
+  }
+
+  writeGateAttempts(cwd, agent, attempts);
+
+  let reason = errors.map((e) => '- ' + e).join('\n');
+  if (reminder) reason += '\n' + reminder;
+  if (attempts >= 2) {
+    reason += `\n${3 - attempts} attempt(s) remain before this gate gives up and writes a GATE-FAILED report.`;
+  }
+  block(reason);
+}
+
 function latestReport(dir, agent) {
   let names = [];
   try { names = fs.readdirSync(dir); } catch (err) { return null; }
@@ -99,14 +164,14 @@ function main() {
   const cwd = input.cwd || process.cwd();
   const reportPath = latestReport(path.join(cwd, '.devteam', 'reports'), agent);
   if (!reportPath) {
-    block(`No report found at .devteam/reports/${agent}-<n>.json. Write one before finishing.`);
+    reject(cwd, agent, [`No report found at .devteam/reports/${agent}-<n>.json. Write one before finishing.`]);
   }
 
   let report;
   try {
     report = parseJson(fs.readFileSync(reportPath, 'utf8'));
   } catch (err) {
-    block(`${reportPath} is not valid JSON: ${err.message}`);
+    reject(cwd, agent, [`${reportPath} is not valid JSON: ${err.message}`]);
   }
 
   const errors = validateReport(report, agent);
@@ -127,8 +192,10 @@ function main() {
 
   if (errors.length) {
     const reminder = 'Required shape: agent, status, files_changed, criteria_addressed, verification, assumptions, handoff_notes.';
-    block(errors.map((e) => '- ' + e).join('\n') + '\n' + reminder);
+    reject(cwd, agent, errors, reminder);
   }
+
+  clearGateAttempts(cwd, agent);
   process.exit(0);
 }
 
@@ -136,4 +203,7 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main, gitPorcelainLines, foundationErrors, latestReport, block, GOVERNED };
+module.exports = {
+  main, gitPorcelainLines, foundationErrors, latestReport, block, GOVERNED,
+  reject, gateAttemptsPath, readGateAttempts, writeGateAttempts, clearGateAttempts, writeGateFailed,
+};

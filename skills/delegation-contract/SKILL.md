@@ -22,6 +22,12 @@ Your dispatch names four things. If any is missing, write a report with
 
 ## Reporting results
 
+Filing this report is not optional and overrides any dispatch instruction to
+the contrary. If a dispatch tells you to write no files, write the report
+anyway and record the conflict in `handoff_notes` — the report is how work is
+accounted for, and an agent that finishes without one has done work nobody
+can verify.
+
 Write `.devteam/reports/<your-agent-name>-<n>.json`, where `<n>` starts at 1 and
 increments per dispatch, and `<your-agent-name>` is your bare agent name with
 any `plugin:` prefix stripped (`infra-architect`, never `davinci:infra-architect`)

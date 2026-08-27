@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { validateReport, validateGateReport } = require('../lib/report.js');
+const { validateReport, validateGateReport, nextGateAttempt } = require('../lib/report.js');
 
 function valid() {
   return {
@@ -90,6 +90,38 @@ test('a gate report with a valid verdict passes', () => {
   const r = valid();
   r.verdict = 'pass';
   assert.deepStrictEqual(validateGateReport(r), []);
+});
+
+// --- nextGateAttempt: the report gate's loop-bound decision ---
+//
+// A live dispatch told security-engineer to write no files, and the report
+// gate rejected its finish eight times in a row, each time demanding a
+// report the dispatch had forbidden -- thirteen minutes burned for no
+// output. nextGateAttempt is the pure decision behind the fix: escalate the
+// attempt count on each rejection, and after the third rejection (the
+// fourth call), tell the wrapper to stop rejecting and give up instead.
+
+test('nextGateAttempt escalates the attempt count by one each call', () => {
+  assert.deepStrictEqual(nextGateAttempt(0), { attempts: 1, giveUp: false });
+  assert.deepStrictEqual(nextGateAttempt(1), { attempts: 2, giveUp: false });
+  assert.deepStrictEqual(nextGateAttempt(2), { attempts: 3, giveUp: false });
+});
+
+test('nextGateAttempt gives up on the fourth attempt, not before', () => {
+  assert.strictEqual(nextGateAttempt(2).giveUp, false);
+  assert.strictEqual(nextGateAttempt(3).giveUp, true);
+  assert.deepStrictEqual(nextGateAttempt(3), { attempts: 4, giveUp: true });
+});
+
+test('nextGateAttempt keeps giving up on any further call once past the limit', () => {
+  assert.strictEqual(nextGateAttempt(4).giveUp, true);
+  assert.strictEqual(nextGateAttempt(10).giveUp, true);
+});
+
+test('nextGateAttempt treats a missing or invalid counter as zero', () => {
+  assert.deepStrictEqual(nextGateAttempt(undefined), { attempts: 1, giveUp: false });
+  assert.deepStrictEqual(nextGateAttempt(-1), { attempts: 1, giveUp: false });
+  assert.deepStrictEqual(nextGateAttempt(NaN), { attempts: 1, giveUp: false });
 });
 
 test('the example report in delegation-contract SKILL.md validates cleanly', () => {

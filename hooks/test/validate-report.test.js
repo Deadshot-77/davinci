@@ -159,3 +159,88 @@ test('gitPorcelainLines degrades to an empty array outside a git repository, wit
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// --- the give-up loop bound, run as the real hook process ---
+//
+// Reproduces the live defect directly: a dispatch tells security-engineer
+// to write no files, so no report ever appears. Before the fix, the gate
+// rejected this forever. After the fix, it must reject exactly three times
+// (with escalating warnings on the 2nd and 3rd) and then, on the fourth
+// consecutive rejection, give up loudly instead of blocking again: write a
+// GATE-FAILED report and exit 0 so the agent can stop.
+
+function runHookOnce(cwd, agentType) {
+  const hookPath = path.join(__dirname, '..', 'validate-report.js');
+  try {
+    const stdout = execFileSync(process.execPath, [hookPath], {
+      cwd, input: JSON.stringify({ agent_type: agentType, cwd }), encoding: 'utf8',
+    });
+    return { status: 0, stdout };
+  } catch (err) {
+    return { status: err.status, stdout: err.stdout || '' };
+  }
+}
+
+test('the gate rejects three times with escalating warnings, then gives up loudly on the fourth', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-gate-'));
+  try {
+    fs.mkdirSync(path.join(cwd, '.devteam', 'reports'), { recursive: true });
+    const counterPath = path.join(cwd, '.devteam', '.gate-attempts-security-engineer.json');
+    const gateFailedPath = path.join(cwd, '.devteam', 'reports', 'security-engineer-GATE-FAILED.json');
+
+    // No security-engineer-<n>.json report ever exists, exactly as when a
+    // dispatch forbids the agent from writing any file at all.
+    const r1 = runHookOnce(cwd, 'security-engineer');
+    assert.strictEqual(r1.status, 2, 'first rejection must still block');
+    assert.strictEqual(JSON.parse(fs.readFileSync(counterPath, 'utf8')).attempts, 1);
+    assert.ok(!fs.existsSync(gateFailedPath));
+
+    const r2 = runHookOnce(cwd, 'security-engineer');
+    assert.strictEqual(r2.status, 2, 'second rejection must still block');
+    assert.strictEqual(JSON.parse(fs.readFileSync(counterPath, 'utf8')).attempts, 2);
+    const ctx2 = JSON.parse(r2.stdout).hookSpecificOutput.additionalContext;
+    assert.match(ctx2, /attempt.*remain/i, 'second rejection must warn how many attempts remain');
+
+    const r3 = runHookOnce(cwd, 'security-engineer');
+    assert.strictEqual(r3.status, 2, 'third rejection must still block');
+    assert.strictEqual(JSON.parse(fs.readFileSync(counterPath, 'utf8')).attempts, 3);
+    const ctx3 = JSON.parse(r3.stdout).hookSpecificOutput.additionalContext;
+    assert.match(ctx3, /attempt.*remain/i, 'third rejection must warn how many attempts remain');
+
+    const r4 = runHookOnce(cwd, 'security-engineer');
+    assert.strictEqual(r4.status, 0, 'fourth consecutive rejection must give up, not block again');
+    assert.ok(fs.existsSync(gateFailedPath), 'a GATE-FAILED report must be written when the gate gives up');
+    const gateFailed = JSON.parse(fs.readFileSync(gateFailedPath, 'utf8'));
+    assert.strictEqual(gateFailed.agent, 'security-engineer');
+    assert.strictEqual(gateFailed.attempts, 4);
+    assert.ok(Array.isArray(gateFailed.errors) && gateFailed.errors.length > 0);
+    assert.ok(!fs.existsSync(counterPath), 'the counter must be cleared once the gate gives up');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('a successful validation clears any prior attempt counter', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-gate-ok-'));
+  try {
+    const devteam = path.join(cwd, '.devteam');
+    fs.mkdirSync(path.join(devteam, 'reports'), { recursive: true });
+    const counterPath = path.join(devteam, '.gate-attempts-frontend-engineer.json');
+    fs.writeFileSync(counterPath, JSON.stringify({ attempts: 2 }));
+    fs.writeFileSync(path.join(devteam, 'reports', 'frontend-engineer-1.json'), JSON.stringify({
+      agent: 'frontend-engineer',
+      status: 'complete',
+      files_changed: ['app/page.tsx'],
+      criteria_addressed: ['AC-1'],
+      verification: [{ cmd: 'npm run build', exit_code: 0 }],
+      assumptions: [],
+      handoff_notes: 'Done.',
+    }));
+
+    const result = runHookOnce(cwd, 'frontend-engineer');
+    assert.strictEqual(result.status, 0);
+    assert.ok(!fs.existsSync(counterPath), 'a passing report must clear the attempt counter');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});

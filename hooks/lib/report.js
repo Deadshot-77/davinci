@@ -85,6 +85,20 @@ function validateReport(report, agentName) {
   return errors;
 }
 
+// The report gate's loop-bound decision, pulled out as a pure function so it
+// is unit-testable without touching the filesystem -- the wrapper in
+// validate-report.js owns reading/writing the counter file. A live dispatch
+// once told security-engineer to write no files; the gate rejected its
+// finish eight times in a row, each rejection demanding a report the
+// dispatch had forbidden, burning thirteen minutes for no output. Blocking
+// forever is worse than failing loudly: after three rejections, the fourth
+// call must tell the caller to give up instead of blocking again.
+function nextGateAttempt(current) {
+  const n = Number.isInteger(current) && current >= 0 ? current : 0;
+  const attempts = n + 1;
+  return { attempts, giveUp: attempts > 3 };
+}
+
 function validateGateReport(report) {
   const errors = [];
   if (!report || typeof report !== 'object') return ['Gate report is not a JSON object.'];
@@ -96,4 +110,4 @@ function validateGateReport(report) {
   return errors;
 }
 
-module.exports = { validateReport, validateGateReport, PLACEHOLDER };
+module.exports = { validateReport, validateGateReport, nextGateAttempt, PLACEHOLDER };
