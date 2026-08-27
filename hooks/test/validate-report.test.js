@@ -1,0 +1,161 @@
+const { test } = require('node:test');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+const { foundationErrors, gitPorcelainLines } = require('../validate-report.js');
+
+// --- foundationErrors: the report gate's actual stack-profile decision ---
+//
+// Ruling R2 required this in both directions: a trivial infra report with
+// no scaffold evidence passes with no profile present, and a report showing
+// a genuine scaffold with no profile present still fails. Previously
+// untested -- validate-report.js had no test coverage at all, and the
+// requiresStackProfile() function this decision used to bypass was tested
+// but never called by anything.
+
+test('a trivial infra report (no scaffold evidence) passes with no stack profile present', () => {
+  const errors = foundationErrors(
+    'infra-architect',
+    ['.devteam/reports/infra-architect-1.json'],
+    [],
+    null,
+    null);
+  assert.deepStrictEqual(errors, []);
+});
+
+test('a genuine scaffold with no stack profile present still fails', () => {
+  const errors = foundationErrors(
+    'infra-architect',
+    ['package.json', 'src/lib/db.ts'],
+    [],
+    null,
+    null);
+  assert.ok(errors.length > 0);
+  assert.ok(errors.some((e) => /stack-profile\.md was not created/.test(e)));
+});
+
+test('a genuine scaffold detected only via git (report under-reports) still fails without a profile', () => {
+  const errors = foundationErrors(
+    'infra-architect',
+    ['.devteam/reports/infra-architect-1.json'],
+    [' M package.json'],
+    null,
+    null);
+  assert.ok(errors.some((e) => /stack-profile\.md was not created/.test(e)));
+});
+
+test('a genuine scaffold with a complete stack profile passes', () => {
+  const profile = [
+    '## Framework', '', 'Next.js 15', '',
+    '## Language', '', 'TypeScript 5', '',
+    '## Package manager', '', 'npm', '',
+    '## Directory map', '', 'src/app', '',
+    '## Naming conventions', '', 'kebab-case', '',
+    '## Testing', '', 'vitest', '',
+    '## Commands', '', 'npm run dev', '',
+  ].join('\n');
+  const errors = foundationErrors('infra-architect', ['package.json'], [], profile, null);
+  assert.deepStrictEqual(errors, []);
+});
+
+test('a non-infra agent never triggers the foundation check, scaffold evidence or not', () => {
+  const errors = foundationErrors('frontend-engineer', ['package.json'], [' M package.json'], null, null);
+  assert.deepStrictEqual(errors, []);
+});
+
+// --- gitPorcelainLines: cwd-relative, not repo-root-relative ---
+//
+// git status --porcelain reports paths relative to the repo root. A project
+// living in a subdirectory of a larger repo saw those paths come back
+// prefixed ("sub/.devteam/brief.md"), which scaffoldEvidence()'s
+// outside-.devteam check misread as outside .devteam/, firing the gate
+// unconditionally. These tests build a real temp git repo with the project
+// one level down and confirm the returned lines are relative to that
+// subdirectory.
+
+// The repo's "sub" directory (where the project lives, one level below the
+// repo root) and its ".devteam" subdirectory are committed up front as part
+// of the initial commit. Otherwise git treats a wholly new, never-tracked
+// directory as one opaque unit -- "?? sub/" -- which collapses to nothing
+// useful once the "sub/" prefix is stripped, and would not reproduce the
+// bug this fix targets (individual paths *inside* an already-tracked
+// subdirectory coming back repo-root-relative instead of cwd-relative).
+function mkTempRepo() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-git-'));
+  const opts = { cwd: dir, stdio: ['ignore', 'pipe', 'ignore'] };
+  execFileSync('git', ['init', '-q'], opts);
+  execFileSync('git', ['config', 'user.email', 'test@example.com'], opts);
+  execFileSync('git', ['config', 'user.name', 'Test'], opts);
+  fs.writeFileSync(path.join(dir, 'README.md'), 'root readme\n');
+  fs.mkdirSync(path.join(dir, 'sub', '.devteam'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'sub', '.gitkeep'), '');
+  fs.writeFileSync(path.join(dir, 'sub', '.devteam', '.gitkeep'), '');
+  execFileSync('git', ['add', '-A'], opts);
+  execFileSync('git', ['commit', '-q', '-m', 'init'], opts);
+  return dir;
+}
+
+test('gitPorcelainLines returns paths relative to cwd, not the repo root, for a project in a subdirectory', () => {
+  const repo = mkTempRepo();
+  try {
+    const sub = path.join(repo, 'sub');
+    fs.mkdirSync(path.join(sub, '.devteam'), { recursive: true });
+    fs.writeFileSync(path.join(sub, '.devteam', 'brief.md'), 'brief\n');
+    fs.writeFileSync(path.join(sub, 'package.json'), '{}\n');
+
+    const lines = gitPorcelainLines(sub);
+    const paths = lines.map((l) => l.slice(3).trim());
+
+    assert.ok(paths.includes('.devteam/brief.md'),
+      'expected a cwd-relative .devteam path, got: ' + JSON.stringify(paths));
+    assert.ok(paths.includes('package.json'),
+      'expected a cwd-relative package.json path, got: ' + JSON.stringify(paths));
+    assert.ok(!paths.some((p) => p.startsWith('sub/')),
+      'a repo-root-relative "sub/..." path leaked through unstripped: ' + JSON.stringify(paths));
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('a subdirectory project with only .devteam/ changes is not mistaken for a scaffold', () => {
+  const { scaffoldEvidence } = require('../lib/foundation.js');
+  const repo = mkTempRepo();
+  try {
+    const sub = path.join(repo, 'sub');
+    fs.mkdirSync(path.join(sub, '.devteam'), { recursive: true });
+    fs.writeFileSync(path.join(sub, '.devteam', 'brief.md'), 'brief\n');
+
+    const lines = gitPorcelainLines(sub);
+    assert.strictEqual(scaffoldEvidence([], lines), false,
+      'unrelated .devteam/-only changes in a subdirectory project should not read as scaffold evidence');
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('a subdirectory project with a real scaffold change is still detected via git', () => {
+  const { scaffoldEvidence } = require('../lib/foundation.js');
+  const repo = mkTempRepo();
+  try {
+    const sub = path.join(repo, 'sub');
+    fs.mkdirSync(sub, { recursive: true });
+    fs.writeFileSync(path.join(sub, 'package.json'), '{}\n');
+
+    const lines = gitPorcelainLines(sub);
+    assert.strictEqual(scaffoldEvidence([], lines), true,
+      'a genuine scaffold in a subdirectory project should still be detected via git');
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('gitPorcelainLines degrades to an empty array outside a git repository, without throwing', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-nogit-'));
+  try {
+    assert.deepStrictEqual(gitPorcelainLines(dir), []);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

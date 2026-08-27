@@ -102,10 +102,14 @@ function requiresStackProfile(report) {
 // consulted here: the hook has no reliable access to the brief's
 // classification, and today's routing rule (tech-lead never dispatches
 // infra-architect on a `Route: direct` brief) already makes it redundant.
+//
+// The self-report half of this evidence is exactly requiresStackProfile()'s
+// question ("does files_changed touch anything outside .devteam/?"), so it
+// is reused here rather than duplicated with a second outside()/isUnderDevteam
+// implementation that could quietly drift out of sync with it.
 function scaffoldEvidence(reportFilesChanged, gitPorcelainLines) {
-  const outside = (p) => p && !p.replace(/^\.\//, '').startsWith('.devteam/');
-  const fromReport = (reportFilesChanged || []).some(outside);
-  const fromGit = (gitPorcelainLines || []).some((l) => outside(l.slice(3).trim()));
+  const fromReport = requiresStackProfile({ files_changed: reportFilesChanged });
+  const fromGit = (gitPorcelainLines || []).some((l) => !isUnderDevteam(l.slice(3).trim()));
   return fromReport || fromGit;
 }
 

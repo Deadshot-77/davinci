@@ -110,7 +110,7 @@ test('the real scope map actually governs infra-architect', () => {
 });
 
 test('the real scope map lets infra-architect scaffold ordinary config and structure files', () => {
-  for (const f of ['robots.txt', 'package.json', 'src/a.ts']) {
+  for (const f of ['robots.txt', 'package.json', 'src/lib/a.ts']) {
     assert.strictEqual(decideScope(
       { agent_type: 'davinci:infra-architect', cwd: '/p', tool_input: { file_path: '/p/' + f } },
       REAL_MAP), null, f + ' should be writable by the scaffolder');
@@ -146,12 +146,26 @@ test('the real scope map still lets infra-architect write structure and config',
   }
 });
 
-test('infra-architect and frontend-engineer scopes are disjoint', () => {
-  const infra = REAL_MAP['infra-architect'];
-  const frontend = REAL_MAP['frontend-engineer'];
-  const overlap = infra.filter((glob) => frontend.includes(glob));
-  assert.deepStrictEqual(
-    overlap, [],
-    'infra-architect and frontend-engineer share identical glob(s): ' + overlap.join(', ') +
-    ' — two agents on one glob breaks the disjoint-scope guarantee.');
+test('no path is allowed for more than one scoped agent in the real map', () => {
+  // Behavioural check, not a glob-string comparison: two agents can own
+  // scopes that overlap in practice (e.g. one agent's "src/**" swallowing
+  // another's "src/app/**") without ever sharing an identical glob string.
+  // Route each representative path through decideScope for every agent that
+  // has a non-empty scope, and require at most one to allow it.
+  const paths = [
+    'index.html', 'styles.css', 'src/app/page.tsx', 'src/components/Hero.tsx',
+    'src/styles/a.css', 'tests/ui/a.test.js', 'package.json', 'src/lib/db.ts',
+    'tsconfig.json',
+  ];
+  const scopedAgents = Object.keys(REAL_MAP).filter((a) => REAL_MAP[a].length > 0);
+
+  for (const p of paths) {
+    const allowedBy = scopedAgents.filter((agent) => decideScope(
+      { agent_type: agent, cwd: '/r', tool_input: { file_path: '/r/' + p } },
+      REAL_MAP) === null);
+    assert.ok(
+      allowedBy.length <= 1,
+      p + ' is allowed for more than one agent: ' + allowedBy.join(', ') +
+      ' — the disjoint-scope guarantee is broken for this path.');
+  }
 });

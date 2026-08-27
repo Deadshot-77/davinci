@@ -9,14 +9,39 @@ const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType } = require('./lib/agents.js');
 
-// Independent evidence for scaffoldEvidence(): the working tree itself,
-// not the self-reported files_changed. A failure here (no git, not a repo,
-// git not installed) must not crash the hook -- an enforcement hook that
-// throws stops enforcing entirely -- so it degrades to no evidence.
+// stdio: silence git's own stderr ("fatal: not a git repository" is expected
+// noise outside a repo, not a real failure -- letting it leak makes every
+// run outside a repo print a scary line for nothing). timeout/maxBuffer:
+// an index.lock contention must not hang SubagentStop, and a porcelain
+// listing over the default buffer must not silently disable the git half.
+const GIT_OPTS = { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5000, maxBuffer: 8e6 };
+
+// git status --porcelain reports paths relative to the REPO ROOT, not to
+// `cwd`. A project living in a subdirectory of a larger repo (or any repo
+// that happens to carry unrelated uncommitted changes elsewhere) then sees
+// paths like "sub/.devteam/brief.md" here -- which scaffoldEvidence()'s
+// outside-.devteam check reads as outside .devteam/ even though it plainly
+// is not, so the foundation gate fires unconditionally. Scope the query to
+// the cwd subtree with a pathspec and strip the repo-root prefix (from
+// `git rev-parse --show-prefix`) so returned paths are cwd-relative, which
+// is what scaffoldEvidence() expects.
+//
+// Independent evidence for scaffoldEvidence(): the working tree itself, not
+// the self-reported files_changed. A failure here (no git, not a repo, git
+// not installed, a lock timeout) must not crash or hang the hook -- an
+// enforcement hook that throws or hangs stops enforcing entirely -- so it
+// degrades to no evidence.
 function gitPorcelainLines(cwd) {
   try {
-    const out = execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' });
-    return out.split(/\r?\n/).filter((l) => l.length > 0);
+    const prefix = execFileSync('git', ['rev-parse', '--show-prefix'], { cwd, ...GIT_OPTS }).trim();
+    const out = execFileSync('git', ['status', '--porcelain', '--', '.'], { cwd, ...GIT_OPTS });
+    const lines = out.split(/\r?\n/).filter((l) => l.length > 0);
+    if (!prefix) return lines;
+    return lines.map((l) => {
+      const status = l.slice(0, 3);
+      const rest = l.slice(3);
+      return rest.startsWith(prefix) ? status + rest.slice(prefix.length) : l;
+    });
   } catch (err) {
     return [];
   }
@@ -47,6 +72,22 @@ function latestReport(dir, agent) {
   return mine.length ? path.join(dir, mine[mine.length - 1]) : null;
 }
 
+// The report gate's stack-profile decision, pulled out as a pure function so
+// it can be unit tested directly -- without spawning this file as a
+// subprocess -- in both directions: a trivial infra report with no scaffold
+// evidence must pass with no profile present, and a report showing a
+// genuine scaffold with no profile present must still fail. Callers supply
+// the git evidence and file contents already read; this function touches no
+// fs or child_process itself.
+function foundationErrors(agent, reportFilesChanged, gitLines, profileText, pkgText) {
+  if (agent !== 'infra-architect') return [];
+  if (!scaffoldEvidence(reportFilesChanged, gitLines)) return [];
+  if (profileText === null || profileText === undefined) {
+    return ['.devteam/stack-profile.md was not created. Builders have no contract to obey.'];
+  }
+  return validateFoundation(profileText, pkgText);
+}
+
 function main() {
   let input;
   try { input = parseJson(fs.readFileSync(0, 'utf8')); } catch (err) { process.exit(0); }
@@ -73,16 +114,15 @@ function main() {
   const GATES = ['security-engineer', 'code-reviewer'];
   if (GATES.includes(agent)) errors.push(...validateGateReport(report));
 
-  if (agent === 'infra-architect' && scaffoldEvidence(report.files_changed, gitPorcelainLines(cwd))) {
+  if (agent === 'infra-architect') {
+    const gitLines = gitPorcelainLines(cwd);
     let profileText = null;
     let pkgText = null;
-    try { profileText = fs.readFileSync(path.join(cwd, '.devteam', 'stack-profile.md'), 'utf8'); } catch (err) { profileText = null; }
-    try { pkgText = fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'); } catch (err) { pkgText = null; }
-    if (profileText === null) {
-      errors.push('.devteam/stack-profile.md was not created. Builders have no contract to obey.');
-    } else {
-      errors.push(...validateFoundation(profileText, pkgText));
+    if (scaffoldEvidence(report.files_changed, gitLines)) {
+      try { profileText = fs.readFileSync(path.join(cwd, '.devteam', 'stack-profile.md'), 'utf8'); } catch (err) { profileText = null; }
+      try { pkgText = fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'); } catch (err) { pkgText = null; }
     }
+    errors.push(...foundationErrors(agent, report.files_changed, gitLines, profileText, pkgText));
   }
 
   if (errors.length) {
@@ -92,4 +132,8 @@ function main() {
   process.exit(0);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { main, gitPorcelainLines, foundationErrors, latestReport, block, GOVERNED };

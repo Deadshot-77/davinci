@@ -110,7 +110,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     81 tests, zero dependencies
+│  └─ test/                     90 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -128,9 +128,9 @@ claude plugin validate .
 
 ## Status
 
-Increment 2, verified by a live end-to-end run. The five agents above, both hooks, and 81 passing tests.
+Increment 2, verified by a live end-to-end run. The five agents above, both hooks, and 90 passing tests.
 
-**Confirmed working in a real session.** The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer` runs, and produced a real single-page site: `index.html` (11.6KB) and `styles.css` (12.4KB). All five of the brief's acceptance criteria passed mechanically — exactly one stylesheet link, zero network calls, no `@font-face`, photo-free, correct file shape. `frontend-craft`'s accessibility floor was honoured without being asked: `prefers-reduced-motion` handled and focus states defined, 19 CSS custom properties, 3 breakpoints, 9 headings, 5 sections. `infra-architect` scaffolded into the project tree (not an isolated worktree) and, unprompted, wrote an inline Node preview server into `package.json`'s `start` script. The write-scope hook, the Bash guard, and the report gate all fired against real agents.
+**Confirmed working in a real session.** The chain `davinci` → `tech-lead` → `infra-architect` → `frontend-engineer` runs, and produced a real single-page site: `index.html` (11.6KB) and `styles.css` (12.4KB). The brief that run actually used carried **thirteen** acceptance criteria, AC-1 through AC-13. Only the first five were ever checked, and they passed mechanically — exactly one stylesheet link, zero network calls, no `@font-face`, photo-free, correct file shape. The remaining eight, AC-6 through AC-13, were never checked; AC-13 (the `package.json` script actually serving the page) is recorded in the run's own report as explicitly not addressed, because every command that would have proven the script ran was denied. That report is the only one the run filed, and it carries `"status": "blocked"`. `frontend-craft`'s accessibility floor was honoured without being asked: `prefers-reduced-motion` handled and focus states defined, 19 CSS custom properties, 3 breakpoints, 9 headings, 5 sections. `infra-architect` scaffolded into the project tree (not an isolated worktree) and, unprompted, wrote an inline Node preview server into `package.json`'s `start` script. Of the three enforcement hooks, only the report gate is corroborated as having fired against a real agent in this run. The write-scope hook and the Bash guard were verified in increment 1, but by direct invocation of the hook scripts against hand-built input, not against a live agent — this run did not independently confirm either one firing at runtime.
 
 **Known limits, stated plainly.**
 
