@@ -39,7 +39,7 @@ Three properties do the real work:
 
 - Claude Code
 - Node.js 18 or later (the hooks use `node:test` and have zero dependencies)
-- Git, for the review gates and worktree isolation
+- Git, for the review gates
 
 ## Install
 
@@ -93,7 +93,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     55 tests, zero dependencies
+│  └─ test/                     65 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -111,11 +111,13 @@ claude plugin validate .
 
 ## Status
 
-Increment 1. The four agents above, both hooks, and 55 passing tests.
+Increment 1, verified by a live end-to-end run. The four agents above, both hooks, and 65 passing tests.
 
-**Not yet verified end to end.** Every hook has been tested by direct invocation with real hook-shaped input, which proves the logic. It does not prove Claude Code loads `hooks.json` at runtime, nor how a blocked agent behaves when a gate rejects it. See [docs/verification-status.md](docs/verification-status.md) for exactly what remains and the ten-minute procedure to close it.
+**Confirmed working in a real session:** the dispatch chain from `davinci` through `tech-lead` to `infra-architect`; the write-scope hook denying an out-of-scope write with its exact message; the Bash guard blocking a read-only agent from mutating commands while still allowing it to read; the report gate rejecting an agent’s completion and sending it back to try again; and `skills:` preloading driving the intake protocol unattended.
 
-Design rationale and the decisions behind the architecture are in [docs/design.md](docs/design.md).
+**Known limits, stated plainly.** No builder agents exist yet, so no complete feature has been built end to end — only the foundation stage. A full run takes upwards of nine minutes. And `davinci` itself, running as the main thread, is **not** governed by the write-scope hook: a main-thread agent presents no agent identity to hooks, so its “brief only” restriction is protocol, not enforcement.
+
+Design rationale and the decisions behind the architecture are in [docs/design.md](docs/design.md); what was found by the live run is in [docs/verification-status.md](docs/verification-status.md).
 
 ## License
 

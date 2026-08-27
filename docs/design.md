@@ -55,11 +55,12 @@ Chain of command: **user → davinci → tech-lead → {builders} → {gates} �
 
 ### Builders — scoped write access
 
-**`infra-architect`** · Fable 5 · `effort: high` · `isolation: worktree`
+**`infra-architect`** · Fable 5 · `effort: high`
 
 - Scaffolding, conventions, and the `stack-profile` contract every other agent reads.
 - Prefers running real generators (`create-next-app`, framework CLIs) over hand-writing config from training data.
 - Output must pass the foundation gate before any builder starts.
+- Works in the project tree, not an isolated worktree. Worktree isolation was tried and removed: a live run showed its output stranded in `.claude/worktrees/` with no merge step, so the foundation never reached the agents depending on it.
 
 **`backend-engineer`** · Opus 5 · `effort: high`
 

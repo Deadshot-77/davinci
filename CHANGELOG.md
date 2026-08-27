@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.1
+
+First live end-to-end run. Three defects found and fixed:
+
+- Plugin agents are namespaced (`davinci:tech-lead`); rosters said `tech-lead`, so nothing
+  could be dispatched. Hooks now normalise the prefix, and a Davinci agent missing from
+  the scope map is denied rather than silently ungoverned.
+- A main-thread agent’s `Agent(...)` roster is a session-wide allowlist, not that agent’s
+  own limit, so restricting the entry agent blocked every downstream dispatch.
+- The Bash guard blocked pure reads such as `node -e "JSON.parse(...)"`, preventing
+  read-only agents from verifying anything.
+- `infra-architect` no longer runs in an isolated worktree: its output was stranded there
+  with no merge step, so the foundation never reached the agents depending on it.
+
 ## 0.1.0
 
 First increment. The pipeline runs `davinci` -> `tech-lead` -> `infra-architect` -> `code-reviewer`,
