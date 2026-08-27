@@ -506,3 +506,8 @@ not a substitute for the interactive run Increment 2 actually performed.
   its hooks were verified only by direct invocation, and that gap was
   never closed by a later live run the way Increment 2 closed the
   equivalent gap for `infra-architect` and `frontend-engineer`.
+
+## Increment 3 live run
+
+Both new agents have now been dispatched. Findings, the three defects the run exposed,
+and what remains unverified are recorded in [increment-3-run.md](increment-3-run.md).
