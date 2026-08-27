@@ -33,3 +33,21 @@ test('an agent with a real write scope is not guarded by this hook', () => {
 test('an ungoverned agent is never guarded', () => {
   assert.strictEqual(decideBash(cmd('general-purpose', 'rm -rf /'), MAP), null);
 });
+
+test('a read-only agent may inspect files with a scripting one-liner', () => {
+  assert.strictEqual(decideBash(cmd('code-reviewer',
+    'node -e "JSON.parse(require(\'fs\').readFileSync(\'package.json\'))"'), MAP), null);
+  assert.strictEqual(decideBash(cmd('code-reviewer',
+    'python3 -c "import json; print(json.load(open(\'a.json\')))"'), MAP), null);
+});
+
+test('a scripting one-liner that writes is still blocked', () => {
+  assert.ok(decideBash(cmd('code-reviewer',
+    'node -e "require(\'fs\').writeFileSync(\'x\',\'y\')"'), MAP));
+});
+
+test('a read-only agent may still run ordinary verification commands', () => {
+  for (const c of ['test -f index.html', 'cat package.json', 'git log --oneline -5', 'npm test', 'ls -la']) {
+    assert.strictEqual(decideBash(cmd('code-reviewer', c), MAP), null, c + ' should be allowed');
+  }
+});
