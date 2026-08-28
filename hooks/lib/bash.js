@@ -20,13 +20,23 @@ const WRITE_INTENT = [
 const SCRIPT_ONELINER = /\b(node|python3?|perl|ruby)\b[^|]*\s-(e|c)\b/;
 const SCRIPT_WRITES = /writeFileSync|appendFileSync|createWriteStream|\bunlink\b|\brmdir\b|\bmkdirSync\b|\brenameSync\b|open\s*\([^)]*,\s*(mode\s*=\s*)?['"][waxb+]{1,3}['"]|\.write\s*\(/;
 
+function writesOnlyCoordinationState(scopes) {
+  return scopes.every((s) => s.startsWith('.devteam/'));
+}
+
 function decideBash(input, scopeMap, known) {
   const agent = normalizeAgentType(input && input.agent_type);
   if (!agent) return null;
 
   const inMap = Object.prototype.hasOwnProperty.call(scopeMap, agent);
   if (inMap) {
-    if (scopeMap[agent].length !== 0) return null;
+    // A gate whose only writable ground is coordination state under .devteam/
+    // stays bash-guarded. It can write evidence through the Write tool, which
+    // is checked by exact path; it has no business running a shell command
+    // that modifies files, and an arbitrary shell cannot be checked by path at
+    // all. Anything with real source scope is a builder and is not guarded
+    // here -- that has not changed.
+    if (scopeMap[agent].length !== 0 && !writesOnlyCoordinationState(scopeMap[agent])) return null;
   } else if (!(known && known.has(agent))) {
     return null;
   }
@@ -60,4 +70,4 @@ function decideBash(input, scopeMap, known) {
   };
 }
 
-module.exports = { decideBash, WRITE_INTENT, SCRIPT_ONELINER, SCRIPT_WRITES };
+module.exports = { decideBash, writesOnlyCoordinationState, WRITE_INTENT, SCRIPT_ONELINER, SCRIPT_WRITES };

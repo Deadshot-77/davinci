@@ -100,7 +100,10 @@ Runtime state lives in `.devteam/` **in the project being worked on**, never in 
 Prompts are advisory; hooks are not. Two hooks enforce the rules the harness can check:
 
 - **Write scope** — each agent may only modify paths it owns. A read-only agent attempting any write is denied, and an agent whose tool input exposes no recognisable path is denied rather than waved through.
+- **Foundation first** — while `.devteam/stack-profile.md` does not exist, every builder write outside `.devteam/` is denied. The design always said no builder starts before the foundation gate passes; a live run showed the lead skipping it anyway, so it is now the hook's rule rather than the lead's intention. The agent that owns the stack profile is exempt, and so is a brief carrying `Route: direct`.
 - **Report validity** — an agent cannot finish without a well-formed report, and a gate cannot finish without a verdict. The infra agent's foundation is additionally checked for unfilled sections and for declaring a framework that isn't in `package.json`.
+
+**Gates can prove things, not just read them.** Each gate owns one scratch directory — `.devteam/scratch/<agent>/` — and nothing else. It builds a mutation harness there with the `Write` tool, which is checked by exact path, and runs `node --test` against it: a mutation the suite would not have caught is a finding with an exit code behind it. Four agents in a live run reported that a load-bearing review "silently degrades to reading" without this. No shell permission was widened to allow it, and an agent whose only writable ground is coordination state stays bash-guarded — handing the gates a scratch path would otherwise have switched their shell guard off entirely.
 
 **One honest limitation.** The Bash guard is best effort. An arbitrary shell cannot be made safe by pattern matching — it stops a read-only agent casually routing around its scope, not a determined one. Treat the enforcement as a strong seatbelt, not a sandbox.
 
@@ -249,7 +252,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     190 tests, zero dependencies
+│  └─ test/                     199 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -267,7 +270,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Eight agents, both hooks, and 190 passing tests. Increment 2's
+Increment 3. Eight agents, both hooks, and 199 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -298,6 +301,10 @@ It changes the output. A status page whose composition left a large dead zone wa
 **The tiering run.** A live run built API-key authentication on the existing service and produced the first evidence that the spend rubric works: the lead set `model` explicitly on twelve of seventeen dispatches — Opus for the auth build and the load-bearing review fan-out, Sonnet for the README and `.editorconfig`. The builder ran the mandatory revision pass, recorded its deletion pass, and went further than asked, proving its own suite could fail with a six-mutant battery against the new module. The scope hook denied `backend-engineer` the README and the lead re-routed it to the agent that owns `*.md`.
 
 It also found three defects, now fixed: 54 findings filed their prose under invented keys because nothing validated `description`; the placeholder detector bounced the security gate four times for writing the word "placeholder" in a sentence about placeholder credentials; and `davinci` on the main thread receives neither its declared skills nor its declared tools, which killed the first attempt outright. The full record is in [docs/live-run-auth.md](docs/live-run-auth.md).
+
+**The rate-limiting run.** A second live run added per-client rate limiting and request logging, and produced 32 passing tests, a new `src/lib/` with one-way dependencies, and the first complete fail → fix → re-gate cycle: the tests lens blocked on a test that could not fail — stdout and stderr were teed into one buffer, so a logger switched to stderr still passed — the lead re-dispatched, and a re-gate passed.
+
+The observation channel carried 17 findings from 8 agents, including the silent-failure lens independently reporting the five bare catches in `src/server.js`: noticed, correctly left alone as out of scope, and escalated with a consequence. Findings filed under invented keys went from 54 to zero. The question channel did not fire, and `CRAFT` has still never blocked. The full record is in [docs/live-run-rate-limit.md](docs/live-run-rate-limit.md).
 
 **Known limits, stated plainly.**
 

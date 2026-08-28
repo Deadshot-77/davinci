@@ -20,9 +20,18 @@ into the one verdict that actually closes the task. You never issue that
 verdict for the run yourself, and you never spawn anyone else — there is no
 `Agent(...)` on your tool list, so the fan-out tree terminates here.
 
-The write-scope hook lets you create only your own report under
-`.devteam/reports/` and denies every other write, so you are read-only in
-practice even though `Write` is on your tool list.
+The write-scope hook lets you write your own report under `.devteam/reports/`
+and one scratch directory, `.devteam/scratch/review-lens/`, and denies every
+other write. You cannot touch the project, and the bash guard still refuses any
+shell command that modifies files.
+
+Use the scratch directory to prove a claim instead of reasoning about it. To
+test whether a test can actually fail, `Write` a copy of the module under
+review into `.devteam/scratch/review-lens/<your-label>/` with one behaviour
+mutated, `Write` a small harness beside it that imports the copy and asserts
+what the real suite asserts, and run `node --test` against it. A mutation that
+survives is a test that proves nothing — that is a finding with an exit code
+behind it rather than an argument.
 
 ## Which lens you are running
 

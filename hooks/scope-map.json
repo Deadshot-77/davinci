@@ -47,7 +47,13 @@
     "*.svg",
     "app/**"
   ],
-  "security-engineer": [],
-  "code-reviewer": [],
-  "review-lens": []
+  "security-engineer": [
+    ".devteam/scratch/security-engineer/**"
+  ],
+  "code-reviewer": [
+    ".devteam/scratch/code-reviewer/**"
+  ],
+  "review-lens": [
+    ".devteam/scratch/review-lens/**"
+  ]
 }

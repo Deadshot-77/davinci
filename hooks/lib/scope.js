@@ -9,7 +9,14 @@ function toRepoRelative(filePath, cwd) {
   return rel.split(path.sep).join('/');
 }
 
-function decideScope(input, scopeMap, known) {
+// The agent that owns the stack profile is the foundation layer and is exempt
+// from needing one -- it is the one that writes it. Derived from the map rather
+// than named here, so renaming the foundation agent cannot desynchronise this.
+function ownsStackProfile(scopes) {
+  return scopes.includes('.devteam/stack-profile.md');
+}
+
+function decideScope(input, scopeMap, known, foundation) {
   const agent = normalizeAgentType(input && input.agent_type);
   if (!agent) return null;
   if (!Object.prototype.hasOwnProperty.call(scopeMap, agent)) {
@@ -44,6 +51,22 @@ function decideScope(input, scopeMap, known) {
   if (globToRegExp(`.devteam/reports/${agent}-*.json`).test(rel)) return null;
 
   const scopes = scopeMap[agent];
+
+  // No builder starts before the foundation exists. The design has always said
+  // so; a live run showed the lead skipping it anyway, and builders then work
+  // against a contract nobody wrote. Coordination state under .devteam/ is
+  // always allowed -- a blocked agent must still be able to file its report.
+  if (foundation && !foundation.hasStackProfile && !foundation.routeDirect &&
+      !rel.startsWith('.devteam/') && scopes.length > 0 && !ownsStackProfile(scopes)) {
+    return {
+      deny:
+        `${agent} may not write ${rel} yet: .devteam/stack-profile.md does not exist, so there is ` +
+        `no contract for this build to obey. Report blocked. The lead must dispatch infra-architect ` +
+        `and pass the foundation gate before any builder starts, unless the brief carries ` +
+        `"Route: direct".`,
+    };
+  }
+
   if (scopes.length === 0) {
     return { deny: `${agent} is read-only and may not write ${rel}. Report findings instead.` };
   }
@@ -57,4 +80,4 @@ function decideScope(input, scopeMap, known) {
   return null;
 }
 
-module.exports = { decideScope, toRepoRelative };
+module.exports = { decideScope, toRepoRelative, ownsStackProfile };

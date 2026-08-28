@@ -90,11 +90,11 @@ test('the real scope map lets davinci write the brief it owns', () => {
     REAL_MAP), null);
 });
 
-test('the real scope map keeps every gate agent read-only', () => {
+test('the real scope map denies every gate agent a source write', () => {
   for (const agent of ['security-engineer', 'code-reviewer', 'tech-lead']) {
     const d = decideScope(
       { agent_type: agent, cwd: '/proj', tool_input: { file_path: '/proj/src/x.ts' } }, REAL_MAP);
-    assert.ok(d && /read-only/.test(d.deny), agent + ' should be read-only');
+    assert.ok(d && d.deny, agent + ' should be denied a write to src/x.ts');
   }
 });
 
@@ -233,7 +233,7 @@ test('both gates are denied a write to an ordinary source path against the real 
     const d = decideScope(
       { agent_type: agent, cwd: '/proj', tool_input: { file_path: '/proj/src/api/users.ts' } },
       REAL_MAP);
-    assert.ok(d && /read-only/.test(d.deny), agent + ' should be denied a write to src/api/users.ts');
+    assert.ok(d && d.deny, agent + ' should be denied a write to src/api/users.ts');
   }
 });
 
@@ -266,7 +266,7 @@ test('each gate may not write the other gate report against the real scope map',
     const d = decideScope(
       { agent_type: agent, cwd: '/r', tool_input: { file_path: '/r/.devteam/reports/' + other + '-1.json' } },
       REAL_MAP);
-    assert.ok(d && /read-only/.test(d.deny), agent + ' should not be able to write ' + other + "'s report");
+    assert.ok(d && d.deny, agent + ' should not be able to write ' + other + "'s report");
   }
 });
 
@@ -275,7 +275,7 @@ test('each gate may not write an ordinary source path against the real scope map
     const d = decideScope(
       { agent_type: agent, cwd: '/r', tool_input: { file_path: '/r/src/x.ts' } },
       REAL_MAP);
-    assert.ok(d && /read-only/.test(d.deny), agent + ' should be denied a write to src/x.ts');
+    assert.ok(d && d.deny, agent + ' should be denied a write to src/x.ts');
   }
 });
 
@@ -309,14 +309,14 @@ test('review-lens may not write an ordinary source path against the real scope m
   const d = decideScope(
     { agent_type: 'review-lens', cwd: '/r', tool_input: { file_path: '/r/src/x.ts' } },
     REAL_MAP);
-  assert.ok(d && /read-only/.test(d.deny), 'review-lens should be denied a write to src/x.ts');
+  assert.ok(d && d.deny, 'review-lens should be denied a write to src/x.ts');
 });
 
 test('review-lens may not write another agent report against the real scope map', () => {
   const d = decideScope(
     { agent_type: 'review-lens', cwd: '/r', tool_input: { file_path: '/r/.devteam/reports/code-reviewer-1.json' } },
     REAL_MAP);
-  assert.ok(d && /read-only/.test(d.deny), 'review-lens should not be able to write code-reviewer\'s report');
+  assert.ok(d && d.deny, 'review-lens should not be able to write code-reviewer\'s report');
 });
 
 test('review-lens is denied a write-intent Bash command, but allowed git diff, against the real map', () => {
@@ -355,4 +355,102 @@ test('no path is allowed for more than one scoped agent in the real map', () => 
       p + ' is allowed for more than one agent: ' + allowedBy.join(', ') +
       ' — the disjoint-scope guarantee is broken for this path.');
   }
+});
+
+
+/* ---------- the gates' evidence scratch ---------- */
+
+const GATES = ['security-engineer', 'code-reviewer', 'review-lens'];
+
+test('each gate may write its own scratch directory', () => {
+  // Four agents in a live run reported that a load-bearing review "silently
+  // degrades to reading" with nowhere to run a mutation harness. This is that
+  // ground, and it is the paired permission for every denial above -- a test
+  // suite where everything is denied proves nothing about what is allowed.
+  for (const agent of GATES) {
+    const d = decideScope({
+      agent_type: agent,
+      cwd: '/proj',
+      tool_input: { file_path: '/proj/.devteam/scratch/' + agent + '/probe/mutant.js' },
+    }, REAL_MAP);
+    assert.strictEqual(d, null, agent + ' should be able to write its own scratch directory');
+  }
+});
+
+test('no gate may write another gate scratch directory', () => {
+  for (const agent of GATES) {
+    for (const other of GATES) {
+      if (agent === other) continue;
+      const d = decideScope({
+        agent_type: agent,
+        cwd: '/proj',
+        tool_input: { file_path: '/proj/.devteam/scratch/' + other + '/mutant.js' },
+      }, REAL_MAP);
+      assert.ok(d && d.deny, agent + ' should not be able to write ' + other + "'s scratch");
+    }
+  }
+});
+
+test('a scratch scope does not switch the bash guard off for a gate', () => {
+  // decideBash returns early for any agent with a non-empty scope. Handing the
+  // gates a scratch directory would have silently unguarded their shell, which
+  // is the opposite of the intent: the Write tool is checked by exact path, an
+  // arbitrary shell cannot be.
+  for (const agent of GATES) {
+    const d = decideBash({
+      agent_type: agent,
+      cwd: '/proj',
+      tool_input: { command: "sed -i 's/a/b/' src/api/users.ts" },
+    }, REAL_MAP);
+    assert.ok(d && /read-only/.test(d.deny),
+      agent + ' should still be refused a write-intent shell command');
+  }
+});
+
+/* ---------- foundation first, enforced ---------- */
+
+const NO_FOUNDATION = { hasStackProfile: false, routeDirect: false };
+const HAS_FOUNDATION = { hasStackProfile: true, routeDirect: false };
+const DIRECT_ROUTE = { hasStackProfile: false, routeDirect: true };
+
+function builderWrite(agent, file, foundation) {
+  return decideScope(
+    { agent_type: agent, cwd: '/proj', tool_input: { file_path: '/proj/' + file } },
+    REAL_MAP, undefined, foundation);
+}
+
+test('a builder may not write source before a stack profile exists', () => {
+  // A live run had the lead skip the foundation gate on a bounded brief, so
+  // builders worked with no contract. Prompts had already said not to.
+  const d = builderWrite('backend-engineer', 'src/api/users.ts', NO_FOUNDATION);
+  assert.ok(d && /stack-profile\.md does not exist/.test(d.deny),
+    'expected a foundation denial, got: ' + (d && d.deny));
+});
+
+test('the same write is allowed once the stack profile exists', () => {
+  assert.strictEqual(builderWrite('backend-engineer', 'src/api/users.ts', HAS_FOUNDATION), null);
+});
+
+test('a Route: direct brief exempts a builder from needing a foundation', () => {
+  assert.strictEqual(builderWrite('backend-engineer', 'src/api/users.ts', DIRECT_ROUTE), null);
+});
+
+test('the agent that owns the stack profile is exempt from needing one', () => {
+  // Otherwise the foundation agent could never create the foundation. Derived
+  // from the map -- infra-architect owns .devteam/stack-profile.md.
+  assert.strictEqual(builderWrite('infra-architect', 'package.json', NO_FOUNDATION), null);
+});
+
+test('a builder can still file its report with no stack profile', () => {
+  // An agent denied its work must be able to say so, or the run loses the
+  // record of why nothing happened.
+  assert.strictEqual(
+    builderWrite('backend-engineer', '.devteam/reports/backend-engineer-main-1.json', NO_FOUNDATION),
+    null);
+});
+
+test('omitting the foundation context leaves scope behaviour unchanged', () => {
+  // The hook computes it; every other caller passes nothing and must not
+  // suddenly start seeing foundation denials.
+  assert.strictEqual(builderWrite('backend-engineer', 'src/api/users.ts', undefined), null);
 });

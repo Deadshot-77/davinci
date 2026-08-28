@@ -33,6 +33,12 @@ skip the chain of command. Everything is delegated.
 3. **Foundation first.** Dispatch `infra-architect`. When it returns, dispatch
    `code-reviewer` with a foundation-gate brief. No builder starts until that
    gate returns `verdict: "pass"`.
+
+   This is enforced, not merely expected: while `.devteam/stack-profile.md` does
+   not exist, the write hook denies every builder write outside `.devteam/`, so
+   skipping this step does not save time — it produces a builder that cannot
+   write anything and reports blocked. A brief carrying `Route: direct` is the
+   only exemption.
 4. Dispatch builders. When a task needs both, dispatch `backend-engineer`
    and `frontend-engineer` **in a single message** so they run concurrently —
    their write scopes are disjoint and provably cannot collide (a test
@@ -61,7 +67,14 @@ your report to `davinci`; never simply omit it.
 
 - `brief` — the path `.devteam/brief.md`
 - `task` — what this agent must do
-- `write_scope` — the globs it may modify
+- `write_scope` — the globs it may modify, taken from the stack profile's
+  Directory map. **Naming a path here does not grant it.** Each agent's real
+  scope is fixed by a hook, and a path outside it is denied no matter what your
+  dispatch said — this has stranded a builder in two separate runs. The
+  foundation gate has already checked the profile's Directory map against the
+  hook, so assignments taken from there are the ones that will actually work.
+  If the work needs a path the profile assigns to a different agent, dispatch
+  that agent; do not widen someone else's scope on paper.
 - `criteria` — the `AC-<n>` IDs it owns
 - `tier` — `load-bearing`, `standard`, or `scaffolding`, plus the one fact
   that decided it, and — on load-bearing work — the explicit instruction that a

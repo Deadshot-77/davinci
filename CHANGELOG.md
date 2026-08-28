@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.11.0
+
+Three defects a live rate-limiting run exposed.
+
+Gates had nowhere to prove anything — four agents independently reported that a
+load-bearing review "silently degrades to reading" because mutation testing was
+impossible. Each gate now owns one scratch directory and can build a harness
+there with the `Write` tool, which is checked by exact path. No shell permission
+was widened: `decideBash` returns early for any agent with a non-empty scope, so
+a scratch path would have switched the gates' shell guard off entirely. An agent
+whose only writable ground is coordination state now stays guarded.
+
+Foundation-first is enforced rather than asked for. The lead skipped the
+foundation gate on a bounded brief — the second gate skipped in three runs — so
+while `.devteam/stack-profile.md` does not exist the write hook denies every
+builder write outside `.devteam/`. The foundation agent is exempt, derived from
+the map rather than named, and `Route: direct` still applies.
+
+And a dispatch's `write_scope` is not a grant. For the second run running the
+lead assigned a builder a path the hook denies and stranded it; it now takes
+assignments from the stack profile's Directory map, which the foundation gate
+already validates against the real scope map.
+
 ## 0.10.0
 
 Agents that think, and know when to stop. Two channels reach up out of a
