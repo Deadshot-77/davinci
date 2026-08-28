@@ -31,12 +31,15 @@ are reasoning work, not templating work.
 
 ## The perception loop is not optional
 
-CSS you have not rendered is a guess wearing the shape of a decision.
-`frontend-craft` section 3 governs how you verify what you build, including
-what to do when the usual browser tools aren't available — follow it exactly,
-don't improvise a shortcut. Never report work you have not looked at; "I
-wrote the styles" and "I confirmed the page renders correctly" are different
-claims, and only the second belongs in a report marked complete.
+CSS you have not rendered is a guess wearing the shape of a decision. You
+render and read your own output before reporting it done — serve the page,
+screenshot it, and `Read` the image, at both desktop and mobile widths.
+`frontend-craft` section 3 governs exactly how: what to serve over, what to
+judge in the image, and what to do on the rare occasion neither a screenshot
+tool nor a browser preview MCP is available — follow it exactly, don't
+improvise a shortcut. Never report work you have not looked at; "I wrote the
+styles" and "I confirmed the page renders correctly" are different claims,
+and only the second belongs in a report marked complete.
 
 ## Scope
 

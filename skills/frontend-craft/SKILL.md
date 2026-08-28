@@ -35,21 +35,50 @@ blind is the single most common way this goes wrong, and shipping unlooked-at
 work is the failure mode this section exists to prevent. Verify in this
 order, don't skip steps, and don't stop after one pass:
 
-1. **Browser preview tools available** (`preview_start`, `computer`,
-   `resize_window`, `read_console_messages`, or equivalent): `preview_start`
-   → screenshot → critique against the checks below → revise → repeat until
-   it actually passes. Then `resize_window` for a mobile pass, and
-   `read_console_messages` for what's silently broken — a missing font, a
-   failed request, a hydration warning rarely throws where you're looking.
-2. **No browser preview tools, but a shell is available**: render headlessly
-   from `Bash` and read the result back — a headless Chrome or Playwright
-   screenshot into a temp PNG, then the `Read` tool to actually view it.
-   Same critique-and-revise loop, same mobile-width pass.
-3. **Neither is possible**: say so. State in the report's `assumptions`,
+1. **Serve, then shoot.** Start the project's dev server (or a static server —
+   `npx --yes serve` works for a plain HTML/CSS build with no server of its
+   own) against a real `http://` URL, then run
+   `node <plugin>/scripts/shoot.mjs <url> <out.png>` and **`Read` the
+   resulting PNG**. Taking the screenshot is not the step — looking at it is.
+   Critique the image against the checks below, revise, and re-shoot until it
+   actually passes.
+2. **A browser preview MCP happens to be available** (`preview_start`,
+   `computer`, `resize_window`, `read_console_messages`, or equivalent): this
+   is equally good — use it the same way, screenshot → critique → revise →
+   repeat, plus `read_console_messages` for what's silently broken (a missing
+   font, a failed request, a hydration warning rarely throws where you're
+   looking).
+3. **Both are impossible**: say so. State in the report's `assumptions`,
    explicitly, that the work was not visually verified and why not. Never
    report visual work as done in a way that implies it was looked at when it
    was not — an agent that quietly stops looking is exactly the failure this
    loop exists to prevent, and a false claim is worse than an honest gap.
+
+**Shoot over HTTP, not `file://`.** A root-absolute stylesheet href
+(`/styles.css`) resolves correctly against a server origin and fails
+completely when the page is opened straight from the filesystem — the
+browser looks for the file at the filesystem root and finds nothing. A page
+screenshotted over `file://` can look broken when it's actually fine, or look
+fine when a real deploy would be broken. Always serve first.
+
+**Look at composition, not just correctness.** The class of flaw that
+matters most is invisible in the code and obvious in one glance at the
+image — the first page ever rendered through this loop was typographically
+strong but left a large dead zone because the layout didn't own the
+viewport. Judge the screenshot against at least these:
+
+- Does the composition use the viewport deliberately, or does content sit in
+  a fraction of it with unclaimed space around it?
+- Is vertical rhythm consistent between sections, given their differing
+  content weight?
+- Is there one clear focal entry point, or does the eye not know where to
+  land first?
+- Does anything collide, overlap, or crowd at this width?
+
+**Run a mobile pass too.** Re-shoot the same URL at 390x844
+(`node <plugin>/scripts/shoot.mjs <url> <out-mobile.png> 390 844`) and look
+again — a layout that composes well at desktop width routinely breaks at
+phone width, and that only shows up by looking.
 
 ## 4. Companion skills
 
@@ -93,9 +122,10 @@ Mechanical checks, not vibes — run through this before writing the report:
 
 - [ ] direction named and recorded in `assumptions`
 - [ ] all three dials present in the report, inferred or read from the brief
-- [ ] the perception loop actually ran — a screenshot exists, or the report
-      records that visual verification was impossible and why
-- [ ] a mobile-width screenshot was taken
+- [ ] the perception loop actually ran — a desktop screenshot **and** a
+      mobile screenshot exist and were read, with their paths recorded in
+      the report's `assumptions`; or the report states plainly that visual
+      verification was impossible and why
 - [ ] console checked and clear of errors introduced by this change
 - [ ] none of the banned defaults in section 5 are present
 - [ ] focus states, contrast, and keyboard reachability checked, not assumed

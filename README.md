@@ -117,6 +117,24 @@ Apply it one of two ways:
 
 **Two command shapes are refused regardless of the profile.** Compound commands joined with `;` or `&&` are refused per clause — `npm test; echo "exit=$?"` fails on the `echo` half even though `npm test` alone is allowed. Commands containing shell globs are refused with `Contains expansion`. Agents should run one plain command at a time.
 
+### Letting `frontend-engineer` see its own work
+
+The same problem — a claim nobody can check — applies to visual work.
+`scripts/shoot.mjs` is a zero-dependency screenshot tool: it finds an
+already-installed Chromium-family browser (Edge, Chrome, or Chromium — tried
+via `CHROME_PATH`, then common install paths, then `PATH`), drives it
+headlessly against a served URL, and verifies the output is a genuine PNG
+before printing its dimensions. `frontend-engineer` runs it and then `Read`s
+the resulting image, so a design gets critiqued against a real screenshot
+instead of the code that supposedly produces it. No extra install is
+required beyond whatever browser is already on the machine, and
+`permissions.example.json` grants exactly the two commands this needs —
+`node scripts/shoot.mjs` and `npx --yes serve`, for the plain-HTML case with
+no dev server of its own. When no Chromium-family browser can be found, the
+script fails loudly rather than silently, and the agent falls back to
+stating in its report that visual verification was impossible and why —
+never to implying it looked when it did not.
+
 ## Layout
 
 ```
@@ -126,11 +144,13 @@ davinci/
 ├─ permissions.example.json     verification-only permission profile for agents
 ├─ agents/                      the seven agent definitions
 ├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft, security review
+├─ scripts/
+│  └─ shoot.mjs                 zero-dependency headless screenshot tool
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     159 tests, zero dependencies
+│  └─ test/                     170 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
