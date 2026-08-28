@@ -130,7 +130,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     115 tests, zero dependencies
+│  └─ test/                     150 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -148,7 +148,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, both hooks, and 115 passing tests. Increment 2's
+Increment 3. Seven agents, both hooks, and 150 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -165,7 +165,10 @@ including three defects that run exposed, is in
 
 **Agents can now verify their own work.** For two increments, every report came back with empty `verification` because every Bash call an agent made was denied — the AC-13 line above is a direct record of that. The cause was found and fixed: see "Letting agents verify their own work" above. Passing `permissions.example.json` via `claude --settings` to a subagent let it genuinely run `npm test`, and its report came back with `npm test -> exit 0` — the first time an agent in this project confirmed its own work instead of reporting `blocked`. That exit code was inferred from the test runner's own summary output, not printed directly: a compound command like `npm test; echo "exit=$?"` is still refused on the `echo` half, so agents read success from what the runner itself prints rather than echoing the shell's exit status back.
 
-**Parallel review, built but not yet run live.** The two gates can now dispatch several `review-lens` agents in one message so they review concurrently — correctness, silent-failure, types, tests and secrets — and synthesise the findings into one verdict. `tech-lead` is likewise instructed to dispatch `backend-engineer` and `frontend-engineer` together, since a test proves their write scopes cannot collide. The wiring is complete and unit-tested: the lens is governed by the scope map, confined to its own report, and the report validator now derives which agents it governs from what is on disk rather than a hand-maintained list. **No live run has exercised it** — the CLI session expired before the fan-out test could complete.
+**Parallel review, verified live.** The gates dispatch several `review-lens` agents in one message and synthesise their findings. Four lenses — correctness, silent-failure, types, secrets — ran concurrently at depth three against a real codebase and each filed a valid report with its own verdict; the gate synthesised twelve findings into `verdict: fail`. Concurrency was corroborated independently rather than taken on the report at face value: in an earlier run two lenses raced the same output path, which sequential dispatch cannot produce.
+
+Three concurrency defects surfaced only under fan-out and are fixed: report filenames assumed one instance per agent type, the give-up counter was shared across instances of the same type, and the status/verdict vocabularies were loose enough that agents invented values like `partial` and `pass-with-findings`. A fourth is documented rather than fixed: roughly one lens instance per run still files a report without a verdict, exhausts its four attempts and trips the give-up valve. The run degrades correctly — that instance fails loudly and leaves a `GATE-FAILED` record while its siblings and the gate complete normally.
+
 
 **Known limits, stated plainly.**
 

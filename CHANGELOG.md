@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0
+
+Parallel review fan-out, verified live. Four `review-lens` agents run concurrently at
+depth three and the gate synthesises their verdicts. Fixes three defects that only
+appear under concurrency: report filenames now carry a per-dispatch label, the give-up
+counter is keyed per agent instance rather than per type, and the `status`/`verdict`
+vocabularies are stated as closed sets after agents invented `partial` and
+`pass-with-findings`. Gates now prove completion with a verdict rather than a shell
+command — demanding one from a read-only reviewer invited the fabrication the rule
+exists to prevent.
+
 ## 0.4.0
 
 Parallel review fan-out. Adds a `review-lens` agent that the gates dispatch several
