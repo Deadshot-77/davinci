@@ -231,6 +231,28 @@ the brief, and that is what `handoff_notes` is for.
 
 `questions` is optional and does not replace any of the seven required keys.
 
+## Running commands
+
+The permission layer that lets you verify anything is narrow on purpose, and it
+refuses more shapes than it accepts. A live run produced 47 denials, and most of
+them were avoidable:
+
+- **One plain command at a time.** Anything joined with `&&`, `;`, or `|` is
+  checked clause by clause and refused if any clause is not allowed — so
+  `npm test && echo done` fails on the `echo`, even though `npm test` alone is
+  fine. Run them as separate calls.
+- **No `cd`.** You already start in the project root. `cd` is a write-shaped
+  command and is refused.
+- **No `-C` or absolute paths into another directory.** `git -C /path status`
+  does not match the allowance for `git status`; run `git status` plainly.
+- **No shell globs** in the command string. Expansion is refused outright.
+- **Nothing outside the project.** Reads of the plugin's own directory are
+  denied — everything you need is already in your context or in the repository.
+
+If a command you genuinely need is refused, that is a finding, not an obstacle
+to route around: record it in `observations` with what you were trying to prove,
+and use `verification` for what you did manage to run.
+
 ## The rule that governs everything
 
 **You cannot declare yourself done.** `status: "complete"` is a claim. A task

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.15.0
+
+Everything an agent must read now lives where it can read it. Two skills told
+agents to copy a template from ${CLAUDE_SKILL_DIR}, which is inside the plugin
+and therefore outside the working directory: every such read is denied. The
+stack-profile template named the seven headings the foundation gate demands, so
+infra-architect could not see the contract it was being held to -- it guessed,
+guessed wrong, and was bounced. Both templates are now inline in their skill
+bodies, which are preloaded, and the unreadable templates/ directories are gone.
+
+The shell constraints moved into delegation-contract, which every agent
+preloads, from the README, which no agent reads. A live run produced 47
+permission denials and most were avoidable: compound commands checked clause by
+clause, cd, git -C, and reads into the plugin directory.
+
+Adds bare-form verification commands to permissions.example.json -- it had
+Bash(npm test) and Bash(npm test:*) but only the :* form for build, lint and
+typecheck, so a plain npm run build likely never matched. That is the only
+verification command an Astro project has.
+
+Two guards, both confirmed to fail against a broken copy: no skill, agent or
+command may point at a path inside the plugin, and no skill may ship a
+templates/ directory no agent can read.
+
+
 ## 0.14.0
 
 Scopes the project declares, not scopes the plugin assumes. The shipped map fits

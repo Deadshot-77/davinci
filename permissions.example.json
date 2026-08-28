@@ -28,7 +28,14 @@
       "Bash(test -f:*)",
       "Bash(test -d:*)",
       "Bash(node scripts/shoot.mjs:*)",
-      "Bash(npx --yes serve:*)"
+      "Bash(npx --yes serve:*)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run check)",
+      "Bash(npx astro check)",
+      "Bash(node --test)"
     ]
-  }
+  },
+  "//shoot": "The screenshot tool lives in the plugin directory, whose absolute path differs per installation, so it cannot be listed here. To let frontend-engineer see its own work, add: \"Bash(node /absolute/path/to/davinci/scripts/shoot.mjs:*)\". Without it the agent reports that visual verification was impossible rather than implying it looked."
 }

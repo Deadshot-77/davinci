@@ -239,3 +239,49 @@ test('the entry command carries the user request through', () => {
       file + ' never substitutes $ARGUMENTS, so the request never reaches the team');
   }
 });
+
+test('no skill, agent or command tells an agent to read inside the plugin directory', () => {
+  // The plugin lives outside the project working directory, so every such read
+  // is denied with "Path is outside allowed working directories". Two skills
+  // pointed at ${CLAUDE_SKILL_DIR}/templates/... for the shape of the file they
+  // were required to produce. infra-architect could not read the template that
+  // names the seven headings the gate demands, guessed them, and was bounced:
+  //
+  //   "the template that names the required ones is outside my read permission,
+  //    so I guessed and guessed wrong"
+  //
+  // Anything an agent must read belongs in the skill body, which is preloaded.
+  const root = path.join(__dirname, '..', '..');
+  const offenders = [];
+  for (const dir of ['skills', 'agents', 'commands']) {
+    const base = path.join(root, dir);
+    if (!fs.existsSync(base)) continue;
+    const walk = (d) => {
+      for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, entry.name);
+        if (entry.isDirectory()) { walk(full); continue; }
+        if (!entry.name.endsWith('.md')) continue;
+        const body = fs.readFileSync(full, 'utf8');
+        if (/\$\{CLAUDE_SKILL_DIR\}|\$\{CLAUDE_PLUGIN_ROOT\}/.test(body)) {
+          offenders.push(path.relative(root, full).split(path.sep).join('/'));
+        }
+      }
+    };
+    walk(base);
+  }
+  assert.deepStrictEqual(offenders, [],
+    'file(s) point an agent at a path inside the plugin, which is always denied: ' +
+    offenders.join(', '));
+});
+
+test('no skill ships a templates directory an agent is expected to read', () => {
+  // The same trap in its other shape: a template file that exists, looks
+  // authoritative, and is unreachable from where the agent runs.
+  const skills = path.join(__dirname, '..', '..', 'skills');
+  const withTemplates = fs.readdirSync(skills, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .filter((d) => fs.existsSync(path.join(skills, d.name, 'templates')))
+    .map((d) => d.name);
+  assert.deepStrictEqual(withTemplates, [],
+    'skill(s) ship a templates/ directory no agent can read: ' + withTemplates.join(', '));
+});

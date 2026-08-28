@@ -48,6 +48,10 @@ order, don't skip steps, and don't stop after one pass:
    repeat, plus `read_console_messages` for what's silently broken (a missing
    font, a failed request, a hydration warning rarely throws where you're
    looking).
+   The plugin's path is per-installation, so `permissions.example.json` cannot
+   name it: if this command is refused, the profile is missing an entry for
+   `node <plugin>/scripts/shoot.mjs` and that is a setup gap, not something to
+   work around. Record it in `assumptions` and fall back to the next option.
 3. **Both are impossible**: say so. State in the report's `assumptions`,
    explicitly, that the work was not visually verified and why not. Never
    report visual work as done in a way that implies it was looked at when it

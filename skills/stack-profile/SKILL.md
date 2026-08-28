@@ -20,11 +20,54 @@ than relying on recall. Framework defaults change faster than training data.
 
 ## Fill every section
 
-Copy `${CLAUDE_SKILL_DIR}/templates/stack-profile.md` to
-`.devteam/stack-profile.md` and fill all seven sections. A hook checks that each
-is present and non-empty, that none contains placeholder text, and that the
-framework you declare actually appears in `package.json`. An unfilled section
-fails the gate — it does not pass with a note.
+Write `.devteam/stack-profile.md` with exactly these seven headings, spelled
+this way. The gate matches them literally: a heading you invent is a section it
+cannot find, and the profile is rejected for being incomplete even when the
+content is all there. That has happened in a live run.
+
+```markdown
+# Stack profile
+
+Every agent reads this file before writing code. It is the contract.
+
+## Framework
+
+Name and major version, e.g. "Next.js 15 (App Router)". Must match a real
+dependency in package.json.
+
+## Language
+
+e.g. "TypeScript 5, strict mode on"
+
+## Package manager
+
+npm | pnpm | yarn | bun, and the lockfile that proves it
+
+## Directory map
+
+Where each kind of file lives, one line per directory, with its owning agent.
+Every path here must be covered by the `.devteam/scope-map.json` you write
+alongside it.
+
+## Naming conventions
+
+File naming, component naming, export style. Specific enough that two agents
+writing different files produce consistent output.
+
+## Testing
+
+Runner, file location, naming pattern, and how to run a single test.
+
+## Commands
+
+dev, build, test, lint. The exact command strings.
+```
+
+An eighth section of your own is fine — put anything that fits none of the seven
+under one, rather than bending a heading to hold it. A hook checks that each of
+the seven is present and non-empty, that none still contains an unfilled
+template marker, and that the framework you declare actually appears in
+`package.json`. An unfilled section fails the gate; it does not pass with a note.
 
 ## The Directory map and `.devteam/scope-map.json` are the same decision
 

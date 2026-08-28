@@ -287,7 +287,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     220 tests, zero dependencies
+│  └─ test/                     222 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -305,7 +305,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 220 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 222 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -342,6 +342,8 @@ It also found three defects, now fixed: 54 findings filed their prose under inve
 The observation channel carried 17 findings from 8 agents, including the silent-failure lens independently reporting the five bare catches in `src/server.js`: noticed, correctly left alone as out of scope, and escalated with a consequence. Findings filed under invented keys went from 54 to zero. The question channel did not fire, and `CRAFT` has still never blocked. The full record is in [docs/live-run-rate-limit.md](docs/live-run-rate-limit.md).
 
 **The entry command run.** The first run through `/davinci:build` completed the full chain with both gates returning `verdict: pass` — and produced the first question the channel has ever carried. `backend-engineer` stopped, reported `needs_input`, and asked which agent should own `.nvmrc` and `README.md` given that its enforced scope covers neither, offering two options and a default. It diagnosed the scope-map defect itself rather than guessing, which is what the channel exists for.
+
+**The Astro run.** The first run against a framework the shipped scope map does not fit. `infra-architect` wrote a project scope map on its own and split `src/pages/` correctly between two agents — `src/pages/api/**` to the backend, `src/pages/blog/**` to the frontend, disjointly — which is the case the shipped defaults cannot express. The run was then cut short, and its 47 permission denials exposed three setup defects now fixed: two skills pointed agents at template files inside the plugin directory, which is always denied, so `infra-architect` guessed the seven required headings and was bounced by the gate for guessing wrong; the shell constraints lived only in this README, which agents never read; and `git -C` and `cd` were being reached for despite neither being grantable.
 
 **Known limits, stated plainly.**
 

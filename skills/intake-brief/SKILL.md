@@ -63,9 +63,51 @@ product. Do not ask them to pick numbers. Record the reasoning under **Assumed**
 
 ## Step 5 — Hand off
 
-Write the brief to `.devteam/brief.md` using
-`${CLAUDE_SKILL_DIR}/templates/brief.md` as the template, and fill EVERY section
-it contains. Two are easy to skip and must not be: **Goal** — one paragraph, in
+Write the brief to `.devteam/brief.md` in exactly this shape, and fill EVERY
+section.
+
+```markdown
+# Brief: <short title>
+
+**Classification:** trivial | bounded | architectural
+**Date:** <YYYY-MM-DD>
+**Route:** direct — <agent-name>  <!-- trivial only; omit otherwise -->
+
+## Goal
+
+One paragraph. What the user wants and why.
+
+## Decided
+
+Facts the user stated or confirmed. One per line.
+
+## Assumed
+
+Choices made without the user. One per line, each with its reasoning. The user
+scans this to catch a wrong guess before work starts.
+
+## Out of scope
+
+What this explicitly does not cover.
+
+## Acceptance criteria
+
+Numbered AC-<n>. Each must be objectively checkable by a gate — a command that
+exits zero, a file that exists, a measurable property. "Looks good" is not an
+acceptance criterion.
+
+- AC-1: <criterion>
+- AC-2: <criterion>
+
+## Design dials
+
+Only for work with a visual surface. Omit otherwise.
+
+- DESIGN_VARIANCE: <1-10>
+- MOTION_INTENSITY: <1-10>
+- VISUAL_DENSITY: <1-10>
+```
+ Two are easy to skip and must not be: **Goal** — one paragraph, in
 your own words, on what the user wants and why — and **Out of scope**, drawn
 from whatever you ruled out while clarifying. A section you leave blank is one a
 downstream agent will invent for itself.
