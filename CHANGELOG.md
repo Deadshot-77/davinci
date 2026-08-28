@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.0
+
+Spend and strictness become one decision. Adds the `work-tiers` skill: the lead
+gives every task a tier — `load-bearing`, `standard`, or `scaffolding` — from what
+the work carries rather than how large it is, and that single tier sets the model
+override, the review fan-out depth, whether a revision pass runs before the gate,
+and which gates run at all.
+
+It also sets the bar. A new `CRAFT` criterion blocks regardless of the brief, the
+way `SECURITY` does, but only on load-bearing work and only for three defects: an
+untested error path that can fail in production, a discarded error cause, and an
+exported interface with no test at all. Everywhere else those stay advisory, so
+the floor is high where being wrong is expensive and cheap where it is not.
+
+On load-bearing work builders now critique their own output against `code-craft`
+and revise before the gate sees it. `review-lens` preloads `code-craft` rather
+than invoking it through the `Skill` tool — a reviewer that has to remember to
+load its own standard is a reviewer that sometimes does not.
+
 ## 0.8.0
 
 An authoring standard for the code itself. Adds the `code-craft` skill —

@@ -101,3 +101,63 @@ test('an agent told to invoke a skill has the Skill tool to invoke it with', () 
   assert.deepStrictEqual(broken, [],
     `agent(s) instructed to use the Skill tool without it on their tool list: ${broken.join(', ')}`);
 });
+
+// The tier vocabulary is a closed set, the same way `status` and `verdict` are.
+// Those two were left loose once and agents invented `partial` and
+// `pass-with-findings`; a tier the lead names and a gate does not recognise
+// silently drops the work to the wrong strictness instead of erroring.
+function definedTiers() {
+  const skill = fs.readFileSync(
+    path.join(SKILLS_DIR, 'work-tiers', 'SKILL.md'), 'utf8');
+  const section = skill.split('## The three tiers')[1];
+  if (!section) throw new Error('work-tiers has no "The three tiers" section');
+  return [...section.matchAll(/^### ([a-z-]+)$/gm)].map((m) => m[1]);
+}
+
+test('every tier defined in work-tiers is spoken by every agent that must tell them apart', () => {
+  const tiers = definedTiers();
+  assert.ok(tiers.length >= 2, 'expected work-tiers to define tiers, found ' + tiers.length);
+
+  // The lead assigns a tier, the gate sets its fan-out depth from it, and the
+  // builders decide from it whether a revision pass is owed. All three branch
+  // on which tier it is, so all three must know every name. A tier renamed in
+  // the skill and not here leaves them reading a word nobody sends.
+  const distinguishAll = [
+    'tech-lead', 'code-reviewer',
+    'backend-engineer', 'frontend-engineer', 'infra-architect',
+  ];
+  // review-lens takes one binary branch -- CRAFT blocks on load-bearing and is
+  // advisory on anything else -- so it needs that one name and no more.
+  const needsLoadBearingOnly = ['review-lens'];
+
+  const byName = new Map(readAgents().map((a) => [a.name, a]));
+  const missing = [];
+  const check = (name, wanted) => {
+    const agent = byName.get(name);
+    assert.ok(agent, name + '.md is missing');
+    for (const tier of wanted) {
+      if (!agent.body.includes(tier)) missing.push(name + ' -> ' + tier);
+    }
+  };
+  for (const name of distinguishAll) check(name, tiers);
+  for (const name of needsLoadBearingOnly) {
+    assert.ok(tiers.includes('load-bearing'),
+      'work-tiers no longer defines a load-bearing tier; review-lens branches on it');
+    check(name, ['load-bearing']);
+  }
+
+  assert.deepStrictEqual(missing, [],
+    'agent(s) never mention a tier they are required to act on: ' + missing.join(', '));
+});
+
+test('CRAFT is never described as blocking without its load-bearing restriction', () => {
+  // CRAFT blocks regardless of the brief, like SECURITY, but only on
+  // load-bearing work. Drop that restriction anywhere and the criterion becomes
+  // a universal blocker: review churn over fixtures, which costs delivery and
+  // improves nothing.
+  const unrestricted = readAgents()
+    .filter((a) => a.body.includes('CRAFT') && !a.body.includes('load-bearing'))
+    .map((a) => a.name);
+  assert.deepStrictEqual(unrestricted, [],
+    'agent(s) cite CRAFT without restricting it to load-bearing work: ' + unrestricted.join(', '));
+});

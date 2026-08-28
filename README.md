@@ -21,6 +21,8 @@ The name is the architecture: Leonardo ran a *bottega*, a workshop where the mas
 | `code-reviewer` | Opus 5 | high | Foundation gate, then code review | nothing |
 | `review-lens` | Opus 5 | high | One review lens — correctness, silent-failure, types, tests, secrets or craft | nothing |
 
+The lead overrides `model` per dispatch from the tier it assigns, so the table shows each agent's default rather than a fixed assignment.
+
 ## How it works
 
 ```
@@ -135,6 +137,44 @@ script fails loudly rather than silently, and the agent falls back to
 stating in its report that visual verification was impossible and why —
 never to implying it looked when it did not.
 
+## Spending the budget where it buys quality
+
+The product is the objective. Tokens and wall-clock are the budget spent
+reaching it — not a second goal competing with it, and not something to
+minimise on its own.
+
+Spending them evenly is the same mistake made twice. Opus and a six-lens review
+over a fixture buys nothing and slows the run; a cheap pass over an
+authorisation path ships a defect nobody catches. So `work-tiers` has the lead
+give every task a tier from what the work carries rather than how large it is —
+blast radius, exposure to untrusted input or credentials, whether anything else
+builds on its shape, and how long it lives. Three lines touching auth are
+load-bearing. Four hundred lines of static copy are not.
+
+| Tier | Model | Revision pass | Review depth | `CRAFT` findings |
+|---|---|---|---|---|
+| `load-bearing` | Opus | mandatory before the gate | all six lenses, both gates | **block** |
+| `standard` | Opus | builder's call | correctness, tests, craft | advisory |
+| `scaffolding` | Sonnet or Haiku | none | one lens, or the gate reads it | advisory |
+
+One decision sets both ends, which is the point: the tier that says how much to
+spend is the tier that says how strictly to judge the result. `CRAFT` blocks
+regardless of what the brief asked for — like `SECURITY` — but only on
+load-bearing work, and only for three defects: an error path that can fail in
+production with no test exercising it, a discarded error cause on such a path,
+and an exported interface with no test at all. Applying that floor everywhere
+produces review churn that slows delivery without improving the product;
+applying the scaffolding floor everywhere ships untested auth.
+
+On load-bearing work the builder also critiques its own output against
+`code-craft` and revises before the gate ever sees it. A gate bounce costs a
+full re-dispatch plus a second gate run; a self-critique costs a turn.
+
+**One honest limit on the mechanism.** The `Agent` tool takes a `model` override
+that beats an agent's frontmatter, and that lever is real. It takes no effort
+override — effort is fixed per agent definition — so the skill says so plainly
+rather than letting the lead write one and believe it took.
+
 ## Code that reads as though a person wrote it
 
 Seeing fixed how the output looks. `code-craft` is the same argument applied to
@@ -159,7 +199,8 @@ without the standard. And `review-lens` gained a sixth lens, `craft`, which load
 the same skill and reviews against it, so builders and reviewers are held to one
 standard instead of two.
 
-See [docs/code-craft.md](docs/code-craft.md) for what it found when applied to
+See [docs/work-tiers.md](docs/work-tiers.md) for the rubric in full, and
+[docs/code-craft.md](docs/code-craft.md) for what the standard found when applied to
 the team's own output.
 
 ## Layout
@@ -170,14 +211,14 @@ davinci/
 ├─ settings.json                declares davinci as the main thread
 ├─ permissions.example.json     verification-only permission profile for agents
 ├─ agents/                      the eight agent definitions
-├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft, code craft, security audit
+├─ skills/                      intake, delegation contract, work tiers, stack profile, foundation review, frontend craft, code craft, security audit
 ├─ scripts/
 │  └─ shoot.mjs                 zero-dependency headless screenshot tool
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     173 tests, zero dependencies
+│  └─ test/                     175 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -195,7 +236,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Eight agents, both hooks, and 173 passing tests. Increment 2's
+Increment 3. Eight agents, both hooks, and 175 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

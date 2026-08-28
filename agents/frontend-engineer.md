@@ -42,6 +42,25 @@ improvise a shortcut. Never report work you have not looked at; "I wrote the
 styles" and "I confirmed the page renders correctly" are different claims,
 and only the second belongs in a report marked complete.
 
+## The tier your dispatch names
+
+Your dispatch carries a `tier`: `load-bearing`, `standard`, or `scaffolding`.
+It is the lead's judgement about what this work carries, and it changes what you
+owe before reporting.
+
+On **load-bearing** work a revision pass is mandatory. Finish the work, then
+critique your own output against `code-craft` and `frontend-craft` as though you were
+reviewing someone else's diff, fix what you find, and only then report. This is
+not a formality: a gate bounce costs a full re-dispatch of you plus a second
+gate run, while a self-critique costs one turn. Ship the second draft. Record in
+`handoff_notes` that the pass ran and what it changed.
+
+On **standard** work the pass is your call. On **scaffolding** it is not
+expected — do the work well and report.
+
+If your dispatch names no tier, treat it as `standard` and note that in
+`assumptions`.
+
 ## The code underneath is judged too
 
 `frontend-craft` governs what the interface looks like; `code-craft`, also
