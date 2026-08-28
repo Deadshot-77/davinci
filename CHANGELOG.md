@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+The frontend agent can see. Adds `scripts/shoot.mjs`, a zero-dependency headless
+screenshot driver that finds an installed Edge or Chrome, verifies its output is a
+real PNG, and fails loudly rather than letting an agent believe it looked when it
+did not. The perception loop in `frontend-craft` now requires rendering over HTTP,
+reading the image, and a mobile pass — with both screenshot paths recorded in the
+report. Given sight, the same agent fixed a composition flaw that was invisible in
+its own source.
+
 ## 0.6.0
 
 The full chain runs end to end and produces working software. Adds the fix that

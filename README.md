@@ -168,7 +168,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, both hooks, and 159 passing tests. Increment 2's
+Increment 3. Seven agents, both hooks, and 170 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -193,6 +193,9 @@ Three concurrency defects surfaced only under fan-out and are fixed: report file
 **The full chain runs end to end.** In a single pass, `davinci` → `tech-lead` → `infra-architect` → foundation gate → `backend-engineer` + `frontend-engineer` → a review lens produced a working service-status page: a health endpoint, a server entry point, a page and stylesheet, a manifest, and a test that genuinely runs and passes. All six reports filed were valid, no report was rejected, and the give-up valve never fired. Both builders reported `complete` — also a first. Across the run the agents executed real commands and recorded real exit codes rather than empty verification arrays.
 
 One gate was skipped: `security-engineer` never ran and left no record. The lead now treats both gates as mandatory and must declare a gate explicitly rather than omit it — that change is unexercised. The full record, including the contract-versus-enforcement defect an earlier attempt exposed, is in [docs/full-chain-run.md](docs/full-chain-run.md).
+**The frontend agent sees its own work.** `scripts/shoot.mjs` drives an already-installed Chromium-family browser headlessly — Edge or Chrome, no dependency and no install — and the agent reads the resulting PNG back with the `Read` tool, which renders images. For three increments the perception loop existed on paper and never executed; every design rule was applied blind.
+
+It changes the output. A status page whose composition left a large dead zone was handed back to the same agent with the same skill and the same model, the only difference being that it could now screenshot and look. It produced a full-bleed layout that owns the viewport, kept the direction it was told to keep, and balanced what had been empty space. The before-and-after is in [docs/seeing-loop.md](docs/seeing-loop.md).
 **Known limits, stated plainly.**
 
 - Nobody has seen the page with their own eyes in an automated session. The browser pane does not composite headlessly, so verification here was structural — the rendered DOM read back — not visual. `frontend-craft`'s perception loop has a third tier for exactly this case: say so rather than imply you looked. That applies to the tooling used in this run as much as it applies to the agent.
