@@ -10,9 +10,10 @@ The name is the architecture: Leonardo ran a *bottega*, a workshop where the mas
 
 ## The team
 
+`/davinci:build` is the way in. It runs on your own session — the only place that can ask you anything — and dispatches the seven agents below.
+
 | Agent | Model | Effort | Role | Can write |
 |---|---|---|---|---|
-| `davinci` | Opus 5 | high | Clarifies your request, writes the brief, delegates | the brief only |
 | `tech-lead` | Opus 5 | xhigh | Dispatches specialists, arbitrates verdicts, re-routes | nothing |
 | `infra-architect` | Fable 5 | high | Scaffolding and the conventions everyone obeys | scoped |
 | `backend-engineer` | Opus 5 | high | APIs, server logic, data layer | scoped |
@@ -52,22 +53,62 @@ Three properties do the real work:
 
 ## Install
 
-**Globally, for every project** — clone into your skills directory and it loads automatically on the next session, with no marketplace and no install step:
-
-```bash
-git clone https://github.com/Deadshot-77/davinci.git ~/.claude/skills/davinci
-```
-
-**For a single project**, without installing globally:
+Clone it anywhere, then point Claude Code at it:
 
 ```bash
 git clone https://github.com/Deadshot-77/davinci.git
+```
+
+```bash
 claude --plugin-dir ./davinci
 ```
 
-After editing any agent, skill, or hook, run `/reload-plugins` to pick up changes without restarting.
+That is the configuration everything here was built and tested against. To load
+it in every session without the flag, add the directory to your Claude Code
+plugin configuration, or publish the containing repository as a marketplace: add
+a `.claude-plugin/marketplace.json` at the *repository* root — not inside this
+directory, where it would shadow the plugin's own manifest — with an entry whose
+`source` points at `./davinci`. Teammates then run
+`claude plugin marketplace add <owner>/<repo>`.
 
-**To share it with a team**, publish the containing repository as a plugin marketplace by adding a `.claude-plugin/marketplace.json` at the *repository* root — not inside this directory, where it would shadow the plugin's own manifest — with an entry whose `source` points at `./davinci`. Teammates then run `claude plugin marketplace add <owner>/<repo>`.
+After editing any agent, skill, or hook, run `/reload-plugins` to pick up
+changes without restarting.
+
+**Davinci does not take over your session.** Earlier versions shipped a
+`settings.json` that made an entry agent the main thread. It has been removed: a
+main-thread agent receives its prompt but not its identity, not its declared
+tools, and none of its skills. Probed twice, it named itself
+`davinci:orchestrator` once and `davinci:product-manager` the next, had
+`intake-brief` in context neither time, invented a classification outside the
+closed set, and ended a run having only asked questions with nothing built.
+
+Your session stays your own. `/davinci:build` runs on it, does the intake, and
+dispatches the team beneath it, where frontmatter is honoured and every agent is
+confined by its own `tools:` allowlist and by the hooks.
+
+## Use
+
+```
+/davinci:build Add a contact form to the marketing site with server-side validation.
+```
+
+The command classifies the request, asks only the questions that change the
+outcome, writes `.devteam/brief.md` with checkable acceptance criteria, and
+hands off to the tech lead. When the team finishes you get back what was built,
+which criteria passed, every assumption the specialists made, and every
+observation with the lead's ruling on it.
+
+**The entry point is a command rather than an agent, and that is not a style
+choice.** `AskUserQuestion` exists on the main thread and nowhere below it, so
+only something running on your session can reach you — and an agent stopped on a
+question needs exactly that. An entry *agent* was tried and does not work twice
+over: on the main thread it loses its skills and its identity, and as a subagent
+it cannot be dispatched at all, because the Agent tool silently excludes an agent
+whose name matches its plugin. A test now guards that trap.
+
+Runtime state lives in `.devteam/` **in the project being worked on**, never in
+this directory. Add it to that project's `.gitignore` if you would rather not
+commit it.
 
 ## Companion skills
 
@@ -82,18 +123,6 @@ git clone https://github.com/Leonxlnx/taste-skill.git ~/.claude/skills/taste-ski
 ## Generated media (optional)
 
 `frontend-engineer` can drive a media MCP server to produce imagery or video. The server identifier is per-installation and can't be shipped in this repository, so the block is commented out by default — uncomment and fill in the `mcpServers:` block at the top of `agents/frontend-engineer.md` with your own connected server's name. Without it, the agent produces static design instead; nothing breaks either way.
-
-## Use
-
-Start Claude Code in the project you want to work on. Davinci is the agent you talk to — everything else is delegated. Describe the work in plain language:
-
-```
-Add a contact form to the marketing site with server-side validation.
-```
-
-Davinci classifies the request, asks at most a few questions that genuinely change the outcome, writes `.devteam/brief.md` with checkable acceptance criteria, and dispatches the team. It reports back with what was built, which criteria passed, and — importantly — every assumption the specialists made along the way.
-
-Runtime state lives in `.devteam/` **in the project being worked on**, never in this directory. Add it to that project's `.gitignore` if you'd rather not commit it.
 
 ## What is actually enforced
 
@@ -247,9 +276,9 @@ the team's own output.
 ```
 davinci/
 ├─ .claude-plugin/plugin.json   plugin manifest
-├─ settings.json                declares davinci as the main thread
+├─ commands/build.md            the /davinci:build entry command
 ├─ permissions.example.json     verification-only permission profile for agents
-├─ agents/                      the eight agent definitions
+├─ agents/                      the seven agent definitions
 ├─ skills/                      intake, delegation contract, work tiers, stack profile, foundation review, frontend craft, code craft, security audit
 ├─ scripts/
 │  └─ shoot.mjs                 zero-dependency headless screenshot tool
@@ -257,7 +286,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     200 tests, zero dependencies
+│  └─ test/                     204 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -275,7 +304,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Eight agents, both hooks, and 200 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 204 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -319,7 +348,7 @@ The observation channel carried 17 findings from 8 agents, including the silent-
 - Browser-MCP access under a `tools:` allowlist is confirmed by mechanism — an explicit allowlist drops unnamed MCP tools, so named ones are kept — but has never been directly sighted, because no test environment so far has had that server connected. The `claude` CLI itself carries no browser MCP at all.
 - `security-engineer` is built and wired — scope map, roster allowlists, `SubagentStop` matcher — but has never run. No security work has been routed through a live session, so nothing about its actual behaviour is confirmed yet, only its governance. `backend-engineer` has since run as part of the full chain.
 
-And `davinci` itself, running as the main thread, is still **not** governed by the write-scope hook: a main-thread agent presents no agent identity to hooks, so its "brief only" restriction is protocol, not enforcement.
+Now that `davinci` runs as a subagent rather than owning your session, it presents an agent identity to the hooks like everyone else, so its "brief only" scope is enforced rather than merely stated. Whatever agent dispatches it — your own session — is not governed, and cannot be: a main-thread agent presents no identity to a hook. That is the boundary, and it is where it belongs.
 
 Design rationale and the decisions behind the architecture are in [docs/design.md](docs/design.md); what was found by the live run is in [docs/verification-status.md](docs/verification-status.md).
 

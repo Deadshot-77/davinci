@@ -45,7 +45,7 @@ test('the same rules apply to write-intent bash commands', () => {
 test('knownAgents with no argument resolves the shipped agents directory', () => {
   const { knownAgents } = require('../lib/agents.js');
   const names = knownAgents();
-  for (const name of ['davinci', 'tech-lead', 'infra-architect', 'code-reviewer']) {
+  for (const name of ['tech-lead', 'infra-architect', 'code-reviewer']) {
     assert.ok(names.has(name), `expected knownAgents() to contain ${name}`);
   }
 });

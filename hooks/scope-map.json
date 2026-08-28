@@ -1,7 +1,4 @@
 {
-  "davinci": [
-    ".devteam/brief.md"
-  ],
   "tech-lead": [],
   "infra-architect": [
     "*.json",

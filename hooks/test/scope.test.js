@@ -98,10 +98,36 @@ test('the real scope map denies every gate agent a source write', () => {
   }
 });
 
-test('the real scope map actually governs davinci', () => {
-  const d = decideScope(
-    { agent_type: 'davinci', cwd: '/proj', tool_input: { file_path: '/proj/src/x.ts' } }, REAL_MAP);
-  assert.ok(d, 'davinci is absent from the scope map, so it is ungoverned');
+test('no shipped agent is named after the plugin itself', () => {
+  // An agent whose name matches its plugin -- davinci/agents/davinci.md, giving
+  // "davinci:davinci" -- appears in the session's agent registry and is absent
+  // from the Agent tool's roster:
+  //
+  //   Agent type 'davinci:davinci' not found. Available agents: davinci:backend-
+  //   engineer, davinci:code-reviewer, ...
+  //
+  // Nothing errors at load time. The entry agent was undispatchable for three
+  // live runs while the main thread quietly absorbed its role, and every one of
+  // those runs looked like it had worked.
+  const manifest = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', '..', '.claude-plugin', 'plugin.json'), 'utf8').replace(/^\uFEFF/, ''));
+  const agents = fs.readdirSync(path.join(__dirname, '..', '..', 'agents'))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => f.slice(0, -3));
+  assert.ok(!agents.includes(manifest.name),
+    'agents/' + manifest.name + '.md would be dispatched as "' + manifest.name + ':' +
+    manifest.name + '", which the Agent tool silently refuses');
+});
+
+test('the real scope map governs every agent that ships', () => {
+  // An agent absent from the map is ungoverned, and decideScope only denies an
+  // unknown agent when it is told which agents exist.
+  const known = new Set(fs.readdirSync(path.join(__dirname, '..', '..', 'agents'))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => f.slice(0, -3)));
+  const ungoverned = [...known].filter((a) => !Object.prototype.hasOwnProperty.call(REAL_MAP, a));
+  assert.deepStrictEqual(ungoverned, [],
+    'agent(s) ship with no scope-map entry and are therefore ungoverned: ' + ungoverned.join(', '));
 });
 
 test('the real scope map actually governs infra-architect', () => {

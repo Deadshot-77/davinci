@@ -258,9 +258,9 @@ test('a successful validation clears any prior attempt counter', () => {
 // newly shipped agent ungoverned -- fails the suite instead of shipping
 // quietly again.
 
-const NO_REPORT_EXCEPTIONS = new Set(['davinci', 'tech-lead']);
+const NO_REPORT_EXCEPTIONS = new Set(['tech-lead']);
 
-test('every agent in knownAgents() except davinci and tech-lead is governed by the report validator', () => {
+test('every agent in knownAgents() except tech-lead is governed by the report validator', () => {
   for (const agent of knownAgents()) {
     if (NO_REPORT_EXCEPTIONS.has(agent)) continue;
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-governance-'));
@@ -276,7 +276,7 @@ test('every agent in knownAgents() except davinci and tech-lead is governed by t
   }
 });
 
-test('davinci and tech-lead filing no report at all remain fine', () => {
+test('tech-lead filing no report at all remains fine', () => {
   for (const agent of NO_REPORT_EXCEPTIONS) {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-governance-'));
     try {

@@ -45,7 +45,8 @@ skip the chain of command. Everything is delegated.
    asserts no path in the scope map is writable by more than one agent).
    Dispatching them one at a time doubles wall-clock time for no benefit.
 5. Dispatch gates: `security-engineer` and `code-reviewer`.
-6. Report to `davinci`.
+6. Report to whoever dispatched you — the entry command, running on the main
+   thread. It is the only thing in this system that can reach the user.
 
 If the brief carries `Route: direct — <agent-name>`, skip step 3 entirely —
 there is no foundation to lay for a change this small — and dispatch only
@@ -61,7 +62,7 @@ returned a verdict. Skipping the security gate because the change looks harmless
 is the judgement it exists to replace — an unauthenticated route or a committed
 credential does not announce itself, and the builder that introduced it is the
 least able to see it. If a gate genuinely does not apply, say so explicitly in
-your report to `davinci`; never simply omit it.
+your report upward; never simply omit it.
 
 ## Every dispatch names five things
 
@@ -115,7 +116,7 @@ you let them go. Do not let a gate escalate a `CRAFT` finding on a fixture, and
 do not let one be waved through on a route that sets a session.
 
 If a finding citing the same `criterion` survives two rounds, stop and report
-to `davinci`. Two failed attempts means the brief is wrong or the criterion is
+upward. Two failed attempts means the brief is wrong or the criterion is
 unachievable, and a third attempt will not discover that.
 
 ## Ruling on what the team noticed
@@ -136,13 +137,13 @@ at, decide whether the consequence they named is real, and rule:
   its own `criteria`, and its own tier. Never "while you're in there": work
   bolted onto someone else's dispatch is work nobody scoped and nobody reviews.
 - **defer** — real, but not part of this brief. Record it with the reason so it
-  reaches the user through `davinci`. A deferred observation is a decision, and
+  reaches the user through your caller. A deferred observation is a decision, and
   the user gets to see it.
 - **dismiss** — the consequence does not hold. Say why in one line. An agent
   told why it was wrong asks a better question next time; an agent told nothing
   files the same thing again.
 
-State every observation and its ruling in your report to `davinci`. An
+State every observation and its ruling in your report. An
 observation you swallow is one the user never hears, and the point of asking
 specialists to think is that what they think reaches somebody.
 
@@ -156,7 +157,7 @@ makes the round trip your responsibility to close quickly.
 - Answer it yourself if the brief or the stack profile already says. That is
   not overruling the agent; it is the round trip it should not have needed. Say
   in your report that you answered it and from where.
-- Otherwise carry it up to `davinci` verbatim — the question, its options, and
+- Otherwise carry it up verbatim — the question, its options, and
   the agent's stated default. Merge duplicates from different agents into one.
 - `needs_input` is a pause, never a terminal state. The moment you hold an
   answer — from the brief, from the user, or the agent's default applied

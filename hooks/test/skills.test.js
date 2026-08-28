@@ -182,3 +182,60 @@ test('the tier that gates the reversibility question is one work-tiers defines',
     'the asking rule names a tier work-tiers does not define, or work-tiers no longer ' +
     'defines load-bearing; the reversibility trigger would never fire. tiers: ' + tiers.join(', '));
 });
+
+/* ---------- the entry path ---------- */
+
+const PLUGIN_ROOT = path.join(__dirname, '..', '..');
+
+test('the plugin does not put any agent on the main thread', () => {
+  // A settings.json declaring an "agent" half-installs it: the prompt arrives,
+  // the identity, the declared tools and every preloaded skill do not. Probed
+  // twice, the entry agent named itself "davinci:orchestrator" once and
+  // "davinci:product-manager" the next, had intake-brief in context neither
+  // time, invented a classification outside the closed set, and ended a run
+  // having only asked questions with nothing built.
+  const settings = path.join(PLUGIN_ROOT, 'settings.json');
+  if (!fs.existsSync(settings)) return;
+  const parsed = JSON.parse(fs.readFileSync(settings, 'utf8').replace(/^\uFEFF/, ''));
+  assert.ok(!Object.prototype.hasOwnProperty.call(parsed, 'agent'),
+    'settings.json declares a main-thread agent again; that configuration silently ' +
+    'strips the entry agent of its skills, its tools and its identity');
+});
+
+test('the entry command dispatches an agent this plugin actually ships', () => {
+  // The command is the documented way in. If it names an agent that does not
+  // exist -- a rename, a typo -- the only supported entry point fails at the
+  // one moment a new user is watching.
+  const dir = path.join(PLUGIN_ROOT, 'commands');
+  const commands = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter((f) => f.endsWith('.md'))
+    : [];
+  assert.ok(commands.length > 0, 'the plugin ships no entry command');
+
+  const shipped = new Set(fs.readdirSync(AGENTS_DIR)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => f.slice(0, -3)));
+
+  const broken = [];
+  for (const file of commands) {
+    const body = fs.readFileSync(path.join(dir, file), 'utf8');
+    const named = [...body.matchAll(/`davinci:([a-z-]+)`/g)].map((m) => m[1]);
+    assert.ok(named.length > 0, file + ' names no agent to dispatch');
+    for (const agent of named) {
+      if (!shipped.has(agent)) broken.push(file + ' -> davinci:' + agent);
+    }
+  }
+  assert.deepStrictEqual(broken, [],
+    'entry command(s) dispatch an agent that does not exist: ' + broken.join(', '));
+});
+
+test('the entry command carries the user request through', () => {
+  // Without the substitution token the command runs with no request in it and
+  // the team builds whatever it imagines.
+  const dir = path.join(PLUGIN_ROOT, 'commands');
+  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.md'))) {
+    const body = fs.readFileSync(path.join(dir, file), 'utf8');
+    assert.ok(body.includes('$ARGUMENTS'),
+      file + ' never substitutes $ARGUMENTS, so the request never reaches the team');
+  }
+});

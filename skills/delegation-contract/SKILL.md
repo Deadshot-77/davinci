@@ -149,10 +149,11 @@ on an observation yourself, and you do not file it twice.
 
 ## Asking a question
 
-You cannot reach the user. No agent below `davinci` can — the tool does not
-exist in your context, so there is nothing to try. What you have instead is a
-`questions` array on your report, which `tech-lead` carries up to `davinci`,
-who asks on your behalf and sends the answer back down on a re-dispatch.
+You cannot reach the user. No agent can — `AskUserQuestion` exists only on the
+main thread, and every agent here runs beneath it, so there is nothing to try.
+What you have instead is a `questions` array on your report, which `tech-lead`
+carries up to the entry command, which asks on your behalf and sends the answer
+back down on a re-dispatch.
 
 **Read first, always.** The brief, `.devteam/stack-profile.md`, and the code in
 front of you answer most of what looks like a question. One you could have
@@ -207,8 +208,8 @@ seems to contain four irreversible forks, the brief was misread or the task
 should have been split, and that belongs in `handoff_notes`.
 
 **Every question carries its own default.** That is what keeps a run from
-dying: most runs are unattended, and when nobody answers, `davinci` applies
-your default and re-dispatches you with it. The default is what you would
+dying: most runs are unattended, and when nobody answers, your default is
+applied and you are re-dispatched with it. The default is what you would
 choose, not something you already did — you stopped, so you did nothing.
 
 - `question` — one sentence, specific, answerable without reading your context.

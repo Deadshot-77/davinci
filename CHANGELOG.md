@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.13.0
+
+The entry point works. It was broken two different ways at once, and both are
+fixed by making it a command instead of an agent.
+
+Removed `settings.json`, which put an entry agent on the main thread. A
+main-thread agent receives its prompt but not its identity, not its declared
+tools and none of its skills. Probed twice, it named itself
+`davinci:orchestrator` once and `davinci:product-manager` the next, had
+intake-brief in context neither time, invented a classification outside the
+closed set, and ended a run having only asked questions with nothing built.
+Removing it also restored the Skill tool the half-install had been stripping.
+
+Removed `agents/davinci.md`, which could never be dispatched: an agent whose
+name matches its plugin appears in the session registry and is absent from the
+Agent tool roster -- "Agent type davinci:davinci not found". Three live runs
+had the main thread silently absorb its role, and each looked like it worked.
+
+Its role now lives in `commands/build.md`, invoked as `/davinci:build`. That is
+where it belonged: AskUserQuestion exists on the main thread and nowhere below
+it, so the only thing that can reach the user is the thing running on the
+user session. An entry agent could never have done the job it was designed for.
+
+Three guards: no shipped agent may be named after the plugin, every shipped
+agent must have a scope-map entry, and the entry command must dispatch an agent
+that exists and carry $ARGUMENTS through.
+
+
 ## 0.12.0
 
 Agents ask about decisions they could have made. The bar was three conditions
