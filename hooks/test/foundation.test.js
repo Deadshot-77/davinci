@@ -1,6 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile, scaffoldEvidence } = require('../lib/foundation.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const { validateFoundation, REQUIRED_SECTIONS, parseSections, requiresStackProfile, scaffoldEvidence, scopeConflicts } = require('../lib/foundation.js');
 
 function profile(overrides) {
   const body = {
@@ -117,4 +119,67 @@ test('scaffoldEvidence parses git porcelain status prefixes rather than treating
 test('scaffoldEvidence tolerates an undefined or empty git line array', () => {
   assert.strictEqual(scaffoldEvidence(['.devteam/brief.md'], undefined), false);
   assert.strictEqual(scaffoldEvidence(['.devteam/brief.md']), false);
+});
+
+// --- scopeConflicts: does the Directory map assign paths agents can't write? ---
+//
+// The defect this closes: a stack profile can name a real agent as owner of
+// a path that agent's scope-map.json entry does not actually cover. The
+// foundation gate approved exactly this ("pass"), the builder correctly
+// refused to write out of scope and reported blocked, and two deliverables
+// were never produced. scopeConflicts() is the pure check that would have
+// caught it: parse the Directory map table, and for every row whose owner
+// is a real agent, confirm the scope map actually lets that agent write
+// there -- reusing matchAny() and the self-report exemption rather than
+// reimplementing glob matching.
+
+const REAL_SCOPE_MAP = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'scope-map.json'), 'utf8'));
+
+function dirMapProfile(rows) {
+  const table = ['| File | Owner |', '|---|---|', ...rows].join('\n');
+  return profile({ 'Directory map': table });
+}
+
+test('assigning src/server.js to backend-engineer produces no conflict', () => {
+  const text = dirMapProfile(['| `src/server.js` | backend-engineer |']);
+  assert.deepStrictEqual(scopeConflicts(text, REAL_SCOPE_MAP), []);
+});
+
+test('assigning public/index.html to backend-engineer produces a conflict naming the path and owner', () => {
+  const text = dirMapProfile(['| `public/index.html` | backend-engineer |']);
+  const errors = scopeConflicts(text, REAL_SCOPE_MAP);
+  assert.strictEqual(errors.length, 1);
+  assert.match(errors[0], /public\/index\.html/);
+  assert.match(errors[0], /backend-engineer/);
+});
+
+test('assigning a path to a read-only agent produces a conflict', () => {
+  const text = dirMapProfile(['| `src/anything.ts` | code-reviewer |']);
+  const errors = scopeConflicts(text, REAL_SCOPE_MAP);
+  assert.strictEqual(errors.length, 1);
+  assert.match(errors[0], /code-reviewer/);
+});
+
+test('a profile with no Directory map table produces no conflicts', () => {
+  assert.deepStrictEqual(scopeConflicts(profile(), REAL_SCOPE_MAP), []);
+});
+
+test('an empty or missing profile produces no conflicts', () => {
+  assert.deepStrictEqual(scopeConflicts('', REAL_SCOPE_MAP), []);
+  assert.deepStrictEqual(scopeConflicts(null, REAL_SCOPE_MAP), []);
+  assert.deepStrictEqual(scopeConflicts(undefined, REAL_SCOPE_MAP), []);
+});
+
+test('a row whose owner is not a known agent is ignored', () => {
+  const text = dirMapProfile(['| `src/whatever.ts` | some-random-team |']);
+  assert.deepStrictEqual(scopeConflicts(text, REAL_SCOPE_MAP), []);
+});
+
+test('multiple conflicting rows each produce their own error', () => {
+  const text = dirMapProfile([
+    '| `public/index.html` | backend-engineer |',
+    '| `src/app/page.tsx` | code-reviewer |',
+  ]);
+  assert.strictEqual(scopeConflicts(text, REAL_SCOPE_MAP).length, 2);
 });

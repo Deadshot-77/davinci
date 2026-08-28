@@ -26,6 +26,16 @@ is present and non-empty, that none contains placeholder text, and that the
 framework you declare actually appears in `package.json`. An unfilled section
 fails the gate — it does not pass with a note.
 
+## The Directory map must assign paths agents can actually write
+
+A hook enforces write scope independently of this document, and it does not
+consult the Directory map to decide who may write where. Only assign a path
+in the Directory map to an agent whose write scope actually covers it — if
+the natural layout for this project needs a path outside every candidate
+owner's scope, say so in the profile and report it as a blocker rather than
+assigning it anyway and leaving the builder to discover the contradiction
+when its write is refused.
+
 ## Be specific enough to remove judgement
 
 Bad: "Components go in the components folder."

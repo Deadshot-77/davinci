@@ -170,6 +170,29 @@ test('the real scope map lets backend-engineer write the application data layer'
   }
 });
 
+// The scope-contract fix: the layouts a stack profile reasonably assigned
+// (a flat src/server.js entrypoint, a top-level test/ directory, a flat
+// src/api.js) were refused because backend-engineer's scope was too narrow
+// for them, not because they were the wrong owner. Widened rather than
+// reinterpreted -- these are new, additional grants alongside the existing
+// src/server/**, tests/api/**, etc.
+test('the real scope map lets backend-engineer write the widened flat-layout paths', () => {
+  for (const f of ['src/server.js', 'test/health.test.js', 'src/api.js']) {
+    assert.strictEqual(decideScope(
+      { agent_type: 'backend-engineer', cwd: '/p', tool_input: { file_path: '/p/' + f } },
+      REAL_MAP), null, f + ' should be writable by backend-engineer');
+  }
+});
+
+// test/** (singular) must stay a different root from tests/ui/** (plural),
+// which frontend-engineer owns -- the widening must not blur that boundary.
+test('the widened test/** grant does not leak into frontend-engineer\'s tests/ui/**', () => {
+  const d = decideScope(
+    { agent_type: 'backend-engineer', cwd: '/p', tool_input: { file_path: '/p/tests/ui/a.test.js' } },
+    REAL_MAP);
+  assert.ok(d, 'backend-engineer should not own tests/ui/** just because it now owns test/**');
+});
+
 test('the real scope map lets frontend-engineer write app/**', () => {
   assert.strictEqual(decideScope(
     { agent_type: 'frontend-engineer', cwd: '/p', tool_input: { file_path: '/p/app/layout.tsx' } },
@@ -319,7 +342,7 @@ test('no path is allowed for more than one scoped agent in the real map', () => 
     'src/styles/a.css', 'tests/ui/a.test.js', 'package.json', 'src/lib/db.ts',
     'tsconfig.json', 'src/api/users.ts', 'src/server/app.ts', 'src/lib/db/client.ts',
     'src/types/user.ts', 'src/index.ts', 'prisma/schema.prisma', 'tests/api/x.test.ts',
-    'app/layout.tsx',
+    'app/layout.tsx', 'src/server.js', 'test/health.test.js', 'src/api.js',
   ];
   const scopedAgents = Object.keys(REAL_MAP).filter((a) => REAL_MAP[a].length > 0);
 

@@ -20,7 +20,10 @@ inconsistent work across three agents who never see each other's output.
    release. Stale scaffolding is the failure mode this gate exists to catch.
 4. **Truth.** Does the profile describe what is actually on disk? Run the
    commands it documents. A `Commands` section that does not work is worse than
-   an empty one, because builders will trust it.
+   an empty one, because builders will trust it. This includes checking that
+   every Directory map assignment is actually writable by its assigned owner —
+   a path handed to an agent whose write scope does not cover it will pass this
+   gate and then be refused when that builder tries to write it.
 5. **Fit.** Does this foundation actually serve the brief, or is it a generic
    scaffold that ignores what was asked for?
 

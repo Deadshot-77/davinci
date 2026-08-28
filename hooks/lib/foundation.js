@@ -2,6 +2,7 @@
 
 const { PLACEHOLDER } = require('./report.js');
 const { parseJson } = require('./json.js');
+const { matchAny } = require('./glob.js');
 
 const REQUIRED_SECTIONS = [
   'Framework', 'Language', 'Package manager', 'Directory map',
@@ -113,7 +114,71 @@ function scaffoldEvidence(reportFilesChanged, gitPorcelainLines) {
   return fromReport || fromGit;
 }
 
+// Parse the "Directory map" table into { path, owner } rows. Tolerates
+// backticks around the path cell and extra whitespace anywhere. Header and
+// separator rows ("| File | Owner |", "|---|---|") are not special-cased --
+// they parse into rows too, but their "owner" cell ("Owner", "---") never
+// matches a real agent name, so scopeConflicts() below ignores them the
+// same way it ignores any other row naming a non-agent as owner.
+function parseDirectoryMapRows(sectionText) {
+  const rows = [];
+  for (const rawLine of String(sectionText || '').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line.startsWith('|')) continue;
+    const cells = line.split('|').slice(1, -1).map((c) => c.trim());
+    if (cells.length !== 2) continue;
+    const p = cells[0].replace(/^`+|`+$/g, '').trim();
+    const owner = cells[1].trim();
+    if (!p || !owner) continue;
+    rows.push({ path: p, owner });
+  }
+  return rows;
+}
+
+// The foundation gate's other half: does the Directory map this profile
+// hands to every builder actually match what scope-map.json will let them
+// write? A profile can be internally coherent (all sections filled, no
+// placeholders, framework matches package.json) and still assign a path to
+// an agent whose scope-map.json entry does not cover it -- the contract and
+// its enforcement silently contradicting each other. That contradiction
+// only surfaces later, when the assigned builder's write is refused and it
+// reports blocked instead of shipping.
+//
+// Reuses matchAny() (hooks/lib/glob.js) for the actual glob matching, and
+// mirrors the self-report exemption already expressed in
+// hooks/lib/scope.js's decideScope() (".devteam/reports/<agent>-*.json" is
+// always writable by its own agent) rather than reimplementing either.
+//
+// A row whose owner is not a key in scopeMap is not a scope conflict --
+// it names something the write-scope hook does not govern at all (a typo,
+// a team name, a future agent), so there is nothing to contradict.
+function scopeConflicts(profileText, scopeMap) {
+  if (typeof profileText !== 'string' || profileText.trim() === '') return [];
+  const sections = parseSections(profileText);
+  const rows = parseDirectoryMapRows(sections['Directory map']);
+  const map = scopeMap || {};
+  const errors = [];
+
+  for (const { path: p, owner } of rows) {
+    if (!Object.prototype.hasOwnProperty.call(map, owner)) continue;
+
+    const scopes = map[owner];
+    if (matchAny(p, [`.devteam/reports/${owner}-*.json`])) continue;
+
+    const scopeDesc = scopes.length ? scopes.join(', ') : '(none -- read-only)';
+    if (scopes.length === 0 || !matchAny(p, scopes)) {
+      errors.push(
+        `stack-profile.md Directory map assigns "${p}" to ${owner}, but ${owner}'s actual write ` +
+        `scope (${scopeDesc}) does not cover it. The builder will refuse this write and report ` +
+        `blocked rather than write out of scope.`
+      );
+    }
+  }
+
+  return errors;
+}
+
 module.exports = {
   validateFoundation, REQUIRED_SECTIONS, parseSections,
-  requiresStackProfile, scaffoldEvidence,
+  requiresStackProfile, scaffoldEvidence, scopeConflicts,
 };

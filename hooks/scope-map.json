@@ -31,7 +31,10 @@
     "tests/api/**",
     "src/lib/**",
     "src/types/**",
-    "src/index.ts"
+    "src/index.ts",
+    "src/server.js",
+    "test/**",
+    "src/api.js"
   ],
   "frontend-engineer": [
     "src/app/**",

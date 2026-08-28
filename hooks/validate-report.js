@@ -5,9 +5,23 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles, gateAttemptKey } = require('./lib/report.js');
-const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
+const { validateFoundation, scaffoldEvidence, scopeConflicts } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType, knownAgents } = require('./lib/agents.js');
+
+// Loaded once at module load, not inside foundationErrors() -- that function
+// is documented pure (see below) and must not touch fs itself. A read
+// failure here degrades to {} rather than throwing, matching how the rest
+// of this file treats a missing/unreadable config file: an enforcement hook
+// that crashes stops enforcing entirely.
+function loadScopeMap() {
+  try {
+    return parseJson(fs.readFileSync(path.join(__dirname, 'scope-map.json'), 'utf8'));
+  } catch (err) {
+    return {};
+  }
+}
+const SCOPE_MAP = loadScopeMap();
 
 // stdio: silence git's own stderr ("fatal: not a git repository" is expected
 // noise outside a repo, not a real failure -- letting it leak makes every
@@ -155,13 +169,18 @@ function latestReport(dir, agent) {
 // genuine scaffold with no profile present must still fail. Callers supply
 // the git evidence and file contents already read; this function touches no
 // fs or child_process itself.
-function foundationErrors(agent, reportFilesChanged, gitLines, profileText, pkgText) {
+function foundationErrors(agent, reportFilesChanged, gitLines, profileText, pkgText, scopeMap) {
   if (agent !== 'infra-architect') return [];
   if (!scaffoldEvidence(reportFilesChanged, gitLines)) return [];
   if (profileText === null || profileText === undefined) {
     return ['.devteam/stack-profile.md was not created. Builders have no contract to obey.'];
   }
-  return validateFoundation(profileText, pkgText);
+  const errors = validateFoundation(profileText, pkgText);
+  // scopeMap is optional so this stays backward-compatible with any caller
+  // that doesn't have one to hand -- without it there is simply nothing to
+  // check the Directory map's assignments against.
+  if (scopeMap) errors.push(...scopeConflicts(profileText, scopeMap));
+  return errors;
 }
 
 function main() {
@@ -209,7 +228,7 @@ function main() {
       try { profileText = fs.readFileSync(path.join(cwd, '.devteam', 'stack-profile.md'), 'utf8'); } catch (err) { profileText = null; }
       try { pkgText = fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'); } catch (err) { pkgText = null; }
     }
-    errors.push(...foundationErrors(agent, report.files_changed, gitLines, profileText, pkgText));
+    errors.push(...foundationErrors(agent, report.files_changed, gitLines, profileText, pkgText, SCOPE_MAP));
   }
 
   // validateReport() and validateGateReport() both check the verdict field
