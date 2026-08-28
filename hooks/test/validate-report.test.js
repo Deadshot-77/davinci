@@ -326,3 +326,126 @@ test('review-lens filing a report with verdict "pass" is accepted', () => {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+// --- the give-up counter is keyed per instance, not per agent type ---
+//
+// Live evidence: a fan-out of four concurrent review-lens instances shared
+// one .gate-attempts-review-lens.json counter keyed on agent type alone.
+// Their rejection attempts pooled, the four-attempt cap tripped
+// collectively, and one lens that had submitted a perfectly valid report
+// got refused anyway -- byte-identical rejection text regardless of what it
+// changed -- because its siblings had already exhausted the shared budget.
+// These tests run the real hook process with distinct agent_id values (as
+// Claude Code supplies per subagent instance) and confirm each instance now
+// gets its own counter file and its own independent give-up budget.
+
+function runHookWithId(cwd, agentType, agentId) {
+  const hookPath = path.join(__dirname, '..', 'validate-report.js');
+  try {
+    const stdout = execFileSync(process.execPath, [hookPath], {
+      cwd, input: JSON.stringify({ agent_type: agentType, agent_id: agentId, cwd }), encoding: 'utf8',
+    });
+    return { status: 0, stdout };
+  } catch (err) {
+    return { status: err.status, stdout: err.stdout || '' };
+  }
+}
+
+test('two concurrent review-lens instances get independent attempt counters, keyed on agent_id', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-gate-concurrent-'));
+  try {
+    fs.mkdirSync(path.join(cwd, '.devteam', 'reports'), { recursive: true });
+
+    // siblingA rejects three times in a row (no report ever appears for it,
+    // same as the live "dispatch forbids writing" scenario) -- its own
+    // counter must climb to 3 without tripping the give-up valve early.
+    runHookWithId(cwd, 'review-lens', 'siblingA');
+    runHookWithId(cwd, 'review-lens', 'siblingA');
+    const a3 = runHookWithId(cwd, 'review-lens', 'siblingA');
+    assert.strictEqual(a3.status, 2, 'siblingA third rejection must still block, not give up early');
+    const counterA = path.join(cwd, '.devteam', '.gate-attempts-review-lens-siblingA.json');
+    assert.strictEqual(JSON.parse(fs.readFileSync(counterA, 'utf8')).attempts, 3);
+
+    // siblingB's very first rejection must land as attempt 1, not attempt 4
+    // -- it must not inherit siblingA's exhausted, pooled count.
+    const b1 = runHookWithId(cwd, 'review-lens', 'siblingB');
+    assert.strictEqual(b1.status, 2, 'siblingB first rejection must still block');
+    const counterB = path.join(cwd, '.devteam', '.gate-attempts-review-lens-siblingB.json');
+    assert.strictEqual(JSON.parse(fs.readFileSync(counterB, 'utf8')).attempts, 1,
+      "siblingB must have its own independent counter, not inherit siblingA's pooled count");
+    assert.ok(fs.existsSync(counterA), "siblingA's counter must be unaffected by siblingB's run");
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('a successful validation clears only that instance\'s counter, leaving a sibling\'s counter untouched', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-gate-ok-concurrent-'));
+  try {
+    const devteam = path.join(cwd, '.devteam');
+    fs.mkdirSync(path.join(devteam, 'reports'), { recursive: true });
+    const counterA = path.join(devteam, '.gate-attempts-review-lens-siblingA.json');
+    const counterB = path.join(devteam, '.gate-attempts-review-lens-siblingB.json');
+    fs.writeFileSync(counterA, JSON.stringify({ attempts: 2 }));
+    fs.writeFileSync(counterB, JSON.stringify({ attempts: 2 }));
+    writeReviewLensReport(cwd, { verdict: 'pass', findings: [] });
+
+    const result = runHookWithId(cwd, 'review-lens', 'siblingA');
+    assert.strictEqual(result.status, 0);
+    assert.ok(!fs.existsSync(counterA), "siblingA's own counter must be cleared on its success");
+    assert.ok(fs.existsSync(counterB), "siblingB's counter must be untouched by siblingA's success");
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('a missing agent_id falls back to the plain per-agent counter filename, unchanged', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-gate-fallback-'));
+  try {
+    fs.mkdirSync(path.join(cwd, '.devteam', 'reports'), { recursive: true });
+    const r1 = runHookOnce(cwd, 'review-lens'); // no agent_id in the input at all
+    assert.strictEqual(r1.status, 2);
+    const counterPath = path.join(cwd, '.devteam', '.gate-attempts-review-lens.json');
+    assert.ok(fs.existsSync(counterPath), 'a caller with no agent_id must still get the plain, un-suffixed counter file');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+// --- de-duplicated rejection text ---
+//
+// validateReport() and validateGateReport() both check the verdict field,
+// added independently for different reasons. A gate report with an invalid
+// (but present) verdict value triggers the identical "Unknown verdict ..."
+// message from both, so it used to appear twice in one rejection. Harmless,
+// but an agent reading its own rejection sees the same complaint
+// duplicated. Neither check should be removed -- only the missing-verdict
+// case is caught by validateGateReport() alone -- so this confirms the
+// final rejection text carries the message once.
+
+test('an invalid gate verdict produces the "Unknown verdict" message once, not duplicated', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-lens-dup-'));
+  try {
+    writeReviewLensReport(cwd, { verdict: 'pass-with-findings', findings: [] });
+    const result = runHookOnce(cwd, 'review-lens');
+    assert.strictEqual(result.status, 2);
+    const ctx = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    const occurrences = (ctx.match(/Unknown verdict/g) || []).length;
+    assert.strictEqual(occurrences, 1, `expected "Unknown verdict" exactly once, got ${occurrences} in: ${ctx}`);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('a missing gate verdict is still reported (the check validateReport() alone cannot make)', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'davinci-lens-missing-'));
+  try {
+    writeReviewLensReport(cwd, {});
+    const result = runHookOnce(cwd, 'review-lens');
+    assert.strictEqual(result.status, 2);
+    const ctx = JSON.parse(result.stdout).hookSpecificOutput.additionalContext;
+    assert.match(ctx, /must report a "verdict"/);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});

@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles } = require('../lib/report.js');
+const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles, gateAttemptKey } = require('../lib/report.js');
 
 function valid() {
   return {
@@ -325,4 +325,68 @@ test('matchReportFiles does not let a prefix agent name pick up a longer, distin
 test('matchReportFiles returns an empty list when nothing matches', () => {
   assert.deepStrictEqual(matchReportFiles('review-lens', []), []);
   assert.deepStrictEqual(matchReportFiles('review-lens', ['unrelated.json', 'review-lens-GATE-FAILED.json']), []);
+});
+
+// --- gateAttemptKey: per-instance identity for the give-up loop bound ---
+//
+// The give-up valve's attempt counter used to live at
+// .devteam/.gate-attempts-<agent>.json, keyed on agent TYPE alone. Four
+// concurrent review-lens instances therefore shared one counter: their
+// rejection attempts pooled, the four-attempt cap tripped collectively, and
+// a lens that had actually submitted a valid report got refused anyway
+// because its siblings had already exhausted the shared budget. Hook input
+// carries agent_id, unique per subagent instance -- gateAttemptKey is the
+// pure key derivation (agent name plus that id, sanitised for a filename)
+// pulled out of the counter path so it is unit-testable without touching
+// the filesystem. The wrapper in validate-report.js does the actual path
+// join and file I/O.
+
+test("gateAttemptKey('review-lens','abc123') and gateAttemptKey('review-lens','def456') differ", () => {
+  assert.notStrictEqual(gateAttemptKey('review-lens', 'abc123'), gateAttemptKey('review-lens', 'def456'));
+});
+
+test('two different ids for the same agent never collide', () => {
+  const seen = new Set();
+  for (const id of ['abc123', 'def456', 'ghijkl', 'zzz999', 'a', 'ab']) {
+    const key = gateAttemptKey('review-lens', id);
+    assert.ok(!seen.has(key), `duplicate key produced for id "${id}": ${key}`);
+    seen.add(key);
+  }
+});
+
+test('a missing agentId falls back to the agent name alone', () => {
+  assert.strictEqual(gateAttemptKey('review-lens', undefined), 'review-lens');
+  assert.strictEqual(gateAttemptKey('review-lens', null), 'review-lens');
+});
+
+test('an empty agentId falls back to the agent name alone', () => {
+  assert.strictEqual(gateAttemptKey('review-lens', ''), 'review-lens');
+});
+
+test('an id containing path-hostile characters is sanitised to a safe filename fragment', () => {
+  const key = gateAttemptKey('review-lens', '../../etc/passwd');
+  assert.match(key, /^[A-Za-z0-9_-]+$/, `key must be a safe filename fragment, got: ${key}`);
+  assert.ok(!key.includes('/') && !key.includes('\\'), `key must contain no path separators: ${key}`);
+  assert.ok(!key.includes('..'), `key must contain no traversal segment: ${key}`);
+});
+
+test('an id containing colons and spaces is sanitised to a safe filename fragment', () => {
+  const key = gateAttemptKey('review-lens', 'abc:123 def');
+  assert.match(key, /^[A-Za-z0-9_-]+$/, `key must be a safe filename fragment, got: ${key}`);
+});
+
+test('a sanitised id cannot escape the .devteam/ directory when joined into a path', () => {
+  const key = gateAttemptKey('review-lens', '../../../../outside');
+  const projectRoot = path.resolve('/project');
+  const devteamRoot = path.join(projectRoot, '.devteam');
+  const resolved = path.resolve(devteamRoot, `.gate-attempts-${key}.json`);
+  assert.ok(resolved === path.join(devteamRoot, `.gate-attempts-${key}.json`) &&
+    resolved.startsWith(devteamRoot + path.sep),
+    `resolved path escaped .devteam/: ${resolved}`);
+});
+
+test('gateAttemptKey is stable across repeated calls for the same agent and id', () => {
+  const first = gateAttemptKey('review-lens', 'abc123');
+  const second = gateAttemptKey('review-lens', 'abc123');
+  assert.strictEqual(first, second);
 });

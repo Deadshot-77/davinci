@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles } = require('./lib/report.js');
+const { validateReport, validateGateReport, nextGateAttempt, matchReportFiles, gateAttemptKey } = require('./lib/report.js');
 const { validateFoundation, scaffoldEvidence } = require('./lib/foundation.js');
 const { parseJson } = require('./lib/json.js');
 const { normalizeAgentType, knownAgents } = require('./lib/agents.js');
@@ -71,32 +71,36 @@ function block(reason) {
 
 // Loop bound: a rejection this gate cannot resolve (e.g. a dispatch that
 // forbids the agent from writing anything at all) must not bounce forever.
-// A small per-agent counter under .devteam/ tracks consecutive rejections;
-// nextGateAttempt() (hooks/lib/report.js) is the pure decision of when to
-// stop. This wrapper owns all the filesystem I/O and degrades safely --
-// a write failure here must not crash the hook or hang the loop bound.
-function gateAttemptsPath(cwd, agent) {
-  return path.join(cwd, '.devteam', `.gate-attempts-${agent}.json`);
+// A small per-INSTANCE counter under .devteam/ tracks consecutive
+// rejections, keyed by gateAttemptKey() (hooks/lib/report.js) on the agent
+// name plus the hook's agent_id -- not on agent name alone, which is what
+// let four concurrent review-lens instances pool their attempts into one
+// shared counter and made an innocent instance eat its siblings'
+// rejections. nextGateAttempt() is the pure decision of when to stop. This
+// wrapper owns all the filesystem I/O and degrades safely -- a write
+// failure here must not crash the hook or hang the loop bound.
+function gateAttemptsPath(cwd, key) {
+  return path.join(cwd, '.devteam', `.gate-attempts-${key}.json`);
 }
 
-function readGateAttempts(cwd, agent) {
+function readGateAttempts(cwd, key) {
   try {
-    const data = parseJson(fs.readFileSync(gateAttemptsPath(cwd, agent), 'utf8'));
+    const data = parseJson(fs.readFileSync(gateAttemptsPath(cwd, key), 'utf8'));
     return Number.isInteger(data.attempts) ? data.attempts : 0;
   } catch (err) {
     return 0;
   }
 }
 
-function writeGateAttempts(cwd, agent, attempts) {
+function writeGateAttempts(cwd, key, attempts) {
   try {
     fs.mkdirSync(path.join(cwd, '.devteam'), { recursive: true });
-    fs.writeFileSync(gateAttemptsPath(cwd, agent), JSON.stringify({ attempts }));
+    fs.writeFileSync(gateAttemptsPath(cwd, key), JSON.stringify({ attempts }));
   } catch (err) { /* best-effort; a lost counter just restarts the count at 0 */ }
 }
 
-function clearGateAttempts(cwd, agent) {
-  try { fs.unlinkSync(gateAttemptsPath(cwd, agent)); } catch (err) { /* nothing to clear */ }
+function clearGateAttempts(cwd, key) {
+  try { fs.unlinkSync(gateAttemptsPath(cwd, key)); } catch (err) { /* nothing to clear */ }
 }
 
 function writeGateFailed(cwd, agent, attempts, errors) {
@@ -110,21 +114,24 @@ function writeGateFailed(cwd, agent, attempts, errors) {
   } catch (err) { /* best-effort; failing loudly on disk is a bonus, not a dependency */ }
 }
 
-// Reject one finish attempt for `agent`. Blocks (exit 2) for the first three
-// consecutive rejections, warning on the 2nd and 3rd how many attempts
-// remain; on the fourth consecutive rejection it gives up instead of
-// blocking again -- writes a GATE-FAILED report and exits 0 so the agent can
-// stop rather than bounce forever.
-function reject(cwd, agent, errors, reminder) {
-  const { attempts, giveUp } = nextGateAttempt(readGateAttempts(cwd, agent));
+// Reject one finish attempt for `agent` (instance-keyed by `gateKey`, see
+// gateAttemptKey()). Blocks (exit 2) for the first three consecutive
+// rejections, warning on the 2nd and 3rd how many attempts remain; on the
+// fourth consecutive rejection it gives up instead of blocking again --
+// writes a GATE-FAILED report and exits 0 so the agent can stop rather than
+// bounce forever. The GATE-FAILED report itself stays keyed on the agent
+// name alone (unchanged): concurrency safety for that file is a separate,
+// already-solved problem (the labeled report-filename convention).
+function reject(cwd, agent, gateKey, errors, reminder) {
+  const { attempts, giveUp } = nextGateAttempt(readGateAttempts(cwd, gateKey));
 
   if (giveUp) {
-    clearGateAttempts(cwd, agent);
+    clearGateAttempts(cwd, gateKey);
     writeGateFailed(cwd, agent, attempts, errors);
     process.exit(0);
   }
 
-  writeGateAttempts(cwd, agent, attempts);
+  writeGateAttempts(cwd, gateKey, attempts);
 
   let reason = errors.map((e) => '- ' + e).join('\n');
   if (reminder) reason += '\n' + reminder;
@@ -165,17 +172,23 @@ function main() {
   if (!agent || !knownAgents().has(agent)) process.exit(0);
   if (NO_REPORT.has(agent)) process.exit(0); // control plane: files no report
 
+  // Per-instance loop-bound key: agent name plus the hook's agent_id (unique
+  // per subagent instance), so concurrent instances of the same agent type
+  // never share one attempt counter. Falls back to the agent name alone when
+  // agent_id is absent, preserving single-instance behaviour exactly.
+  const gateKey = gateAttemptKey(agent, input.agent_id);
+
   const cwd = input.cwd || process.cwd();
   const reportPath = latestReport(path.join(cwd, '.devteam', 'reports'), agent);
   if (!reportPath) {
-    reject(cwd, agent, [`No report found at .devteam/reports/${agent}-<label>-<n>.json (or the older ${agent}-<n>.json). Write one before finishing.`]);
+    reject(cwd, agent, gateKey, [`No report found at .devteam/reports/${agent}-<label>-<n>.json (or the older ${agent}-<n>.json). Write one before finishing.`]);
   }
 
   let report;
   try {
     report = parseJson(fs.readFileSync(reportPath, 'utf8'));
   } catch (err) {
-    reject(cwd, agent, [`${reportPath} is not valid JSON: ${err.message}`]);
+    reject(cwd, agent, gateKey, [`${reportPath} is not valid JSON: ${err.message}`]);
   }
 
   const errors = validateReport(report, agent);
@@ -199,12 +212,22 @@ function main() {
     errors.push(...foundationErrors(agent, report.files_changed, gitLines, profileText, pkgText));
   }
 
-  if (errors.length) {
+  // validateReport() and validateGateReport() both check the verdict field
+  // (added independently, for different reasons -- see the enum
+  // literal-match fix), so a gate report with an invalid verdict triggers
+  // the identical "Unknown verdict" message from each and it lands in the
+  // rejection twice. Harmless but sloppy: an agent reading its own
+  // rejection sees the same complaint duplicated. Dedupe the final list
+  // rather than removing either check -- each still catches the case the
+  // other cannot (a missing verdict is only caught by validateGateReport()).
+  const uniqueErrors = Array.from(new Set(errors));
+
+  if (uniqueErrors.length) {
     const reminder = 'Required shape: agent, status, files_changed, criteria_addressed, verification, assumptions, handoff_notes.';
-    reject(cwd, agent, errors, reminder);
+    reject(cwd, agent, gateKey, uniqueErrors, reminder);
   }
 
-  clearGateAttempts(cwd, agent);
+  clearGateAttempts(cwd, gateKey);
   process.exit(0);
 }
 

@@ -127,6 +127,29 @@ function validateGateReport(report) {
   return errors;
 }
 
+// Which counter file identifies one running instance of an agent, for the
+// give-up loop bound's attempt cap in validate-report.js. That counter used
+// to live at .devteam/.gate-attempts-<agent>.json, keyed on agent TYPE
+// alone. Four concurrent review-lens instances shared that one file: their
+// rejection attempts pooled, the four-attempt cap tripped collectively, and
+// a lens that had actually submitted a valid report got refused anyway
+// because its siblings had already exhausted the shared budget. Hook input
+// carries agent_id, unique per subagent instance, so keying the counter on
+// agent name plus that id gives each instance its own independent budget.
+// When agentId is absent or empty (a caller that predates it, or a test
+// harness that doesn't supply one) this falls back to the agent name alone,
+// preserving today's single-instance behaviour exactly.
+//
+// The id is sanitised to [A-Za-z0-9_-] because it lands in a filename on
+// Windows: stripping anything else (path separators, "..", colons, spaces)
+// means a hostile or malformed id can neither escape .devteam/ nor break
+// the path. Pure and filesystem-free so it is unit-testable directly; the
+// wrapper in validate-report.js does the actual path join and file I/O.
+function gateAttemptKey(agentName, agentId) {
+  const safeId = String(agentId || '').replace(/[^A-Za-z0-9_-]/g, '');
+  return safeId ? `${agentName}-${safeId}` : agentName;
+}
+
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -165,4 +188,4 @@ function matchReportFiles(agentName, filenames) {
   return matches.sort((a, b) => a.n - b.n).map((x) => x.name);
 }
 
-module.exports = { validateReport, validateGateReport, nextGateAttempt, matchReportFiles, PLACEHOLDER };
+module.exports = { validateReport, validateGateReport, nextGateAttempt, matchReportFiles, gateAttemptKey, PLACEHOLDER };
