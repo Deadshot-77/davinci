@@ -390,3 +390,196 @@ test('gateAttemptKey is stable across repeated calls for the same agent and id',
   const second = gateAttemptKey('review-lens', 'abc123');
   assert.strictEqual(first, second);
 });
+
+
+/* ---------- the question channel ---------- */
+
+function asking() {
+  const r = valid();
+  r.status = 'needs_input';
+  r.verification = [];
+  r.criteria_addressed = [];
+  r.questions = [{
+    question: 'Should an invalid API key return 401 or 404?',
+    options: ['401 Unauthorized', '404 Not Found, hiding the endpoint'],
+    default: '401 Unauthorized',
+  }];
+  return r;
+}
+
+test('a well-formed question on a needs_input report passes', () => {
+  assert.deepStrictEqual(validateReport(asking(), 'infra-architect'), []);
+});
+
+test('asking a question while reporting any other status is rejected', () => {
+  // Asking means stopping. An agent that asks and keeps building produces work
+  // the answer may invalidate -- either thrown away, or silently kept when it
+  // should have changed.
+  for (const status of ['complete', 'blocked']) {
+    const r = asking();
+    r.status = status;
+    if (status === 'complete') {
+      r.verification = [{ cmd: 'npm test', exit_code: 0 }];
+      r.criteria_addressed = ['AC-1'];
+    }
+    const errors = validateReport(r, 'infra-architect');
+    assert.ok(errors.some((e) => /Asking means stopping/.test(e)),
+      `expected status "${status}" with questions to be rejected, got: ${errors.join(' | ')}`);
+  }
+});
+
+test('a question with no default is rejected', () => {
+  const r = asking();
+  delete r.questions[0].default;
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /missing a "default"/.test(e)));
+});
+
+test('a question whose default is not one of its own options is rejected', () => {
+  const r = asking();
+  r.questions[0].default = '403 Forbidden';
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /not one of its own options/.test(e)));
+});
+
+test('a question offering fewer than two concrete options is rejected', () => {
+  const r = asking();
+  r.questions[0].options = ['401 Unauthorized'];
+  r.questions[0].default = '401 Unauthorized';
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /two to four concrete choices/.test(e)));
+});
+
+test('a third question is rejected', () => {
+  const r = asking();
+  const q = r.questions[0];
+  r.questions = [q, { ...q }, { ...q }];
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /at most 2 are allowed/.test(e)));
+});
+
+/* ---------- the observation channel ---------- */
+
+function observing() {
+  const r = valid();
+  r.observations = [{
+    observation: 'The static file handler catches stat() failures without binding the error.',
+    where: 'src/server.js',
+    impact: 'A permissions misconfiguration is served as a 404 with nothing logged.',
+    recommendation: 'Bind the error and distinguish ENOENT from the rest.',
+  }];
+  return r;
+}
+
+test('an observation does not stop the agent: a complete report carrying one passes', () => {
+  // This is the whole difference between an observation and a question. A
+  // question halts the agent; an observation is handed over alongside finished
+  // work.
+  assert.deepStrictEqual(validateReport(observing(), 'infra-architect'), []);
+});
+
+test('an observation with no stated impact is rejected', () => {
+  // Without a consequence it is a preference, and preferences filed as
+  // findings are noise in the lead's inbox.
+  const r = observing();
+  delete r.observations[0].impact;
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /missing a "impact"/.test(e)));
+});
+
+test('a fourth observation is rejected', () => {
+  const r = observing();
+  const o = r.observations[0];
+  r.observations = [o, { ...o }, { ...o }, { ...o }];
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /at most 3 are allowed/.test(e)));
+});
+
+/* ---------- the tier echo ---------- */
+
+test('every tier work-tiers defines is accepted by the validator, and nothing else is', () => {
+  // The validator keeps its own tier list, which is a second source of truth
+  // next to the skill. This asserts the two agree behaviourally, so renaming a
+  // tier in the skill without updating the validator fails here rather than
+  // silently rejecting reports at runtime.
+  const skill = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'skills', 'work-tiers', 'SKILL.md'), 'utf8');
+  const section = skill.split('## The three tiers')[1];
+  assert.ok(section, 'work-tiers has no "The three tiers" section');
+  const tiers = [...section.matchAll(/^### ([a-z-]+)$/gm)].map((m) => m[1]);
+  assert.ok(tiers.length >= 2, 'expected work-tiers to define tiers, found ' + tiers.length);
+
+  for (const tier of tiers) {
+    const r = valid();
+    r.tier = tier;
+    assert.deepStrictEqual(validateReport(r, 'infra-architect'), [],
+      `validator rejected the tier "${tier}" that work-tiers defines`);
+  }
+
+  const r = valid();
+  r.tier = 'critical';
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /Unknown tier/.test(e)),
+    'validator accepted a tier work-tiers does not define');
+});
+
+
+/* ---------- regressions from the live auth run ---------- */
+
+function gate(findings) {
+  const r = valid();
+  r.agent = 'code-reviewer';
+  r.verdict = 'pass';
+  r.verification = [];
+  r.findings = findings;
+  return r;
+}
+
+test('a finding carrying its text under an invented key is rejected', () => {
+  // The live run produced 54 findings whose prose sat under "detail" or
+  // "title". The schema has always said "description"; nothing checked, so the
+  // lead read an empty field 54 times.
+  for (const key of ['detail', 'title', 'note']) {
+    const r = gate([{ severity: 'advisory', criterion: null, [key]: 'The 401 and 404 paths share a builder.' }]);
+    const errors = validateReport(r, 'code-reviewer');
+    assert.ok(errors.some((e) => /missing a "description"/.test(e)),
+      `expected a finding using "${key}" to be rejected, got: ${errors.join(' | ')}`);
+  }
+});
+
+test('a well-formed finding with a description passes', () => {
+  const r = gate([{
+    severity: 'advisory',
+    criterion: null,
+    file: 'src/api/metrics.js',
+    description: 'The 401 and 404 paths share a response builder.',
+  }]);
+  assert.deepStrictEqual(validateReport(r, 'code-reviewer'), []);
+});
+
+test('a security review that discusses placeholder credentials is not treated as an unfilled template', () => {
+  // This false positive bounced the security gate four times in the live run
+  // and tripped the give-up valve, on a report whose verdict was correct.
+  // Discussing placeholder secrets is what a security review IS.
+  const r = valid();
+  r.agent = 'security-engineer';
+  r.verdict = 'pass';
+  r.verification = [];
+  r.handoff_notes = 'No secrets committed. No placeholder credentials were left in src/api/metrics.js, and no key is written to any log.';
+  assert.deepStrictEqual(validateReport(r, 'security-engineer'), []);
+});
+
+test('a design review citing the ban on placeholder names is likewise not flagged', () => {
+  // frontend-craft names "placeholder person names" in its banned defaults, so
+  // a craft lens quoting its own standard used to fail the report gate.
+  const r = gate([{
+    severity: 'advisory',
+    criterion: null,
+    description: 'The testimonial section uses placeholder person names, which frontend-craft bans.',
+  }]);
+  assert.deepStrictEqual(validateReport(r, 'code-reviewer'), []);
+});
+
+test('genuinely unfilled template markers are still caught', () => {
+  // Narrowing the detector must not disarm it.
+  for (const marker of ['TODO: wire this up', 'Status: TBD', 'FIXME before merge', 'placeholder text here', 'lorem ipsum dolor']) {
+    const r = valid();
+    r.handoff_notes = marker;
+    const errors = validateReport(r, 'infra-architect');
+    assert.ok(errors.some((e) => /placeholder text/.test(e)),
+      `expected "${marker}" to be caught, got: ${errors.join(' | ') || '(no errors)'}`);
+  }
+});

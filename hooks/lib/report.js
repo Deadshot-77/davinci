@@ -8,7 +8,18 @@ const REQUIRED = [
 ];
 const STATUSES = ['complete', 'blocked', 'needs_input'];
 const VERDICTS = ['pass', 'fail'];
-const PLACEHOLDER = /\b(TODO|TBD|FIXME|lorem ipsum)\b|(^|\n)\s*FILL\b|\bplaceholder\b/i;
+const MAX_QUESTIONS = 2;
+const MAX_OBSERVATIONS = 3;
+// Kept in step with the tiers work-tiers defines; a test asserts they match.
+const TIERS = ['load-bearing', 'standard', 'scaffolding'];
+// Markers of a template nobody filled in. The bare word "placeholder" used to
+// be on this list and was removed: a security review discussing placeholder
+// credentials, or a design review citing frontend-craft's ban on placeholder
+// names, is doing its job, not shipping an unfilled template. In a live run
+// that false positive bounced the security gate four times and tripped the
+// give-up valve on a report whose verdict was correct. An angle-bracket slot
+// or an explicit fill-me marker is evidence; the English word is not.
+const PLACEHOLDER = /\b(TODO|TBD|FIXME|lorem ipsum)\b|(^|\n)\s*FILL\b|\bplaceholder (text|value|content|here)\b|<(your|insert|fill)[ -][^>]*>/i;
 
 function collectStrings(value, out) {
   if (typeof value === 'string') out.push(value);
@@ -75,8 +86,83 @@ function validateReport(report, agentName) {
     });
   }
 
+  // Two rules make the question channel safe to open. A question must carry a
+  // default, because most runs are unattended and an unanswerable question
+  // would otherwise kill the run outright. And asking must mean stopping: an
+  // agent that keeps building past an open question produces work the answer
+  // may invalidate, which is either thrown away or silently kept when it
+  // should have changed.
+  if (Object.prototype.hasOwnProperty.call(report, 'questions')) {
+    if (!Array.isArray(report.questions)) {
+      errors.push('"questions" must be an array.');
+    } else {
+      if (report.questions.length > MAX_QUESTIONS) {
+        errors.push(`questions has ${report.questions.length} entries; at most ${MAX_QUESTIONS} are allowed per report. A third question means the brief was misread -- put that in handoff_notes.`);
+      }
+      if (report.questions.length > 0 && report.status !== 'needs_input') {
+        errors.push(`status is "${report.status}" but the report carries questions. Asking means stopping: report "needs_input" and continue when you are re-dispatched with the answer.`);
+      }
+      report.questions.forEach((q, i) => {
+        if (!q || typeof q !== 'object' || Array.isArray(q)) {
+          errors.push(`questions[${i}] is not an object.`);
+          return;
+        }
+        if (typeof q.question !== 'string' || q.question.trim() === '') {
+          errors.push(`questions[${i}] is missing a "question" string.`);
+        }
+        const opts = q.options;
+        if (!Array.isArray(opts) || opts.length < 2 || opts.length > 4) {
+          errors.push(`questions[${i}] needs an "options" array of two to four concrete choices; an open-ended question cannot be answered by a picker.`);
+        } else if (opts.some((o) => typeof o !== 'string' || o.trim() === '')) {
+          errors.push(`questions[${i}].options contains an empty choice.`);
+        }
+        if (typeof q.default !== 'string' || q.default.trim() === '') {
+          errors.push(`questions[${i}] is missing a "default". Every question states what to do if nobody answers, or an unattended run dies on it.`);
+        } else if (Array.isArray(opts) && opts.length && !opts.includes(q.default)) {
+          errors.push(`questions[${i}].default "${q.default}" is not one of its own options.`);
+        }
+      });
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(report, 'tier') && !TIERS.includes(report.tier)) {
+    errors.push(`Unknown tier "${report.tier}". Must be one of: ${TIERS.join(', ')}.`);
+  }
+
+  // An observation is something noticed in passing and handed to the lead. It
+  // never stops the reporting agent -- that is what separates it from a
+  // question -- so nothing here constrains status. What it must carry is a
+  // consequence: without one it is a preference, and preferences filed as
+  // findings are noise in the lead's inbox.
+  if (Object.prototype.hasOwnProperty.call(report, 'observations')) {
+    if (!Array.isArray(report.observations)) {
+      errors.push('"observations" must be an array.');
+    } else {
+      if (report.observations.length > MAX_OBSERVATIONS) {
+        errors.push(`observations has ${report.observations.length} entries; at most ${MAX_OBSERVATIONS} are allowed per report.`);
+      }
+      report.observations.forEach((o, i) => {
+        if (!o || typeof o !== 'object' || Array.isArray(o)) {
+          errors.push(`observations[${i}] is not an object.`);
+          return;
+        }
+        for (const field of ['observation', 'impact', 'recommendation']) {
+          if (typeof o[field] !== 'string' || o[field].trim() === '') {
+            errors.push(`observations[${i}] is missing a "${field}" string.`);
+          }
+        }
+      });
+    }
+  }
+
   if (Array.isArray(report.findings)) {
     report.findings.forEach((f, i) => {
+      // A finding whose text sits under an invented key is a finding the lead
+      // never reads. A live run produced 54 of them under "detail" and "title"
+      // before this check existed.
+      if (f && (typeof f.description !== 'string' || f.description.trim() === '')) {
+        errors.push(`findings[${i}] is missing a "description" string. The finding text goes in "description" -- not "detail", "title", or "note".`);
+      }
       if (f && f.severity === 'blocking' && (!f.criterion || String(f.criterion).trim() === '')) {
         errors.push(`findings[${i}] is blocking but cites no criterion. Blocking findings must cite a brief criterion; otherwise mark it advisory.`);
       }

@@ -137,6 +137,37 @@ script fails loudly rather than silently, and the agent falls back to
 stating in its report that visual verification was impossible and why —
 never to implying it looked when it did not.
 
+## Agents that think, and know when to stop
+
+A specialist on a real team does not silently fix what is not theirs, and does
+not pretend they did not see it. Two channels carry that, and they behave
+differently on purpose.
+
+**A question stops the agent.** When a builder hits something it genuinely
+cannot resolve — not a craft decision, which is its own, but an ambiguity the
+brief, the stack profile and the code all leave open — it halts where it stands
+and reports `needs_input` with the question attached. It does not pick a
+default and build on it, because the answer can change the shape of what was
+already written. No agent below `davinci` can reach you, so the question travels
+up as structured data and `davinci` asks. Every question carries two to four
+concrete options and a stated default, so an unattended run never dies on one —
+the default is applied and the agent re-dispatched. The validator rejects a
+question with no default, with fewer than two options, or attached to any status
+other than `needs_input`.
+
+**An observation does not stop the agent.** Something noticed in passing, outside
+its own task, goes to the tech lead as an `observations` entry while the agent
+finishes its work. Every entry must name a consequence — something that breaks,
+costs, or misleads — or the validator rejects it as a preference. The lead reads
+the file before ruling and must `act`, `defer`, or `dismiss` each one; acting
+means a new dispatch with its own scope and tier, never "while you're in there".
+Every observation and its ruling reaches you.
+
+How much initiative is expected scales with the tier. On `scaffolding` work, or
+any `trivial` brief, an agent does exactly what was asked and nothing more —
+asked to write hello, it writes hello. On `standard` and `load-bearing` work it
+is expected to think.
+
 ## Spending the budget where it buys quality
 
 The product is the objective. Tokens and wall-clock are the budget spent
@@ -218,7 +249,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     175 tests, zero dependencies
+│  └─ test/                     190 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -236,7 +267,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Eight agents, both hooks, and 175 passing tests. Increment 2's
+Increment 3. Eight agents, both hooks, and 190 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -264,6 +295,10 @@ One gate was skipped: `security-engineer` never ran and left no record. The lead
 **The frontend agent sees its own work.** `scripts/shoot.mjs` drives an already-installed Chromium-family browser headlessly — Edge or Chrome, no dependency and no install — and the agent reads the resulting PNG back with the `Read` tool, which renders images. For three increments the perception loop existed on paper and never executed; every design rule was applied blind.
 
 It changes the output. A status page whose composition left a large dead zone was handed back to the same agent with the same skill and the same model, the only difference being that it could now screenshot and look. It produced a full-bleed layout that owns the viewport, kept the direction it was told to keep, and balanced what had been empty space. The before-and-after is in [docs/seeing-loop.md](docs/seeing-loop.md).
+**The tiering run.** A live run built API-key authentication on the existing service and produced the first evidence that the spend rubric works: the lead set `model` explicitly on twelve of seventeen dispatches — Opus for the auth build and the load-bearing review fan-out, Sonnet for the README and `.editorconfig`. The builder ran the mandatory revision pass, recorded its deletion pass, and went further than asked, proving its own suite could fail with a six-mutant battery against the new module. The scope hook denied `backend-engineer` the README and the lead re-routed it to the agent that owns `*.md`.
+
+It also found three defects, now fixed: 54 findings filed their prose under invented keys because nothing validated `description`; the placeholder detector bounced the security gate four times for writing the word "placeholder" in a sentence about placeholder credentials; and `davinci` on the main thread receives neither its declared skills nor its declared tools, which killed the first attempt outright. The full record is in [docs/live-run-auth.md](docs/live-run-auth.md).
+
 **Known limits, stated plainly.**
 
 - Nobody has seen the page with their own eyes in an automated session. The browser pane does not composite headlessly, so verification here was structural — the rendered DOM read back — not visual. `frontend-craft`'s perception loop has a third tier for exactly this case: say so rather than imply you looked. That applies to the tooling used in this run as much as it applies to the agent.

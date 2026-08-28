@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.10.0
+
+Agents that think, and know when to stop. Two channels reach up out of a
+dispatch. A `questions` array halts the asking agent — it reports `needs_input`
+rather than building past an open question, because the answer can change what
+it already wrote — and travels to `davinci`, the only agent that can reach the
+user. Every question carries options and a default, so an unattended run applies
+the default and continues instead of dying. An `observations` array does not halt
+anyone: it hands the lead something noticed in passing, and the lead must read
+the file and rule `act`, `defer`, or `dismiss` on every one. Initiative scales
+with the tier — on scaffolding an agent does exactly what was asked.
+
+Fixes three defects a live tiering run exposed. Findings must now carry their
+text in `description`; the run filed 54 under `detail` and `title` and nothing
+checked. The placeholder detector no longer matches the bare English word, which
+had bounced the security gate four times for discussing placeholder credentials.
+And `davinci` carries its closed classification set, its unattended rule, and its
+relay duty in its own body, because a main-thread agent receives neither its
+declared skills nor its declared tools.
+
 ## 0.9.0
 
 Spend and strictness become one decision. Adds the `work-tiers` skill: the lead

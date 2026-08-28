@@ -97,6 +97,67 @@
           }
         }
       }
+    },
+    "questions": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "options",
+          "default"
+        ],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tier": {
+      "enum": [
+        "load-bearing",
+        "standard",
+        "scaffolding"
+      ]
+    },
+    "observations": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "observation",
+          "impact",
+          "recommendation"
+        ],
+        "properties": {
+          "observation": {
+            "type": "string"
+          },
+          "where": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }
