@@ -35,8 +35,28 @@ function validateReport(report, agentName) {
     errors.push(`Unknown status "${report.status}". Must be one of: ${STATUSES.join(', ')}.`);
   }
 
+  // A report that carries a "verdict" key at all is a gate or lens judging
+  // someone else's work, whatever its agent name -- that is the one signal
+  // this pure layer has to go on. Its value gets the same literal-match
+  // treatment as status: no "pass-with-findings", no third option. A review
+  // that passes with non-blocking issues is verdict "pass" plus those issues
+  // as severity "advisory" findings; that field is what already carries the
+  // nuance a hedge value would be reaching for.
+  const hasVerdict = Object.prototype.hasOwnProperty.call(report, 'verdict');
+  if (hasVerdict && !VERDICTS.includes(report.verdict)) {
+    errors.push(`Unknown verdict "${report.verdict}". Must be one of: ${VERDICTS.join(', ')}.`);
+  }
+
   if (report.status === 'complete') {
-    if (!Array.isArray(report.verification) || report.verification.length === 0) {
+    // Builders prove "complete" with commands; gates prove it with a
+    // verdict. The verification rule exists so a builder cannot claim "I
+    // ran the tests" by assertion -- but a read-only reviewer's work IS
+    // reading code. It often has no write tools and no permission to run
+    // commands, so forcing a shell command out of it just to satisfy this
+    // check invites exactly the fabrication the rule was written to
+    // prevent. A report that carries a verdict is exempted from the
+    // verification requirement; every other agent's rule is unchanged.
+    if (!hasVerdict && (!Array.isArray(report.verification) || report.verification.length === 0)) {
       errors.push('status "complete" requires at least one verification entry with a real command and exit code.');
     }
     if (!Array.isArray(report.criteria_addressed) || report.criteria_addressed.length === 0) {

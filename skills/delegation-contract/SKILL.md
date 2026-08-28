@@ -88,3 +88,28 @@ If you are a gate, your report is every field above PLUS `verdict` and
 `findings` — not those two alone. Every finding with `severity: "blocking"`
 MUST cite a `criterion` from the brief. A concern that maps to no criterion is
 `severity: "advisory"` and never blocks.
+
+Builders prove completion with commands; gates prove it with a verdict — a
+gate's `status: "complete"` requires a `verdict` instead of a `verification`
+entry, because reading code is a gate's actual work and forcing a shell
+command out of a read-only reviewer only invites a fabricated one.
+
+## `status` — exactly one of three values
+
+`status` is exactly one of `complete`, `blocked`, `needs_input`. Lowercase,
+no other spelling, no synonym. A hook matches on the literal string: it does
+not infer intent, so `partial`, `done`, `in_progress`, or anything else you
+think describes your situation better is rejected outright and you will be
+sent back to fix it.
+
+## `verdict` — exactly one of two values, and why there is no third
+
+If you report a `verdict`, it is exactly `pass` or `fail`. Lowercase, no
+other spelling. There is no middle value, and you do not need one.
+
+**A review that passes while raising non-blocking issues is `verdict: "pass"`
+with those issues listed as `severity: "advisory"` findings.** That is what
+the severity field is for — it already carries the nuance a hedge like
+`pass-with-findings` is reaching for. Invent a third verdict value and your
+report is rejected; put the nuance in `findings` and it is accepted the first
+time.

@@ -138,6 +138,66 @@ test('TODO in handoff_notes is still rejected even though verification is exempt
   assert.ok(errors.some((e) => /placeholder/i.test(e)));
 });
 
+// --- builders prove completion with commands; gates prove it with a verdict ---
+//
+// A live review-lens fan-out produced a "silent-failure" lens report with
+// status "complete" and no verification entries, which the old rule
+// rejected -- but a read-only reviewer's work IS reading code. It has no
+// write tools and often no permission to run commands, so demanding a shell
+// command to prove it reviewed something just invites a fabricated one. The
+// fix: a report that carries a "verdict" key proves completion with that
+// verdict instead of a verification entry. Every other agent's rule (real
+// commands, real exit codes) is unchanged.
+
+function gateReport(overrides) {
+  return Object.assign({
+    agent: 'review-lens',
+    status: 'complete',
+    files_changed: [],
+    criteria_addressed: ['AC-1'],
+    verification: [],
+    assumptions: [],
+    handoff_notes: 'Reviewed the diff; nothing blocking.',
+    verdict: 'pass',
+    findings: [],
+  }, overrides);
+}
+
+test('a gate report with verdict "pass", status "complete" and empty verification is accepted', () => {
+  assert.deepStrictEqual(validateReport(gateReport(), 'review-lens'), []);
+});
+
+test('a builder report with status "complete" and empty verification is still rejected', () => {
+  const r = valid();
+  r.verification = [];
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /verification/.test(e)));
+});
+
+test('a report with status "partial" is rejected and the message names the three legal values', () => {
+  const r = valid();
+  r.status = 'partial';
+  const errors = validateReport(r, 'infra-architect');
+  const msg = errors.find((e) => /status/i.test(e));
+  assert.ok(msg, 'expected a status-related error');
+  assert.match(msg, /complete/);
+  assert.match(msg, /blocked/);
+  assert.match(msg, /needs_input/);
+});
+
+test('a report with verdict "pass-with-findings" is rejected and the message names the two legal values', () => {
+  const r = gateReport({ verdict: 'pass-with-findings' });
+  const errors = validateReport(r, 'review-lens');
+  const msg = errors.find((e) => /verdict/i.test(e));
+  assert.ok(msg, 'expected a verdict-related error');
+  assert.match(msg, /pass/);
+  assert.match(msg, /fail/);
+});
+
+test('a gate report with verdict "pass" and zero findings is accepted', () => {
+  const r = gateReport({ findings: [] });
+  assert.deepStrictEqual(validateReport(r, 'review-lens'), []);
+});
+
 test('a gate report without a verdict is rejected', () => {
   assert.ok(validateGateReport(valid()).some((e) => /verdict/.test(e)));
 });
