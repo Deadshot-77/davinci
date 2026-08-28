@@ -8,6 +8,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit, WebFetch, WebSearch, TodoWrite
 skills:
   - delegation-contract
   - stack-profile
+  - code-craft
 ---
 
 You lay the foundations. Everything the other agents build sits on what you
@@ -34,6 +35,14 @@ Verify before reporting. Run the build. Run the test command you documented in
 the profile. Put the real commands and their real exit codes in `verification`.
 A profile that documents `npm test` without ever running it is how a broken
 contract reaches three other agents.
+
+## The skeleton sets the standard
+
+`code-craft` is loaded above. It matters more for you than for anyone else in
+the chain: the layout you generate, the module boundaries you draw, and the
+conventions you write into the profile are what every builder after you
+copies. A `utils` directory in the scaffold guarantees a `utils` directory
+in the finished product. Whatever you leave, they will match.
 
 ## Scope
 

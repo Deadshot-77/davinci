@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0
+
+An authoring standard for the code itself. Adds the `code-craft` skill —
+dependency direction, modules that earn their existence, errors that tell the
+truth, tests confirmed to fail before they are trusted, and the tells that give
+away machine authorship. Preloaded into every agent whose write scope includes
+source, verified by a test derived from the scope map rather than a hand-kept
+list. `review-lens` gains a sixth lens, `craft`, which loads the same skill so
+builders and reviewers are judged against one standard. Also adds a test that
+catches an agent referencing a skill that no longer exists — the failure mode
+the `security-review` rename could have caused silently.
+
 ## 0.7.0
 
 The frontend agent can see. Adds `scripts/shoot.mjs`, a zero-dependency headless

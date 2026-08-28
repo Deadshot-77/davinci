@@ -19,7 +19,7 @@ The name is the architecture: Leonardo ran a *bottega*, a workshop where the mas
 | `frontend-engineer` | Opus 5 | high | Art direction and build — owns markup, components, styles | scoped |
 | `security-engineer` | Opus 5 | xhigh | Audits changed code; reports, never patches | nothing |
 | `code-reviewer` | Opus 5 | high | Foundation gate, then code review | nothing |
-| `review-lens` | Opus 5 | high | One review lens — correctness, silent-failure, types, tests or secrets | nothing |
+| `review-lens` | Opus 5 | high | One review lens — correctness, silent-failure, types, tests, secrets or craft | nothing |
 
 ## How it works
 
@@ -135,6 +135,33 @@ script fails loudly rather than silently, and the agent falls back to
 stating in its report that visual verification was impossible and why —
 never to implying it looked when it did not.
 
+## Code that reads as though a person wrote it
+
+Seeing fixed how the output looks. `code-craft` is the same argument applied to
+what is underneath it: the authoring standard every agent that can write source
+carries into the job, rather than a checklist a reviewer applies afterwards.
+
+The average of every repository in a training set has a shape — everything
+imports everything, nothing is ever deleted, every error is caught and
+discarded, and whatever fits nowhere lands in `utils`. It compiles and it
+passes a glance. The skill names that shape and rules it out: read the
+neighbouring files before writing so the change belongs; read each changed file
+whole after the last edit, because a patch never shows you what you assembled;
+take a deletion pass and record its result either way; keep dependency running
+one direction; handle an error or propagate it but never both and never
+neither; and confirm a new test fails against the unfixed code before trusting
+it.
+
+It is enforced at both ends. Every agent whose write scope includes source
+preloads it — checked by a test that derives the list from the scope map, so an
+agent added later with a source scope fails the suite rather than shipping
+without the standard. And `review-lens` gained a sixth lens, `craft`, which loads
+the same skill and reviews against it, so builders and reviewers are held to one
+standard instead of two.
+
+See [docs/code-craft.md](docs/code-craft.md) for what it found when applied to
+the team's own output.
+
 ## Layout
 
 ```
@@ -142,15 +169,15 @@ davinci/
 ├─ .claude-plugin/plugin.json   plugin manifest
 ├─ settings.json                declares davinci as the main thread
 ├─ permissions.example.json     verification-only permission profile for agents
-├─ agents/                      the seven agent definitions
-├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft, security review
+├─ agents/                      the eight agent definitions
+├─ skills/                      intake, delegation contract, stack profile, foundation review, frontend craft, code craft, security audit
 ├─ scripts/
 │  └─ shoot.mjs                 zero-dependency headless screenshot tool
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     170 tests, zero dependencies
+│  └─ test/                     173 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -168,7 +195,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, both hooks, and 170 passing tests. Increment 2's
+Increment 3. Eight agents, both hooks, and 173 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -202,7 +229,7 @@ It changes the output. A status page whose composition left a large dead zone wa
 - A full chain run took upwards of fifteen minutes and was truncated more than once.
 - `frontend-engineer` filed no report in the run that produced the page above; it was most likely still being bounced by the report gate when the run was cut off.
 - Browser-MCP access under a `tools:` allowlist is confirmed by mechanism — an explicit allowlist drops unnamed MCP tools, so named ones are kept — but has never been directly sighted, because no test environment so far has had that server connected. The `claude` CLI itself carries no browser MCP at all.
-- `backend-engineer` and `security-engineer` are built and wired — scope map, roster allowlists, `SubagentStop` matcher — but have never run. No backend or security work has been routed through a live session, so nothing about their actual behavior is confirmed yet, only their governance.
+- `security-engineer` is built and wired — scope map, roster allowlists, `SubagentStop` matcher — but has never run. No security work has been routed through a live session, so nothing about its actual behaviour is confirmed yet, only its governance. `backend-engineer` has since run as part of the full chain.
 
 And `davinci` itself, running as the main thread, is still **not** governed by the write-scope hook: a main-thread agent presents no agent identity to hooks, so its "brief only" restriction is protocol, not enforcement.
 

@@ -8,6 +8,7 @@ tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, Skill, WebFetch, WebSearc
 skills:
   - delegation-contract
   - frontend-craft
+  - code-craft
 # mcpServers:
 #   <your-media-server-name>: {}
 #   # add your own connected generated-media MCP server here — its identifier
@@ -40,6 +41,15 @@ tool nor a browser preview MCP is available — follow it exactly, don't
 improvise a shortcut. Never report work you have not looked at; "I wrote the
 styles" and "I confirmed the page renders correctly" are different claims,
 and only the second belongs in a report marked complete.
+
+## The code underneath is judged too
+
+`frontend-craft` governs what the interface looks like; `code-craft`, also
+loaded above, governs how the code that produces it is built — component
+boundaries, one direction of dependency, error handling that surfaces rather
+than hides, and no `utils` file standing in for a decision. A screen that
+looks designed and is built out of one eight-hundred-line component has
+failed half the brief.
 
 ## Scope
 
