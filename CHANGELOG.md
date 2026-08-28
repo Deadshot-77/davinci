@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.0
+
+Agents ask about decisions they could have made. The bar was three conditions
+joined by AND, and the first -- 'you cannot proceed correctly without the
+answer' -- filtered out nearly everything, because a competent agent can almost
+always proceed. Two live runs produced zero questions: the builder chose a
+client-identity scheme, documented why, and shipped.
+
+It is now two cases joined by OR. Either the agent cannot proceed, on any tier;
+or the task is load-bearing and the choice is expensive to reverse -- what
+identifies a client, the shape of stored data, a public contract, where state
+lives -- in which case it asks even though it could proceed. Reading the brief,
+the profile and the code first is still required in both cases, craft decisions
+stay the agent's own on every tier, and standard and scaffolding work are
+untouched.
+
+
 ## 0.11.0
 
 Three defects a live rate-limiting run exposed.

@@ -154,14 +154,31 @@ exist in your context, so there is nothing to try. What you have instead is a
 `questions` array on your report, which `tech-lead` carries up to `davinci`,
 who asks on your behalf and sends the answer back down on a re-dispatch.
 
-Use it when you genuinely stumble, and not otherwise. All three must hold:
+**Read first, always.** The brief, `.devteam/stack-profile.md`, and the code in
+front of you answer most of what looks like a question. One you could have
+answered by looking wastes a round trip through three agents, and it is the
+fastest way to make the channel something people learn to ignore.
 
-1. You cannot proceed correctly without the answer.
-2. The brief, `.devteam/stack-profile.md`, and the code in front of you do not
-   already answer it. Read before you ask; a question you could have answered
-   by looking wastes a round trip through three agents.
-3. Different answers lead to materially different work that is expensive to
-   undo once built.
+Having read, ask in either of these two cases.
+
+**One — you cannot proceed correctly without the answer.** Any tier. You are
+stuck, and anything you wrote next would be a guess.
+
+**Two — the tier is `load-bearing` and the choice is expensive to reverse.**
+Ask even though you could proceed. This is the case that matters, and the one
+you will most easily talk yourself out of, because you are competent enough to
+pick something defensible. A decision that fixes a shape other work is then
+built on — what identifies a client, the shape of stored data, a public route
+or response contract, an authorisation model, where state lives — costs one
+round trip now and costs a rewrite of everything downstream later.
+
+"I could choose one and document it under `assumptions`" is true, and it is not
+the test. The test is what it costs if the choice turns out to be wrong. If the
+answer is "one file", decide it. If the answer is "everything built on top of
+it", ask.
+
+On `standard` and `scaffolding` work only the first case applies: decide,
+record it under `assumptions`, and carry on.
 
 ### Asking means stopping
 
@@ -180,8 +197,14 @@ is rejected.
 
 Never ask about a decision that is yours: naming, file structure, which test to
 write, how to handle an error. Those are craft, and `code-craft` already
-governs them. Never ask the user to choose between things you have not
-evaluated.
+governs them — they stay yours on a load-bearing task too, however consequential
+the file. The reversibility case is about a shape other work binds itself to,
+not about how carefully you write the code that holds it.
+
+Never ask the user to choose between things you have not evaluated. The two
+questions per report are a real ceiling, not a target: if a load-bearing task
+seems to contain four irreversible forks, the brief was misread or the task
+should have been split, and that belongs in `handoff_notes`.
 
 **Every question carries its own default.** That is what keeps a run from
 dying: most runs are unattended, and when nobody answers, `davinci` applies

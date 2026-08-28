@@ -161,3 +161,24 @@ test('CRAFT is never described as blocking without its load-bearing restriction'
   assert.deepStrictEqual(unrestricted, [],
     'agent(s) cite CRAFT without restricting it to load-bearing work: ' + unrestricted.join(', '));
 });
+
+test('the tier that gates the reversibility question is one work-tiers defines', () => {
+  // The asking rule in delegation-contract turns on a literal tier name. Rename
+  // the tier in work-tiers and the rule silently stops applying to anything --
+  // agents keep reading a condition that can never be true, and the second
+  // trigger disappears without an error anywhere.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'work-tiers', 'SKILL.md'), 'utf8');
+  const section = skill.split('## The three tiers')[1];
+  assert.ok(section, 'work-tiers has no "The three tiers" section');
+  const tiers = [...section.matchAll(/^### ([a-z-]+)$/gm)].map((m) => m[1]);
+
+  const contract = fs.readFileSync(
+    path.join(SKILLS_DIR, 'delegation-contract', 'SKILL.md'), 'utf8');
+  const asking = contract.split('## Asking a question')[1];
+  assert.ok(asking, 'delegation-contract has no "Asking a question" section');
+
+  const named = tiers.filter((t) => asking.includes(t));
+  assert.ok(named.includes('load-bearing'),
+    'the asking rule names a tier work-tiers does not define, or work-tiers no longer ' +
+    'defines load-bearing; the reversibility trigger would never fire. tiers: ' + tiers.join(', '));
+});

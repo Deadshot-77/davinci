@@ -146,10 +146,15 @@ A specialist on a real team does not silently fix what is not theirs, and does
 not pretend they did not see it. Two channels carry that, and they behave
 differently on purpose.
 
-**A question stops the agent.** When a builder hits something it genuinely
-cannot resolve — not a craft decision, which is its own, but an ambiguity the
-brief, the stack profile and the code all leave open — it halts where it stands
-and reports `needs_input` with the question attached. It does not pick a
+**A question stops the agent.** Two things earn one, and only after the brief,
+the stack profile and the code have been read: the agent cannot proceed without
+the answer, or the task is `load-bearing` and the choice is expensive to reverse
+— what identifies a client, the shape of stored data, a public contract, where
+state lives. The second case is deliberate: an agent competent enough to pick
+something defensible will otherwise decide every one of those for you and tell
+you afterwards. Craft decisions stay the agent's own on any tier. When one is
+earned, the agent halts where it stands and reports `needs_input` with the
+question attached. It does not pick a
 default and build on it, because the answer can change the shape of what was
 already written. No agent below `davinci` can reach you, so the question travels
 up as structured data and `davinci` asks. Every question carries two to four
@@ -252,7 +257,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     199 tests, zero dependencies
+│  └─ test/                     200 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -270,7 +275,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Eight agents, both hooks, and 199 passing tests. Increment 2's
+Increment 3. Eight agents, both hooks, and 200 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
