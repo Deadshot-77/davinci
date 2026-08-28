@@ -3,6 +3,7 @@
 const { PLACEHOLDER } = require('./report.js');
 const { parseJson } = require('./json.js');
 const { matchAny } = require('./glob.js');
+const { effectiveScopeMap } = require('./scope-map.js');
 
 const REQUIRED_SECTIONS = [
   'Framework', 'Language', 'Package manager', 'Directory map',
@@ -152,6 +153,16 @@ function parseDirectoryMapRows(sectionText) {
 // A row whose owner is not a key in scopeMap is not a scope conflict --
 // it names something the write-scope hook does not govern at all (a typo,
 // a team name, a future agent), so there is nothing to contradict.
+// The foundation gate is where a bad project scope map must be caught: the
+// hook falls back to the shipped map rather than failing open, so an invalid
+// file would otherwise take effect as silence -- infra believing it had set the
+// scopes while nothing changed.
+function projectScopeMapErrors(projectMapText, shippedMap) {
+  if (typeof projectMapText !== 'string' || projectMapText.trim() === '') return [];
+  const { errors } = effectiveScopeMap(shippedMap, projectMapText);
+  return errors;
+}
+
 function scopeConflicts(profileText, scopeMap) {
   if (typeof profileText !== 'string' || profileText.trim() === '') return [];
   const sections = parseSections(profileText);
@@ -179,6 +190,7 @@ function scopeConflicts(profileText, scopeMap) {
 }
 
 module.exports = {
+  projectScopeMapErrors,
   validateFoundation, REQUIRED_SECTIONS, parseSections,
   requiresStackProfile, scaffoldEvidence, scopeConflicts,
 };

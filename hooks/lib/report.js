@@ -180,7 +180,7 @@ function validateReport(report, agentName) {
 
   for (const s of collectStrings(scanTarget, [])) {
     if (PLACEHOLDER.test(s)) {
-      errors.push(`Report contains placeholder text: "${s.slice(0, 60)}"`);
+      errors.push(`Report contains an unfilled template marker: "${s.slice(0, 60)}"`);
       break;
     }
   }

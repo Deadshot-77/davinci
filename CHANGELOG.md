@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.14.0
+
+Scopes the project declares, not scopes the plugin assumes. The shipped map fits
+one shape of project: Next.js hands all of app/** to the frontend so app/api/**
+route handlers land with the wrong agent, Astro pages and content match nothing,
+a PHP CMS matches nothing at all. Three consecutive runs stranded a builder on
+it, and in the third the agent stopped and asked -- the first question the
+channel has ever carried.
+
+infra-architect now writes .devteam/scope-map.json beside the stack profile,
+the foundation gate reviews it, and the hook enforces it. Absent, unparseable or
+invalid falls back to the shipped map -- never to an empty one, which would mean
+no governance at all. An agent the map omits keeps its shipped scope.
+
+Four rules hold whatever a map says: only agents that ship, scopes stay disjoint,
+nothing under .devteam/ beyond an agent own scratch (so a map cannot widen
+itself), and a gate can never be given source scope.
+
+Also fixes a detector that flagged its own rejection message: an agent told
+"Report contains placeholder text" quoted that back and was rejected for
+containing it, four attempts and the give-up valve, in two separate runs. A test
+now asserts the detector matches nothing the validator emits.
+
+
 ## 0.13.0
 
 The entry point works. It was broken two different ways at once, and both are

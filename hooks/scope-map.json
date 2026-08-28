@@ -18,7 +18,8 @@
     "*.txt",
     ".editorconfig",
     ".nvmrc",
-    "LICENSE"
+    "LICENSE",
+    ".devteam/scope-map.json"
   ],
   "backend-engineer": [
     "src/api/**",

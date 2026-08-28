@@ -26,15 +26,46 @@ is present and non-empty, that none contains placeholder text, and that the
 framework you declare actually appears in `package.json`. An unfilled section
 fails the gate — it does not pass with a note.
 
-## The Directory map must assign paths agents can actually write
+## The Directory map and `.devteam/scope-map.json` are the same decision
 
-A hook enforces write scope independently of this document, and it does not
-consult the Directory map to decide who may write where. Only assign a path
-in the Directory map to an agent whose write scope actually covers it — if
-the natural layout for this project needs a path outside every candidate
-owner's scope, say so in the profile and report it as a blocker rather than
-assigning it anyway and leaving the builder to discover the contradiction
-when its write is refused.
+A hook enforces write scope, and it does not read your Directory map. What it
+reads is `.devteam/scope-map.json` — which you also write, from the same
+decision, at the same time. Write both or neither. A Directory map with no
+matching scope map is a contract with no enforcement behind it, and a builder
+discovers the gap only when its write is refused three stages later. That has
+happened in three separate runs.
+
+The shipped default fits one shape of project — `src/api/**`, `src/app/**`,
+`test/**`. Astro's `src/pages/**` and `src/content/**` match nothing in it. A
+Next.js layout hands all of `app/**` to the frontend, so `app/api/**` route
+handlers land with the wrong agent. Declare the real layout instead of bending
+the project to fit the default:
+
+```json
+{
+  "frontend-engineer": ["src/pages/**", "src/content/**", "src/layouts/**", "public/**"],
+  "backend-engineer": ["src/lib/server/**", "db/**", "tests/server/**"]
+}
+```
+
+Omit an agent and it keeps its shipped scope; you are specialising, not
+redefining. Four rules are enforced, and a map that breaks any of them is
+ignored in favour of the shipped one — so the foundation gate rejects it rather
+than letting you believe it took:
+
+- Only agents this plugin ships. A map cannot invent one.
+- Scopes must be disjoint. Two builders dispatched together write concurrently.
+- Nothing under `.devteam/` except an agent's own
+  `.devteam/scratch/<agent>/**`. Reports, the brief, the profile and the scope
+  map itself are the hook's ground — a map that could widen itself is not a
+  boundary.
+- A gate stays a gate. `code-reviewer`, `review-lens` and `security-engineer`
+  cannot be given source scope; a reviewer that can patch its own findings is
+  grading its own homework.
+
+Every path in the Directory map must be covered by the scope map you wrote. If
+the natural layout needs something the rules above forbid, say so in the profile
+and report it as a blocker rather than assigning it anyway.
 
 ## Be specific enough to remove judgement
 

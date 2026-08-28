@@ -7,6 +7,7 @@ const { decideScope } = require('./lib/scope.js');
 const { decideBash } = require('./lib/bash.js');
 const { parseJson } = require('./lib/json.js');
 const { knownAgents } = require('./lib/agents.js');
+const { effectiveScopeMap } = require('./lib/scope-map.js');
 
 function main() {
   let input;
@@ -16,13 +17,29 @@ function main() {
     process.exit(0); // Unparseable input: never block an ordinary session.
   }
 
-  let scopeMap;
+  let shippedMap;
   try {
-    scopeMap = parseJson(fs.readFileSync(path.join(__dirname, 'scope-map.json'), 'utf8'));
+    shippedMap = parseJson(fs.readFileSync(path.join(__dirname, 'scope-map.json'), 'utf8'));
   } catch (err) {
     process.stderr.write('davinci: scope-map.json unreadable: ' + err.message + '\n');
     process.exit(0);
   }
+
+  // A project may declare its own layout. An absent, unparseable or invalid one
+  // leaves the shipped map in force -- never an absent map, which would mean no
+  // governance at all.
+  const projectMapPath = path.join((input && input.cwd) || process.cwd(), '.devteam', 'scope-map.json');
+  let projectMapText = '';
+  try {
+    if (fs.existsSync(projectMapPath)) projectMapText = fs.readFileSync(projectMapPath, 'utf8');
+  } catch (err) {
+    projectMapText = '';
+  }
+  const effective = effectiveScopeMap(shippedMap, projectMapText);
+  if (effective.errors.length) {
+    process.stderr.write('davinci: ignoring .devteam/scope-map.json: ' + effective.errors[0] + '\n');
+  }
+  const scopeMap = effective.map;
 
   // Read once, here, so scope.js stays pure and testable.
   const cwd = (input && input.cwd) || process.cwd();

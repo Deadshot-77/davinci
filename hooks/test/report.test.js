@@ -54,10 +54,10 @@ test('verification entry without a real exit code is reported', () => {
   assert.ok(validateReport(r, 'infra-architect').some((e) => /exit_code/.test(e)));
 });
 
-test('placeholder text anywhere is reported', () => {
+test('an unfilled template marker anywhere is reported', () => {
   const r = valid();
   r.handoff_notes = 'TODO: finish this';
-  assert.ok(validateReport(r, 'infra-architect').some((e) => /placeholder/i.test(e)));
+  assert.ok(validateReport(r, 'infra-architect').some((e) => /unfilled template marker/i.test(e)));
 });
 
 test('blocked status does not require verification', () => {
@@ -135,7 +135,7 @@ test('TODO in handoff_notes is still rejected even though verification is exempt
   }];
   r.handoff_notes = 'TODO: still need to wire this up';
   const errors = validateReport(r, 'infra-architect');
-  assert.ok(errors.some((e) => /placeholder/i.test(e)));
+  assert.ok(errors.some((e) => /unfilled template marker/i.test(e)));
 });
 
 // --- builders prove completion with commands; gates prove it with a verdict ---
@@ -579,7 +579,44 @@ test('genuinely unfilled template markers are still caught', () => {
     const r = valid();
     r.handoff_notes = marker;
     const errors = validateReport(r, 'infra-architect');
-    assert.ok(errors.some((e) => /placeholder text/.test(e)),
+    assert.ok(errors.some((e) => /unfilled template marker/.test(e)),
       `expected "${marker}" to be caught, got: ${errors.join(' | ') || '(no errors)'}`);
   }
+});
+
+
+test('the placeholder detector never matches the message it emits', () => {
+  // It used to. An agent rejected for "Report contains placeholder text: ..."
+  // quoted that sentence in its next report and was rejected for the same
+  // reason, every time -- four attempts and the give-up valve, in two separate
+  // live runs. A detector that flags its own output cannot be escaped by
+  // fixing anything.
+  const { PLACEHOLDER } = require('../lib/report.js');
+  const r = valid();
+  r.handoff_notes = 'x'.repeat(80);
+  // Provoke a real rejection, then feed every message it produced back through
+  // the detector.
+  const provoked = valid();
+  provoked.handoff_notes = 'TODO: finish this';
+  const messages = validateReport(provoked, 'infra-architect');
+  assert.ok(messages.length > 0, 'expected the provoked report to be rejected');
+
+  const selfMatching = messages.filter((m) => PLACEHOLDER.test(m.replace(/"[^"]*"/g, '""')));
+  assert.deepStrictEqual(selfMatching, [],
+    'the validator emits a message that its own placeholder detector matches, so quoting ' +
+    'the rejection re-triggers it: ' + selfMatching.join(' | '));
+});
+
+test('an agent quoting its own rejection is not rejected again for quoting it', () => {
+  // The end-to-end form of the rule above, and the shape the live failure
+  // actually took.
+  const provoked = valid();
+  provoked.handoff_notes = 'TODO: finish this';
+  const messages = validateReport(provoked, 'infra-architect');
+
+  const quoting = valid();
+  quoting.handoff_notes = 'The gate rejected my previous report. It said: ' +
+    messages.find((m) => /template marker/.test(m)).replace(/"[^"]*"/, '"<the offending text>"');
+  assert.deepStrictEqual(validateReport(quoting, 'infra-architect'), [],
+    'quoting the rejection is itself rejected, which is a loop no agent can exit');
 });

@@ -26,6 +26,15 @@ inconsistent work across three agents who never see each other's output.
    gate and then be refused when that builder tries to write it.
 5. **Fit.** Does this foundation actually serve the brief, or is it a generic
    scaffold that ignores what was asked for?
+6. **Enforceability.** Is there a `.devteam/scope-map.json`, and does it
+   actually parse and validate? This is the one check the runtime cannot make
+   for you: an invalid map is ignored in favour of the shipped default, so infra
+   believes it set the project's scopes and nothing changed. Read the file, and
+   fail the gate if it names an agent that does not ship, gives a gate source
+   scope, assigns anything under `.devteam/` beyond an agent's own scratch,
+   escapes the project, or hands one glob to two agents. If it is absent
+   entirely, the shipped default applies — say so in your findings so the choice
+   is on record rather than an oversight.
 
 ## Verdict
 
