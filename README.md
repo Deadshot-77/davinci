@@ -130,7 +130,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     150 tests, zero dependencies
+│  └─ test/                     159 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -148,7 +148,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, both hooks, and 150 passing tests. Increment 2's
+Increment 3. Seven agents, both hooks, and 159 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
@@ -170,6 +170,9 @@ including three defects that run exposed, is in
 Three concurrency defects surfaced only under fan-out and are fixed: report filenames assumed one instance per agent type, the give-up counter was shared across instances of the same type, and the status/verdict vocabularies were loose enough that agents invented values like `partial` and `pass-with-findings`. A fourth is documented rather than fixed: roughly one lens instance per run still files a report without a verdict, exhausts its four attempts and trips the give-up valve. The run degrades correctly — that instance fails loudly and leaves a `GATE-FAILED` record while its siblings and the gate complete normally.
 
 
+**The full chain runs end to end.** In a single pass, `davinci` → `tech-lead` → `infra-architect` → foundation gate → `backend-engineer` + `frontend-engineer` → a review lens produced a working service-status page: a health endpoint, a server entry point, a page and stylesheet, a manifest, and a test that genuinely runs and passes. All six reports filed were valid, no report was rejected, and the give-up valve never fired. Both builders reported `complete` — also a first. Across the run the agents executed real commands and recorded real exit codes rather than empty verification arrays.
+
+One gate was skipped: `security-engineer` never ran and left no record. The lead now treats both gates as mandatory and must declare a gate explicitly rather than omit it — that change is unexercised. The full record, including the contract-versus-enforcement defect an earlier attempt exposed, is in [docs/full-chain-run.md](docs/full-chain-run.md).
 **Known limits, stated plainly.**
 
 - Nobody has seen the page with their own eyes in an automated session. The browser pane does not composite headlessly, so verification here was structural — the rendered DOM read back — not visual. `frontend-craft`'s perception loop has a third tier for exactly this case: say so rather than imply you looked. That applies to the tooling used in this run as much as it applies to the agent.

@@ -43,6 +43,15 @@ small still gets a real gate verdict before it is reported done. This
 routing applies only when `Route: direct` is present; bounded and
 architectural briefs always run the full foundation-first sequence above.
 
+## Both gates are mandatory
+
+A run is not closed until BOTH `code-reviewer` and `security-engineer` have
+returned a verdict. Skipping the security gate because the change looks harmless
+is the judgement it exists to replace — an unauthenticated route or a committed
+credential does not announce itself, and the builder that introduced it is the
+least able to see it. If a gate genuinely does not apply, say so explicitly in
+your report to `davinci`; never simply omit it.
+
 ## Every dispatch names four things
 
 - `brief` — the path `.devteam/brief.md`

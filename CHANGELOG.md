@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+
+The full chain runs end to end and produces working software. Adds the fix that
+made it possible: the foundation gate now validates every Directory map assignment
+in the stack profile against the real write-scope map, so a contract that assigns a
+path an agent cannot write fails at the gate instead of stranding a builder three
+stages later. The scope map is widened for the layouts profiles reasonably choose,
+and the lead now treats both gates as mandatory after a run silently skipped the
+security review.
+
 ## 0.5.0
 
 Parallel review fan-out, verified live. Four `review-lens` agents run concurrently at
