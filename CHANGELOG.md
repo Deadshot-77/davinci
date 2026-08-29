@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.16.0
+
+The mobile screenshot was lying. A desktop OS refuses to make a browser window
+narrower than roughly 480-500 CSS pixels, so --window-size=390,844 laid the page
+out at 496px and wrote a PNG cropped to 390: a desktop render indistinguishable
+from a broken mobile layout. Every mobile screenshot this tool took on Windows
+was that, and the mobile pass frontend-craft mandates was silently useless.
+
+Measured with a probe page that renders its own window.innerWidth: 496 at scale
+factor 1 and 483 at 2, so --force-device-scale-factor does not help -- the clamp
+is in CSS pixels.
+
+A viewport below 520px is now rendered in an iframe of the true size inside a
+legal window, which gives it a genuine viewport, and the letterbox is cropped
+away by a dependency-free PNG codec in scripts/png-crop.mjs so the file is
+exactly the viewport that was asked for -- padding an agent would otherwise read
+as dead space in the design. A render that comes back the wrong width is refused
+rather than handed to an agent about to judge a layout from it.
+
+Eleven tests, each confirmed to fail against a broken copy.
+
+
 ## 0.15.0
 
 Everything an agent must read now lives where it can read it. Two skills told

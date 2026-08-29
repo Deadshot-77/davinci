@@ -13,6 +13,8 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
+import { cropPng } from './png-crop.mjs';
 import { pathToFileURL } from 'node:url';
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -148,6 +150,32 @@ function waitForFile(filePath, timeoutMs) {
 // This is the function that stands between an agent believing it looked at
 // its own work and actually having done so — it must never resolve unless
 // the file on disk is genuinely a PNG with real dimensions.
+// A desktop OS will not make a browser window narrower than roughly 480-500
+// CSS pixels. Below that, --window-size is clamped: the page lays out at the
+// clamped width and the screenshot is cropped to the width asked for, which
+// produces an image indistinguishable from a broken mobile layout. Measured at
+// 496px on Windows 11, and unaffected by --force-device-scale-factor because
+// the clamp is in CSS pixels.
+//
+// Above this threshold the window is used directly. At or below it the page is
+// rendered in an iframe of the true size inside a legal window, which gives it
+// a genuine viewport, and the letterbox is cropped off afterwards so the agent
+// looks at exactly the viewport it asked for.
+export const MIN_WINDOW_WIDTH = 520;
+
+export function needsIframeViewport(width, minimum = MIN_WINDOW_WIDTH) {
+  return width < minimum;
+}
+
+// The wrapper page. The iframe is pinned to the top-left at exactly the
+// requested size, so the crop is a plain top-left crop.
+export function viewportWrapperHtml(url, width, height) {
+  return '<!doctype html><meta charset="utf-8">' +
+    '<style>html,body{margin:0;padding:0;background:#000;overflow:hidden}' +
+    'iframe{display:block;border:0;width:' + width + 'px;height:' + height + 'px}</style>' +
+    '<iframe src="' + String(url).replace(/"/g, '&quot;') + '"></iframe>';
+}
+
 export function shoot({ url, out, width, height }, opts = {}) {
   const env = opts.env || process.env;
   const platform = opts.platform || process.platform;
@@ -165,16 +193,35 @@ export function shoot({ url, out, width, height }, opts = {}) {
   const absOut = path.resolve(out);
   fs.mkdirSync(path.dirname(absOut), { recursive: true });
 
+  const minWidth = opts.minWindowWidth || MIN_WINDOW_WIDTH;
+  const useIframe = needsIframeViewport(width, minWidth);
+
+  let target = url;
+  let windowWidth = width;
+  let wrapperPath = null;
+
+  if (useIframe) {
+    windowWidth = minWidth;
+    wrapperPath = path.join(
+      opts.tmpDir || os.tmpdir(),
+      `davinci-viewport-${width}x${height}-${process.pid}.html`,
+    );
+    fs.writeFileSync(wrapperPath, viewportWrapperHtml(url, width, height), 'utf8');
+    target = 'file://' + wrapperPath.split(path.sep).join('/');
+  }
+
   const args = [
     '--headless=new',
     '--disable-gpu',
     `--screenshot=${absOut}`,
-    `--window-size=${width},${height}`,
-    url,
+    `--window-size=${windowWidth},${height}`,
   ];
+  if (useIframe) args.push('--allow-file-access-from-files');
+  args.push(target);
 
   const spawnImpl = opts.spawnSyncImpl || spawnSync;
   const result = spawnImpl(browser, args, { stdio: 'ignore' });
+  if (wrapperPath) { try { fs.unlinkSync(wrapperPath); } catch { /* best effort */ } }
 
   if (result.error) {
     throw new Error(`failed to launch "${browser}": ${result.error.message}`);
@@ -189,7 +236,7 @@ export function shoot({ url, out, width, height }, opts = {}) {
     );
   }
 
-  const buffer = fs.readFileSync(absOut);
+  let buffer = fs.readFileSync(absOut);
   let dims;
   try {
     dims = parsePng(buffer);
@@ -197,6 +244,29 @@ export function shoot({ url, out, width, height }, opts = {}) {
     throw new Error(
       `${absOut} exists but is not a valid PNG (${err.message}). ` +
         `The browser likely wrote an error page or partial file instead of a screenshot.`,
+    );
+  }
+
+  // Trim the letterbox the wrapper window leaves, so the file on disk is the
+  // viewport that was asked for and nothing else.
+  if (useIframe && dims.width > width) {
+    try {
+      buffer = cropPng(buffer, width, Math.min(height, dims.height));
+    } catch (err) {
+      throw new Error(
+        `rendered ${dims.width}x${dims.height} but could not crop to ${width}x${height}: ` +
+          `${err.message}. Refusing to leave a letterboxed image behind — an agent would ` +
+          `read the padding as dead space in the design.`,
+      );
+    }
+    fs.writeFileSync(absOut, buffer);
+    dims = parsePng(buffer);
+  }
+
+  if (dims.width !== width) {
+    throw new Error(
+      `asked for a ${width}px-wide viewport but the image is ${dims.width}px. ` +
+        `Do not judge a layout from this file.`,
     );
   }
 

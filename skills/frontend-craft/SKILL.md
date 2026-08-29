@@ -79,6 +79,13 @@ viewport. Judge the screenshot against at least these:
   land first?
 - Does anything collide, overlap, or crowd at this width?
 
+The tool renders a viewport narrower than about 520px inside an iframe,
+because a desktop OS will not make a browser window that narrow and would
+otherwise lay the page out at ~496px and crop the image to the width you
+asked for — an image indistinguishable from a broken mobile layout. It
+crops the padding away and refuses to hand you an image of the wrong width,
+so what you look at is the viewport you asked for.
+
 **Run a mobile pass too.** Re-shoot the same URL at 390x844
 (`node <plugin>/scripts/shoot.mjs <url> <out-mobile.png> 390 844`) and look
 again — a layout that composes well at desktop width routinely breaks at
