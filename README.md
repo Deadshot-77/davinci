@@ -150,6 +150,8 @@ Apply it one of two ways:
 
 **The trust requirement.** A project's `.claude/settings.json` permissions are silently ignored until the workspace is trusted: Claude Code prints `Ignoring N permissions.allow entries from .claude/settings.json: this workspace has not been trusted.` and proceeds as if the file weren't there. Trust the workspace by running Claude Code interactively in that directory once and accepting the trust dialog — there is no headless equivalent. Skip this step and the profile does nothing, silently, which is exactly how this went unnoticed. The `--settings` flag bypasses the trust requirement entirely, which makes it the reliable choice for headless or first-run dispatches.
 
+**`node -e` is refused, on purpose.** A builder is not bash-guarded by the write-scope hook — only read-only agents are — so this profile is the only thing between a builder and writing outside its scope through Node's filesystem API. Granting an escape hatch to save one command would remove the plugin's central safety property, and a test fails the suite if anyone adds one. When an agent needs real code to prove something, it writes a test and runs `node --test`: the exit code is real, the assertion survives, and `code-craft` wanted the branch covered anyway.
+
 **Two command shapes are refused regardless of the profile.** Compound commands joined with `;` or `&&` are refused per clause — `npm test; echo "exit=$?"` fails on the `echo` half even though `npm test` alone is allowed. Commands containing shell globs are refused with `Contains expansion`. Agents should run one plain command at a time.
 
 ### Letting `frontend-engineer` see its own work
@@ -288,7 +290,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     233 tests, zero dependencies
+│  └─ test/                     238 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -306,7 +308,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 233 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 238 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

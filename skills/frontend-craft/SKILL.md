@@ -35,9 +35,12 @@ blind is the single most common way this goes wrong, and shipping unlooked-at
 work is the failure mode this section exists to prevent. Verify in this
 order, don't skip steps, and don't stop after one pass:
 
-1. **Serve, then shoot.** Start the project's dev server (or a static server —
-   `npx --yes serve` works for a plain HTML/CSS build with no server of its
-   own) against a real `http://` URL, then run
+1. **Serve, then shoot.** A dev server is refused by the permission profile —
+   it never exits, so it would hang the call that started it. Build first, then
+   serve the output directory: `npm run build` followed by
+   `npx --yes serve <dist|out|build>` gives you a real `http://` URL for the
+   thing that would actually ship, which is the more honest surface to judge
+   anyway. Then run
    `node <plugin>/scripts/shoot.mjs <url> <out.png>` and **`Read` the
    resulting PNG**. Taking the screenshot is not the step — looking at it is.
    Critique the image against the checks below, revise, and re-shoot until it

@@ -249,9 +249,29 @@ them were avoidable:
 - **Nothing outside the project.** Reads of the plugin's own directory are
   denied — everything you need is already in your context or in the repository.
 
-If a command you genuinely need is refused, that is a finding, not an obstacle
-to route around: record it in `observations` with what you were trying to prove,
-and use `verification` for what you did manage to run.
+### Proving something the allowlist will not run
+
+`node -e`, `node -p` and running an arbitrary script are refused, and they stay
+refused. You are not bash-guarded by the write-scope hook — only read-only
+agents are — so this allowlist is the only thing between you and writing
+outside your scope through `node`'s filesystem API. That is not a gap to work
+around; it is the boundary working.
+
+When you need real code to prove something — that a built JSON file contains
+only published entries, that a route returns the right shape, that a helper
+handles an edge case — **write it as a test and run `node --test`.** Tests are
+in your scope, `node --test` is allowed, and the exit code is real. A run of
+five agents each reported being unable to assert on build output; every one of
+those assertions was a test that did not get written.
+
+This is better than the one-liner it replaces. A `node -e` that proves the
+draft post is absent proves it once, for you. The same assertion as a test
+proves it on every run, for everyone, and `code-craft` already asks you to
+leave the branch covered.
+
+If a command you genuinely need is still refused after that, it is a finding,
+not an obstacle to route around: record it in `observations` with what you were
+trying to prove, and use `verification` for what you did manage to run.
 
 ## The rule that governs everything
 

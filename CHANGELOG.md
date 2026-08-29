@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.17.0
+
+Agents can prove their work again. A live Astro run had five agents
+independently report that they could not verify anything: "No agent on this
+project can run a script to assert on build output, so JSON-shaped criteria can
+only be checked by reading the code."
+
+The profile gains eighteen entries for what they were provably blocked on --
+npm ls and npm view, framework builds, linters and test runners, read-only git
+beyond status/diff/log, a static file server, and npx ctx7, which stack-profile
+instructs agents to use and the profile was denying.
+
+node -e, node -p and arbitrary script execution stay out, and now say why in the
+file. A builder is not bash-guarded by the write-scope hook, so this allowlist is
+the only boundary it has; an escape hatch would trade the plugin's central
+safety property for one command. An assertion needing real code goes in a test
+run with node --test, where the exit code is real and the check survives.
+
+Five guards on the profile itself, each confirmed to fail against a broken copy:
+no arbitrary code execution, nothing that installs or commits or deploys, every
+:*-granted npm script also granted bare, the verification commands still present,
+and the reason for the exclusions kept on record. The bare-form guard caught a
+real gap on its first run -- npm run test was granted only with arguments.
+
+
 ## 0.16.0
 
 The mobile screenshot was lying. A desktop OS refuses to make a browser window
