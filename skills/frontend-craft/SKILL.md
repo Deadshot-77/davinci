@@ -187,10 +187,12 @@ Each of these is a tell that no decision was made:
 
 ## 7. Generated media
 
-Check whether you actually have media tools before planning around them. A
-generated-media server is frequently absent — it must be one the CLI knows
-about, not a desktop connector — and a page designed around video that then
-ships without it is worse than one designed static from the start. If the tools
+Check whether you actually have media tools before planning around them, and
+check properly: the tools listed at startup are not the whole set. Deferred MCP
+tools load on demand, so a generator absent from your context may still be one
+`ToolSearch` can find — if you have `ToolSearch` at all. A page designed around
+imagery that then ships without it is worse than one designed static from the
+start. If the tools
 are not in your context, say so in `assumptions` and design static. Never
 describe media you did not generate.
 

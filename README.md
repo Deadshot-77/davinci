@@ -125,7 +125,7 @@ git clone https://github.com/Leonxlnx/taste-skill.git ~/.claude/skills/taste-ski
 `frontend-engineer` can drive a media MCP server to produce imagery or video, and by default does not have one. Two facts decide whether it can, both measured rather than assumed:
 
 - **A wildcard in `tools:` does not work.** An agent declared with `tools: Read, mcp__*` receives exactly one tool — the pattern is dropped, not expanded. Every MCP tool must be named in full.
-- **A claude.ai connector is not visible to a `claude -p` run.** The team executes in a CLI subprocess whose MCP registry held only Notion and Spotify across two live runs, whatever the desktop session can see.
+- **A connector missing from the startup tool list may still be reachable.** Deferred MCP tools load on demand through `ToolSearch`: a run whose init listing named only Notion, Spotify and Figma went on to generate a photograph with `mcp__claude_ai_Magnific__images_generate` after searching for it. An init listing is not an inventory — a claim to the contrary shipped here in 0.20 and was wrong. But `ToolSearch` is itself a tool and is absent from every agent allowlist, so today only the entry command can reach a deferred generator.
 
 So the server must be one the CLI itself knows about (`claude mcp add …`), and its tool names listed on the `tools:` line in `agents/frontend-engineer.md`. Without that the agent produces static design and records in `assumptions` that no media server was reachable — which is the honest outcome, not a silent downgrade.
 

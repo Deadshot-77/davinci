@@ -16,10 +16,15 @@ skills:
 #
 #   1. A wildcard does not work. An agent declared with `tools: Read, mcp__*`
 #      receives exactly one tool. The pattern is dropped, not expanded.
-#   2. A claude.ai connector is not visible to a `claude -p` run. The team
-#      executes in a CLI subprocess whose MCP registry held only Notion and
-#      Spotify across two live runs -- no media server, whatever the desktop
-#      session can see.
+#   2. A connector missing from the session's tool list may still be reachable.
+#      Deferred MCP tools do not appear at startup and load on demand through
+#      ToolSearch -- a later run generated a photograph with
+#      mcp__claude_ai_Magnific__images_generate after loading it that way, on a
+#      run whose init list named only Notion, Spotify and Figma. An init
+#      listing is not an inventory. But ToolSearch is itself a tool, and it is
+#      not on the allowlist above, so today only the entry command can do this;
+#      an agent that needs generated media has to be given both the search and
+#      the tool it finds.
 #
 # So the server has to be one the CLI itself knows about (`claude mcp add ...`),
 # and its tool names have to be listed here in full. Absent that, produce static

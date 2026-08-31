@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.23.1
+
+Corrects a claim shipped in 0.20 that measurement has since falsified.
+
+That release stated that a claude.ai connector is not visible to a `claude -p`
+run, concluded from the init tool lists of two live runs which named only
+Notion and Spotify. A later run generated a photograph through
+mcp__claude_ai_Magnific__images_generate, having loaded it with ToolSearch, on
+a run whose init listing named only Notion, Spotify and Figma.
+
+Deferred MCP tools do not appear at startup and load on demand. An init listing
+is not an inventory, and reasoning from two observations to a general rule was
+the error -- the same shape as concluding a test passes because the mutation
+was never applied.
+
+The correction matters practically: work went into registering a CLI-level MCP
+server and debugging its OAuth, when the capability was reachable the whole
+time by a different route.
+
+What remains true is narrower and now stated as such. ToolSearch is itself a
+tool and appears on no agent allowlist, so today only the entry command can
+reach a deferred generator. An agent that needs generated media must be given
+both the search and the tool it finds, and frontend-engineer currently has
+neither.
+
+
 ## 0.23.0
 
 Restraint with no counterweight converges. Three runs of the same brief
