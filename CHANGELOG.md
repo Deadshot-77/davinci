@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.19.0
+
+Model choice is no longer decided by the stakes tier. Those are different
+questions and collapsing them was a real defect: on a greenfield build almost
+every task passes the reversibility test, so a live run tiered 19 of 21
+dispatches load-bearing and ran nearly all of them on Opus. The lead was obeying
+the rubric exactly — the rubric was wrong.
+
+The tier still decides review depth, which gates run, whether a revision pass is
+required, and whether CRAFT blocks. Model is now chosen from what the work is:
+haiku for extraction and classification, sonnet as the default for building and
+ordinary review, opus for architecture and the genuinely subtle. That inverts the
+old default — cheap was the exception, now it is the baseline and Opus is the
+escalation.
+
+Adds escalation on failure: when a gate fails a builder and the lead re-dispatches,
+the retry goes one model up. This spends the expensive model on work that has
+proven it needs one, rather than on everything that might — a loop most systems
+cannot close because they have no gate to observe the stumble.
+
+review-lens now defaults to sonnet. One angle over one diff is a clear goal with
+no multi-step architectural reasoning; seven of the last run twenty-one dispatches
+were lenses inheriting opus.
+
+Two guards, each confirmed to fail against a broken copy: a tier definition may
+not name a model, and every model the rubric names must be one the Agent tool
+accepts — an unknown string is not an error, the override is silently dropped and
+the agent runs on its frontmatter model.
+
+Found by measuring rather than guessing. The preload cost this started as turned
+out to be a red herring: 91.8% of input tokens were served from cache, and preload
+is about 11% of a median call. The driver is 1,356 API calls carrying a median
+53,000 tokens each.
+
+
 ## 0.18.1
 
 Fixes a regression in the 0.18.0 digest rule, found by testing it the way

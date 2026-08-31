@@ -49,7 +49,6 @@ Schema and migrations, authentication and authorisation, payment, anything
 untrusted input reaches, the shape of a public API, the design system's tokens,
 and the scaffold every other agent copies.
 
-- **model** — `opus`.
 - **revision pass, mandatory.** The builder critiques its own output against
   `code-craft` (and `frontend-craft` where there is a visual surface), revises,
   and only then reports. A gate bounce costs a full re-dispatch of the builder
@@ -64,7 +63,6 @@ and the scaffold every other agent copies.
 
 Feature work built on top of a foundation that already exists.
 
-- **model** — `opus`.
 - **revision pass** — the builder's call.
 - **review** — correctness, tests, craft.
 - **gates** — code review always; security whenever the change touches a
@@ -76,13 +74,56 @@ Feature work built on top of a foundation that already exists.
 Config, a README, static copy, a fixture, a stylesheet tweak. Work that is
 thrown away or trivially changed, and that nothing builds on.
 
-- **model** — `sonnet`, or `haiku` for the most mechanical of it. Capability is
-  not the binding constraint on a favicon, and Opus spent here is budget that
-  buys nothing and slows delivery.
 - **revision pass** — no.
 - **review** — one lens, or the gate reads it directly.
 - `CRAFT` findings are advisory here. Do not let a reviewer relitigate a
   fixture.
+
+## Model is a separate question from tier
+
+The tier says how badly it hurts to be wrong. The model says how much reasoning
+the work needs. Those are different, and running them together is a mistake
+this rubric used to make: on a greenfield build almost every task passes the
+reversibility test, so almost everything came out `load-bearing`, and when the
+tier chose the model almost everything ran on Opus. A live run put 19 of 21
+dispatches on the top tier. The lead was obeying the rubric exactly; the rubric
+was wrong.
+
+**Default to `sonnet`. Drop to `haiku` for clearly mechanical work. Escalate to
+`opus` when the task is genuinely hard, or when a cheaper model has already
+stumbled on it.** Choose from what the work *is*, not from what it costs to get
+it wrong:
+
+- **`haiku`** — extraction and classification. Reading a file to answer one
+  question, checking a value, running a command and reporting the exit code,
+  a single mechanical lens over a small diff.
+- **`sonnet`** — most building and most reviewing. Routes, components, tests,
+  refactors, content, and ordinary code review: work with a clear goal that
+  does not need multi-step architectural reasoning. This is the default, and it
+  covers the majority of dispatches on a normal run.
+- **`opus`** — architecture and the genuinely subtle. The stack profile and
+  scope map, a security audit, a multi-file bug whose cause is not local, a
+  schema or migration, an authorisation model. Opus earns its price where being
+  wrong costs more than the tokens.
+
+A `load-bearing` task does not automatically mean Opus. Writing the tenth
+component of a design system is load-bearing — everything binds to it — and it
+is still ordinary generation. Judge the reasoning the work needs.
+
+## Escalate on failure, not on suspicion
+
+The cheapest way to find the tasks that genuinely need Opus is to let a gate
+tell you. When a gate returns `verdict: "fail"` on a builder's work and you
+re-dispatch it, **send the retry one model up** — `haiku` to `sonnet`,
+`sonnet` to `opus` — and say in the dispatch that it is a retry after a failed
+gate and why.
+
+This is the loop most systems cannot close, because they have no gate to
+observe the stumble. Use it: it spends the expensive model on exactly the work
+that has proven it needs one, rather than on everything that might.
+
+If the same criterion fails twice, stop escalating and report upward. A third
+attempt at a higher price does not discover that the brief was wrong.
 
 ## What you can actually set at dispatch
 

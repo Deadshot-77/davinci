@@ -20,7 +20,7 @@ The name is the architecture: Leonardo ran a *bottega*, a workshop where the mas
 | `frontend-engineer` | Opus 5 | high | Art direction and build — owns markup, components, styles | scoped |
 | `security-engineer` | Opus 5 | xhigh | Audits changed code; reports, never patches | nothing |
 | `code-reviewer` | Opus 5 | high | Foundation gate, then code review | nothing |
-| `review-lens` | Opus 5 | high | One review lens — correctness, silent-failure, types, tests, secrets or craft | nothing |
+| `review-lens` | Sonnet 5 | high | One review lens — correctness, silent-failure, types, tests, secrets or craft | nothing |
 
 The lead overrides `model` per dispatch from the tier it assigns, so the table shows each agent's default rather than a fixed assignment.
 
@@ -228,11 +228,13 @@ blast radius, exposure to untrusted input or credentials, whether anything else
 builds on its shape, and how long it lives. Three lines touching auth are
 load-bearing. Four hundred lines of static copy are not.
 
-| Tier | Model | Revision pass | Review depth | `CRAFT` findings |
-|---|---|---|---|---|
-| `load-bearing` | Opus | mandatory before the gate | all six lenses, both gates | **block** |
-| `standard` | Opus | builder's call | correctness, tests, craft | advisory |
-| `scaffolding` | Sonnet or Haiku | none | one lens, or the gate reads it | advisory |
+| Tier | Revision pass | Review depth | `CRAFT` findings |
+|---|---|---|---|
+| `load-bearing` | mandatory before the gate | all six lenses, both gates | **block** |
+| `standard` | builder's call | correctness, tests, craft | advisory |
+| `scaffolding` | none | one lens, or the gate reads it | advisory |
+
+**Model is a separate question.** The tier says how badly it hurts to be wrong; the model says how much reasoning the work needs. Collapsing them was a real defect: on a greenfield build almost every task passes the reversibility test, so a live run tiered 19 of 21 dispatches `load-bearing` and ran almost all of them on Opus — the lead obeying the rubric exactly. The rule is now the field's: default to Sonnet, drop to Haiku for mechanical work, escalate to Opus for architecture and the genuinely subtle — **or when a gate has already failed the work.** That last loop is one most systems cannot close, because they have no gate to observe the stumble.
 
 One decision sets both ends, which is the point: the tier that says how much to
 spend is the tier that says how strictly to judge the result. `CRAFT` blocks
@@ -296,7 +298,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     240 tests, zero dependencies
+│  └─ test/                     242 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -314,7 +316,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 240 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 242 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

@@ -318,3 +318,35 @@ test('the contract tells agents their return value is not their report', () => {
   assert.strictEqual(sections.length, 2,
     'the digest section appears more than once in the contract');
 });
+
+test('the tier definitions do not choose a model', () => {
+  // Stakes and reasoning-depth are different questions. When the tier chose the
+  // model, a greenfield run put 19 of 21 dispatches on load-bearing -- every
+  // task passes the reversibility test when nothing exists yet -- and so put
+  // almost everything on Opus. The lead was obeying the rubric exactly.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'work-tiers', 'SKILL.md'), 'utf8');
+  const tiers = skill.split('## The three tiers')[1].split('\n## ')[0];
+  const offenders = tiers.split('\n')
+    .filter((l) => /^\s*[-*]\s*\*\*model\*\*/i.test(l))
+    .map((l) => l.trim());
+  assert.deepStrictEqual(offenders, [],
+    'a tier definition names a model again, which collapses stakes into reasoning depth: ' +
+    offenders.join(' | '));
+});
+
+test('every model the rubric names is one the Agent tool accepts', () => {
+  // A model string the tool does not know is not an error -- the override is
+  // ignored and the agent silently runs on its frontmatter model.
+  const ACCEPTED = ['haiku', 'sonnet', 'opus', 'fable'];
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'work-tiers', 'SKILL.md'), 'utf8');
+  const section = skill.split('## Model is a separate question from tier')[1];
+  assert.ok(section, 'work-tiers no longer separates model choice from tier');
+
+  const named = [...section.matchAll(/`([a-z][a-z0-9.-]{2,})`/g)]
+    .map((m) => m[1])
+    .filter((w) => /^(haiku|sonnet|opus|fable|claude[-.]?\w*|gpt[-.]?\w*)$/i.test(w));
+  const bad = [...new Set(named)].filter((m) => !ACCEPTED.includes(m));
+  assert.deepStrictEqual(bad, [],
+    'rubric names a model the Agent tool will not accept, so the override is silently dropped: ' +
+    bad.join(', '));
+});
