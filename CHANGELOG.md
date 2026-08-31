@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.20.0
+
+The frontend agent researches before it designs. A designer handed a brief does
+not start drawing; they find out what the category already looks like by looking.
+The agent can now do that literally — scripts/shoot.mjs points at any URL, not
+only a local dev server, so it renders three or four real competitors and reads
+the images. Verified against a live site before the instruction was written.
+
+The discipline is the point, not the capability. Naive inspiration-gathering
+produces convergence: four sites use a centred hero over a gradient, the agent
+absorbs that as the category, and builds a fifth — arriving at the training-data
+average this skill exists to break, by way of the internet. So the rule is to
+name the convention in order to depart from it, and the required output is a
+sentence of the form "they all do X; this one will do Y instead, because Z".
+
+Better is explicitly not the same but nicer. Improving a competitor layout
+produces a derivative worse than either an honest copy or an original; better
+means finding what the category collectively fails to do.
+
+Gated to a real visual surface at standard or load-bearing tier, capped at three
+or four references, and recorded in assumptions — including a plain statement
+when the network or a headless-hostile site made looking impossible.
+
+Adds a guard for drift this change caused. Inserting a section renumbered every
+heading in frontend-craft, and three "frontend-craft section N" references in
+frontend-engineer silently pointed one section off. A test now resolves every
+such reference against the real headings, and was confirmed to fail against a
+broken one.
+
+
 ## 0.19.0
 
 Model choice is no longer decided by the stakes tier. Those are different

@@ -254,6 +254,16 @@ that beats an agent's frontmatter, and that lever is real. It takes no effort
 override — effort is fixed per agent definition — so the skill says so plainly
 rather than letting the lead write one and believe it took.
 
+## The frontend agent researches before it designs
+
+A designer handed a brief does not start drawing — they find out what the category already looks like, by looking. The agent can now do that literally: `scripts/shoot.mjs` points at any URL, not only a local dev server, so it renders three or four real competitors and **reads the images** before deciding anything. Verified against a live site before the instruction was written.
+
+The discipline matters more than the capability. Research done naively produces convergence — four sites use a centred hero over a gradient, the agent absorbs that as what the category looks like, and builds a fifth, arriving at the training-data average this skill exists to break by way of the internet. So the rule is to name the convention in order to depart from it, and the required output is a sentence of the form *“they all do X; this one will do Y instead, because Z.”*
+
+**Better is not the same but nicer.** Improving a competitor’s spacing produces a derivative worse than either an honest copy or an original. Better means finding what the category collectively fails to do — the thing everyone’s visitors put up with — and doing that.
+
+Gated to work with a real visual surface at `standard` or `load-bearing` tier, capped at three or four references, and recorded in `assumptions` — including, when the network or a headless-hostile site makes it impossible, a plain statement that it could not look.
+
 ## Code that reads as though a person wrote it
 
 Seeing fixed how the output looks. `code-craft` is the same argument applied to
@@ -298,7 +308,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     242 tests, zero dependencies
+│  └─ test/                     243 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -316,7 +326,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 242 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 243 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

@@ -350,3 +350,36 @@ test('every model the rubric names is one the Agent tool accepts', () => {
     'rubric names a model the Agent tool will not accept, so the override is silently dropped: ' +
     bad.join(', '));
 });
+
+test('every "<skill> section N" reference points at a heading that exists', () => {
+  // Agents are told things like "frontend-craft section 4 governs exactly how".
+  // Renumber the skill and that sentence silently sends the agent to the wrong
+  // section -- no error, just the wrong instructions. Adding one section at the
+  // top of frontend-craft shifted every reference by one.
+  const roots = ['agents', 'skills', 'commands'];
+  const headings = new Map();
+  for (const dir of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
+    if (!dir.isDirectory()) continue;
+    const body = fs.readFileSync(path.join(SKILLS_DIR, dir.name, 'SKILL.md'), 'utf8');
+    headings.set(dir.name, new Set(
+      [...body.matchAll(/^##\s+(\d+)\./gm)].map((m) => m[1])));
+  }
+
+  const broken = [];
+  for (const dir of roots) {
+    const base = path.join(__dirname, '..', '..', dir);
+    if (!fs.existsSync(base)) continue;
+    for (const file of fs.readdirSync(base).filter((f) => f.endsWith('.md'))) {
+      const body = fs.readFileSync(path.join(base, file), 'utf8');
+      for (const m of body.matchAll(/`([a-z-]+)`\s+section\s+(\d+)/g)) {
+        const [, skill, n] = m;
+        if (!headings.has(skill)) continue;      // not one of ours; nothing to check
+        if (!headings.get(skill).has(n)) {
+          broken.push(`${dir}/${file} -> ${skill} section ${n}`);
+        }
+      }
+    }
+  }
+  assert.deepStrictEqual(broken, [],
+    'reference(s) point at a skill section that does not exist: ' + broken.join(', '));
+});

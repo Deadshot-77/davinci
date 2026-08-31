@@ -12,7 +12,55 @@ three cards, the same near-white greys, the same Inter. That average reads as
 characterless the moment a human looks at it. Breaking it takes a decision
 made before any code is written, not a cleanup pass after.
 
-## 1. Commit to a direction first
+## 1. Go and look at the category first
+
+A designer handed a brief does not start drawing. They find out what the
+category already looks like, and they do it by looking — not by recalling. You
+can do the same, and you have the tool for it: `shoot.mjs` points at any URL,
+not only your own dev server, and `Read` renders the image. You can genuinely
+see a competitor's homepage rather than read a description of it.
+
+Do this when the work has a real visual surface and the tier is `standard` or
+`load-bearing`. A favicon or a config file does not get a competitive audit.
+
+1. **Find the actual set.** Search for who does this specific thing — the
+   studios, products or publications a visitor would compare this against. Not
+   "best website design"; that returns award galleries and trend lists, which
+   is how everything ends up looking the same.
+2. **Look at three or four of them.** `node <plugin>/scripts/shoot.mjs <url>
+   ref-<name>.png 1280 900`, then **`Read` each image**. Three or four is the
+   budget. A survey is not research, it is procrastination with a token cost.
+3. **Write down what you actually saw**, in specifics. Not "modern and clean" —
+   that describes nothing and commits you to nothing. The type pairing. Where
+   the eye lands first and what put it there. How colour behaves: one accent
+   carrying state, or a palette competing with the content. What the layout
+   does with the viewport. Whether the copy says anything.
+4. **Name the convention, then decide about it deliberately.** The point of
+   looking is not to gather things to imitate. It is to find out what the whole
+   category does the same way, so that when you do it too it is a decision
+   rather than a default — and so that you can see what none of them is doing.
+
+**Research is for finding the gap, not the average.** The failure mode here is
+convergence: four sites use a centred hero over a gradient, you absorb that as
+"what this category looks like", and you produce a fifth. You have then used
+the internet to arrive at exactly the training-data average this skill exists to
+break. If the audit only tells you what to copy, you have wasted it. The useful
+output is a sentence of the form *"they all do X; this one will do Y instead,
+because Z."*
+
+**"Better" is not "the same but nicer."** A competitor's design solves their
+problem. Taking their layout and improving the spacing produces a derivative
+that is worse than either an honest copy or an original. Better means finding
+what the category collectively fails to do — the thing everyone's visitors put
+up with — and doing that.
+
+Record in the report's `assumptions`: which references you looked at, the one
+convention you found, and what you are doing instead. Three lines. If you could
+not look — no network, a site that refuses a headless browser — say that plainly
+and choose a direction from the brief alone. Never imply you looked at
+something you did not, and never cite a reference you did not actually render.
+
+## 2. Commit to a direction first
 
 Before touching markup, name a specific visual direction: editorial,
 brutalist, minimal-swiss, maximalist, retro-futurist, whatever the brief
@@ -20,7 +68,7 @@ calls for. Record it in the report's `assumptions` even when the brief didn't
 ask for one. A direction chosen after the first component exists isn't a
 direction — it's a rationalisation of whatever fell out by default.
 
-## 2. The three dials
+## 3. The three dials
 
 Read `DESIGN_VARIANCE`, `MOTION_INTENSITY`, `VISUAL_DENSITY` (1-10 each) from
 the brief's Design dials section when it has one. When it doesn't, infer them
@@ -28,7 +76,7 @@ from the product and the direction you picked, and record the inferred values
 and your reasoning under `assumptions`. Never ask the user to pick numbers —
 that question belongs to intake, not to you.
 
-## 3. Look at what you build
+## 4. Look at what you build
 
 CSS written and never viewed is a guess, not a design. An agent styling
 blind is the single most common way this goes wrong, and shipping unlooked-at
@@ -94,14 +142,14 @@ so what you look at is the viewport you asked for.
 again — a layout that composes well at desktop width routinely breaks at
 phone width, and that only shows up by looking.
 
-## 4. Companion skills
+## 5. Companion skills
 
 If `design-taste-frontend` or `web-design-engineer` are installed, invoke
 them with the `Skill` tool and follow what they say — both carry far more
 detail than fits here and take precedence over this file. This skill is the
 fallback for when they're absent, not a summary of them.
 
-## 5. Banned defaults
+## 6. Banned defaults
 
 Each of these is a tell that no decision was made:
 
@@ -116,7 +164,7 @@ Each of these is a tell that no decision was made:
 - every section sharing the same vertical rhythm regardless of content weight
 - an icon glued to every bullet whether or not it adds information
 
-## 6. Generated media
+## 7. Generated media
 
 When a media MCP server is configured: a poster frame on every video,
 `preload="none"`, lazy-loading below the fold, and a static fallback path for
@@ -124,16 +172,19 @@ When a media MCP server is configured: a poster frame on every video,
 retry loop burns them fast. A scroll page that's beautiful in the demo and
 unshippable in production is a failure, not a draft.
 
-## 7. Accessibility floor
+## 8. Accessibility floor
 
 Non-negotiable regardless of direction or dial values: visible focus states
 on every interactive element, 4.5:1 contrast on body text,
 `prefers-reduced-motion` honoured, everything reachable by keyboard alone.
 
-## 8. Pre-flight, before you report
+## 9. Pre-flight, before you report
 
 Mechanical checks, not vibes — run through this before writing the report:
 
+- [ ] references actually rendered and read, with the convention you found
+      and what you are doing instead recorded in `assumptions` — or a plain
+      statement that you could not look and why
 - [ ] direction named and recorded in `assumptions`
 - [ ] all three dials present in the report, inferred or read from the brief
 - [ ] the perception loop actually ran — a desktop screenshot **and** a
@@ -141,5 +192,5 @@ Mechanical checks, not vibes — run through this before writing the report:
       the report's `assumptions`; or the report states plainly that visual
       verification was impossible and why
 - [ ] console checked and clear of errors introduced by this change
-- [ ] none of the banned defaults in section 5 are present
+- [ ] none of the banned defaults in section 6 are present
 - [ ] focus states, contrast, and keyboard reachability checked, not assumed
