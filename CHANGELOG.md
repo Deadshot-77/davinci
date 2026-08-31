@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.20.1
+
+The screenshot tool was an unguarded write primitive. The write-scope hook
+checks Write and Edit by path, and Bash against patterns for redirection,
+sed -i, cp and node -e. None of those match `node scripts/shoot.mjs <url>
+<output-path>`, so a read-only gate could write a PNG over a source file or
+outside the project and the hook would allow it. Verified against the real
+scope map before fixing:
+
+  ALLOWED  code-reviewer  node scripts/shoot.mjs http://x ../../escape.png
+  ALLOWED  code-reviewer  node scripts/shoot.mjs http://x src/app/page.tsx
+
+shoot.mjs now refuses an output path outside the project or without a .png
+extension, and refuses before launching the browser rather than after it has
+already written the file. The guard lives in the tool rather than the hook,
+because patching the hook means chasing every script that writes a file.
+
+Found by the plugin’s own foundation gate while auditing the run it was part
+of — the observation channel doing something it was not designed for.
+
+The guard immediately caught four existing tests writing screenshots into
+tmpdir, which is outside the project. They now pass their own root.
+
+
 ## 0.20.0
 
 The frontend agent researches before it designs. A designer handed a brief does

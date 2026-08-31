@@ -161,6 +161,34 @@ function waitForFile(filePath, timeoutMs) {
 // rendered in an iframe of the true size inside a legal window, which gives it
 // a genuine viewport, and the letterbox is cropped off afterwards so the agent
 // looks at exactly the viewport it asked for.
+// This tool is an unguarded write primitive. The write-scope hook checks the
+// Write and Edit tools by path, and checks Bash commands against patterns for
+// redirection, `sed -i`, `cp`, `node -e` and the like -- none of which match
+// `node scripts/shoot.mjs <url> <output-path>`. So a read-only gate could
+// write a PNG over a source file, or outside the project entirely, and the
+// hook would allow it. The plugin's own foundation gate found this while
+// reviewing the run it was part of.
+//
+// The guard belongs here rather than in the hook: patching the hook means
+// chasing every script that happens to write a file, while a check at the
+// tool holds whoever invokes it and however.
+export function assertInsideProject(absOut, cwd) {
+  const root = path.resolve(cwd);
+  const rel = path.relative(root, absOut);
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error(
+      `refusing to write ${absOut}: it is outside the project (${root}). ` +
+        `Screenshots go somewhere inside the project you are working on.`,
+    );
+  }
+  if (!/\.png$/i.test(absOut)) {
+    throw new Error(
+      `refusing to write ${absOut}: a screenshot must be a .png. ` +
+        `Writing PNG bytes over a source file is not a screenshot.`,
+    );
+  }
+}
+
 export const MIN_WINDOW_WIDTH = 520;
 
 export function needsIframeViewport(width, minimum = MIN_WINDOW_WIDTH) {
@@ -191,6 +219,7 @@ export function shoot({ url, out, width, height }, opts = {}) {
   }
 
   const absOut = path.resolve(out);
+  assertInsideProject(absOut, opts.cwd || process.cwd());
   fs.mkdirSync(path.dirname(absOut), { recursive: true });
 
   const minWidth = opts.minWindowWidth || MIN_WINDOW_WIDTH;

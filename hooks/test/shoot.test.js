@@ -188,6 +188,7 @@ test('a viewport narrower than the window minimum is rendered through an iframe'
   const out = require('node:path').join(require('node:os').tmpdir(), 'davinci-shoot-iframe.png');
 
   shoot({ url: 'http://localhost:3000', out, width: 390, height: 844 }, {
+    cwd: require('node:os').tmpdir(),
     findBrowser: () => 'browser.exe',
     spawnSyncImpl: (bin, args) => { captured = args; fs.writeFileSync(out, png); return {}; },
   });
@@ -207,6 +208,7 @@ test('the letterbox is cropped away so the file is the viewport that was asked f
   const png = makeRealPng(MIN_WINDOW_WIDTH, 844);
 
   const result = shoot({ url: 'http://x', out, width: 390, height: 844 }, {
+    cwd: require('node:os').tmpdir(),
     findBrowser: () => 'browser.exe',
     spawnSyncImpl: () => { fs.writeFileSync(out, png); return {}; },
   });
@@ -223,6 +225,7 @@ test('a viewport wide enough for a real window is shot directly, with no wrapper
   const out = require('node:path').join(require('node:os').tmpdir(), 'davinci-shoot-direct.png');
 
   shoot({ url: 'http://localhost:3000', out, width: 1280, height: 900 }, {
+    cwd: require('node:os').tmpdir(),
     findBrowser: () => 'browser.exe',
     spawnSyncImpl: (bin, args) => { captured = args; fs.writeFileSync(out, makeRealPng(1280, 900)); return {}; },
   });
@@ -268,10 +271,66 @@ test('a render that comes back the wrong width is refused, not handed over', asy
 
   assert.throws(
     () => shoot({ url: 'http://x', out, width: 1280, height: 900 }, {
-      findBrowser: () => 'browser.exe',
+      cwd: require('node:os').tmpdir(),
+    findBrowser: () => 'browser.exe',
       spawnSyncImpl: () => { fs.writeFileSync(out, makeRealPng(900, 900)); return {}; },
     }),
     /asked for a 1280px-wide viewport but the image is 900px/,
   );
   try { fs.unlinkSync(out); } catch { /* the throw may precede the write */ }
+});
+
+/* ---------- the tool as an unguarded write primitive ---------- */
+//
+// The write-scope hook checks Write and Edit by path, and Bash by patterns for
+// redirection, `sed -i`, `cp`, `node -e`. None of those match
+// `node scripts/shoot.mjs <url> <path>`, so a read-only gate could write a PNG
+// over a source file or outside the project and the hook would allow it.
+// Verified against the real scope map before the guard existed:
+//
+//   ALLOWED  code-reviewer  node scripts/shoot.mjs http://x ../../escape.png
+//   ALLOWED  code-reviewer  node scripts/shoot.mjs http://x src/app/page.tsx
+
+test('a screenshot may not be written outside the project', async () => {
+  const { assertInsideProject } = await loadShoot();
+  const root = process.platform === 'win32' ? 'C:\proj' : '/proj';
+  for (const outside of ['../escape.png', '../../elsewhere/x.png']) {
+    const abs = require('node:path').resolve(root, outside);
+    assert.throws(() => assertInsideProject(abs, root), /outside the project/,
+      outside + ' should be refused');
+  }
+});
+
+test('a screenshot may not be written over a source file', async () => {
+  const { assertInsideProject } = await loadShoot();
+  const path = require('node:path');
+  const root = process.platform === 'win32' ? 'C:\proj' : '/proj';
+  assert.throws(
+    () => assertInsideProject(path.join(root, 'src', 'app', 'page.tsx'), root),
+    /must be a \.png/,
+  );
+});
+
+test('an ordinary screenshot path inside the project is allowed', async () => {
+  const { assertInsideProject } = await loadShoot();
+  const path = require('node:path');
+  const root = process.platform === 'win32' ? 'C:\proj' : '/proj';
+  assert.doesNotThrow(() => assertInsideProject(path.join(root, '.devteam', 'shots', 'a.png'), root));
+  assert.doesNotThrow(() => assertInsideProject(path.join(root, 'out.png'), root));
+});
+
+test('shoot refuses the write before launching a browser', async () => {
+  // The refusal must come before the spawn, or the browser has already written
+  // the file by the time anything objects.
+  const { shoot } = await loadShoot();
+  let spawned = false;
+  assert.throws(
+    () => shoot({ url: 'http://x', out: '../escape.png', width: 1280, height: 900 }, {
+      cwd: require('node:os').tmpdir(),
+    findBrowser: () => 'browser.exe',
+      spawnSyncImpl: () => { spawned = true; return {}; },
+    }),
+    /outside the project/,
+  );
+  assert.strictEqual(spawned, false, 'the browser must not run for a refused path');
 });

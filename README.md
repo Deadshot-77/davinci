@@ -135,6 +135,8 @@ Prompts are advisory; hooks are not. Two hooks enforce the rules the harness can
 
 **Gates can prove things, not just read them.** Each gate owns one scratch directory — `.devteam/scratch/<agent>/` — and nothing else. It builds a mutation harness there with the `Write` tool, which is checked by exact path, and runs `node --test` against it: a mutation the suite would not have caught is a finding with an exit code behind it. Four agents in a live run reported that a load-bearing review "silently degrades to reading" without this. No shell permission was widened to allow it, and an agent whose only writable ground is coordination state stays bash-guarded — handing the gates a scratch path would otherwise have switched their shell guard off entirely.
 
+**A script that writes a file is a write the Bash guard cannot see.** It matches redirection, `sed -i`, `cp`, `node -e` — not `node scripts/shoot.mjs <url> <path>`. A read-only gate could therefore write a PNG over a source file, or outside the project entirely. `shoot.mjs` now refuses any output path outside the project or without a `.png` extension, and refuses before launching the browser rather than after it has already written. The guard belongs in the tool, not the hook: patching the hook means chasing every script that happens to write a file. Found by this plugin’s own foundation gate, auditing the run it was part of.
+
 **One honest limitation.** The Bash guard is best effort. An arbitrary shell cannot be made safe by pattern matching — it stops a read-only agent casually routing around its scope, not a determined one. Treat the enforcement as a strong seatbelt, not a sandbox.
 
 ## Letting agents verify their own work
@@ -308,7 +310,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     243 tests, zero dependencies
+│  └─ test/                     247 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -326,7 +328,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 243 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 247 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
