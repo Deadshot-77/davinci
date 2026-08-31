@@ -9,6 +9,19 @@ function toRepoRelative(filePath, cwd) {
   return rel.split(path.sep).join('/');
 }
 
+// Which agent, if any, may write this path. A denial that names the owner turns
+// a dead end into a routing instruction: the blocked agent reports who should
+// have had the work, and the lead re-dispatches instead of guessing. Three runs
+// in a row assigned a path to a builder that the map gave to someone else.
+function ownerOf(rel, scopeMap, excluding) {
+  for (const [agent, scopes] of Object.entries(scopeMap)) {
+    // An empty scope needs no special case: matchAny() against [] is already false.
+    if (agent === excluding || !Array.isArray(scopes)) continue;
+    if (matchAny(rel, scopes)) return agent;
+  }
+  return null;
+}
+
 // The agent that owns the stack profile is the foundation layer and is exempt
 // from needing one -- it is the one that writes it. Derived from the map rather
 // than named here, so renaming the foundation agent cannot desynchronise this.
@@ -71,13 +84,18 @@ function decideScope(input, scopeMap, known, foundation) {
     return { deny: `${agent} is read-only and may not write ${rel}. Report findings instead.` };
   }
   if (!matchAny(rel, scopes)) {
+    const owner = ownerOf(rel, scopeMap, agent);
+    const routing = owner
+      ? `${owner} owns this path. Report blocked and name ${owner} so the lead ` +
+        `re-dispatches it there rather than guessing.`
+      : `No agent owns this path, which is a gap in the foundation rather than a ` +
+        `mistake of yours. Report blocked and say so, so the scope map can be fixed ` +
+        `before anyone tries again.`;
     return {
-      deny:
-        `${agent} may not write ${rel}. Its write scope is: ${scopes.join(', ')}. ` +
-        `Report this as a blocked dependency so the tech-lead can route it.`,
+      deny: `${agent} may not write ${rel}. Its write scope is: ${scopes.join(', ')}. ` + routing,
     };
   }
   return null;
 }
 
-module.exports = { decideScope, toRepoRelative, ownsStackProfile };
+module.exports = { decideScope, toRepoRelative, ownsStackProfile, ownerOf };

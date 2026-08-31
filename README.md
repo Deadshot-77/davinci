@@ -128,7 +128,8 @@ git clone https://github.com/Leonxlnx/taste-skill.git ~/.claude/skills/taste-ski
 
 Prompts are advisory; hooks are not. Two hooks enforce the rules the harness can check:
 
-- **Write scope** — each agent may only modify paths it owns. A read-only agent attempting any write is denied, and an agent whose tool input exposes no recognisable path is denied rather than waved through.
+- **Write scope** — each agent may only modify paths it owns, and a denial names the agent that does own the path so the lead re-routes instead of guessing. Where nobody owns it, the denial says that too: a missing owner is a gap in the foundation, not a mistake by the builder that tripped over it.
+- **Write scope, continued** — each agent may only modify paths it owns. A read-only agent attempting any write is denied, and an agent whose tool input exposes no recognisable path is denied rather than waved through.
 - **Project scopes** — the shipped scope map fits one shape of project. `infra-architect` writes `.devteam/scope-map.json` for the project it is actually scaffolding, the foundation gate reviews it, and the hook enforces it — falling back to the shipped map when it is absent, unparseable, or invalid. Four rules hold regardless: only agents that ship, scopes stay disjoint, nothing under `.devteam/` beyond an agent own scratch, and a gate can never be given source scope. Details in [docs/project-scope-map.md](docs/project-scope-map.md).
 - **Foundation first** — while `.devteam/stack-profile.md` does not exist, every builder write outside `.devteam/` is denied. The design always said no builder starts before the foundation gate passes; a live run showed the lead skipping it anyway, so it is now the hook's rule rather than the lead's intention. The agent that owns the stack profile is exempt, and so is a brief carrying `Route: direct`.
 - **Report validity** — an agent cannot finish without a well-formed report, and a gate cannot finish without a verdict. The infra agent's foundation is additionally checked for unfilled sections and for declaring a framework that isn't in `package.json`.
@@ -310,7 +311,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     247 tests, zero dependencies
+│  └─ test/                     251 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -328,7 +329,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 247 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 251 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

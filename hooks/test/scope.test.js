@@ -480,3 +480,46 @@ test('omitting the foundation context leaves scope behaviour unchanged', () => {
   // suddenly start seeing foundation denials.
   assert.strictEqual(builderWrite('backend-engineer', 'src/api/users.ts', undefined), null);
 });
+
+/* ---------- a denial that routes itself ---------- */
+//
+// Three consecutive runs assigned a path to a builder that the scope map gave
+// to someone else -- README.md, .nvmrc, DESIGN_NOTES.md, all owned by
+// infra-architect. The map knew the answer every time; the denial just never
+// said it, so the lead re-guessed instead of re-routing.
+
+test('a denial names the agent that does own the path', () => {
+  const d = decideScope(
+    { agent_type: 'frontend-engineer', cwd: '/p', tool_input: { file_path: '/p/DESIGN_NOTES.md' } },
+    REAL_MAP);
+  assert.ok(d, 'frontend-engineer should not be able to write a root markdown file');
+  assert.match(d.deny, /infra-architect owns this path/,
+    'the denial must name the owner so the lead can route rather than guess: ' + d.deny);
+});
+
+test('a denial for a path nobody owns says so, rather than naming a scapegoat', () => {
+  // A path outside every scope is a foundation gap. Blaming the builder sends
+  // the lead re-dispatching in circles.
+  const d = decideScope(
+    { agent_type: 'backend-engineer', cwd: '/p', tool_input: { file_path: '/p/weird/place/thing.bin' } },
+    REAL_MAP);
+  assert.ok(d);
+  assert.match(d.deny, /No agent owns this path/);
+  assert.doesNotMatch(d.deny, /owns this path\./, 'must not name an owner that does not exist');
+});
+
+test('ownerOf never reports the blocked agent as its own owner', () => {
+  const { ownerOf } = require('../lib/scope.js');
+  assert.strictEqual(ownerOf('src/api/users.ts', REAL_MAP, 'backend-engineer'), null,
+    'excluding the asking agent is what makes the answer useful');
+  assert.strictEqual(ownerOf('src/api/users.ts', REAL_MAP, 'frontend-engineer'), 'backend-engineer');
+});
+
+test('ownerOf does not hand a source path to a read-only gate', () => {
+  const { ownerOf } = require('../lib/scope.js');
+  for (const p of ['src/api/users.ts', 'README.md', 'src/app/page.tsx']) {
+    const owner = ownerOf(p, REAL_MAP, 'backend-engineer');
+    assert.ok(!['code-reviewer', 'review-lens', 'security-engineer'].includes(owner),
+      p + ' was routed to the gate ' + owner);
+  }
+});

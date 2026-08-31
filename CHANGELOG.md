@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.21.0
+
+A write denial now names the agent that does own the path. Three consecutive
+runs lost a dispatch to the same mistake — README.md, .nvmrc and
+DESIGN_NOTES.md each assigned to a builder while the scope map gave them to
+infra-architect. The map knew the answer every time; the message just never
+said it, so the lead re-guessed rather than re-routed.
+
+Where no agent owns the path, the denial says so explicitly. That is a gap in
+the foundation rather than a mistake by the builder that tripped over it, and
+naming a scapegoat sends the lead re-dispatching in circles.
+
+The lead now takes write_scope from .devteam/scope-map.json when the project
+has one — the file the hook actually enforces — rather than from the stack
+profile Directory map, which is a description of intent. Where the two differ,
+the hook wins.
+
+Four guards, three confirmed to fail against a broken copy. The fourth could
+not: it targeted a clause that turned out to be dead, because matchAny against
+an empty scope is already false. The clause is removed rather than left to look
+load-bearing.
+
+
 ## 0.20.1
 
 The screenshot tool was an unguarded write primitive. The write-scope hook

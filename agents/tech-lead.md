@@ -68,14 +68,26 @@ your report upward; never simply omit it.
 
 - `brief` — the path `.devteam/brief.md`
 - `task` — what this agent must do
-- `write_scope` — the globs it may modify, taken from the stack profile's
-  Directory map. **Naming a path here does not grant it.** Each agent's real
+- `write_scope` — the globs it may modify, taken from
+  `.devteam/scope-map.json` when the project has one, and otherwise from the
+  stack profile's Directory map. Read the scope map before you dispatch: it is
+  the file the hook actually enforces, the Directory map is a description of
+  intent, and where they differ the hook wins. **Naming a path here does not
+  grant it.** Each agent's real
   scope is fixed by a hook, and a path outside it is denied no matter what your
   dispatch said — this has stranded a builder in two separate runs. The
   foundation gate has already checked the profile's Directory map against the
   hook, so assignments taken from there are the ones that will actually work.
-  If the work needs a path the profile assigns to a different agent, dispatch
-  that agent; do not widen someone else's scope on paper.
+  If the work needs a path the map assigns to a different agent, dispatch that
+  agent; do not widen someone else's scope on paper. When a denial comes back it
+  names the owner — route it there immediately rather than re-deciding. Three
+  consecutive runs lost a dispatch to this: `README.md`, `.nvmrc` and
+  `DESIGN_NOTES.md` each went to a builder while the map gave them to
+  `infra-architect`.
+
+  If an acceptance criterion needs a file no agent owns, that is a foundation
+  gap, not a routing problem. Send it back to `infra-architect` to put the path
+  in the scope map before any builder tries again.
 - `criteria` — the `AC-<n>` IDs it owns
 - `tier` — `load-bearing`, `standard`, or `scaffolding`, plus the one fact
   that decided it, and — on load-bearing work — the explicit instruction that a
