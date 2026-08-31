@@ -424,3 +424,27 @@ test('story-direction does not name a single generation provider', () => {
   assert.deepStrictEqual(named, [],
     'story-direction names a specific provider, which is how it stops being portable: ' + named.join(', '));
 });
+
+test('the escalation ladder has a rung for beats that must show', () => {
+  // Without it every clause biases toward less: "stop as soon as the beat does
+  // its job", "most beats need type and space", "more than one or two is
+  // decorating". Three separate runs stopped at step one and produced three
+  // near-identical text-only pages, each believing it had chosen its own
+  // direction. Restraint with no counterweight converges.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(skill, /cannot be done with type/,
+    'story-direction no longer says that some beats require showing');
+  assert.match(skill, /showing is the job/,
+    'the showing rule is present but no longer states that type cannot substitute');
+  assert.match(skill, /could this be the same page for a different company/,
+    'the test that catches a page showing nothing is gone');
+});
+
+test('the banned defaults name the idiom this plugin actually produces', () => {
+  // Every other entry is a default inherited from training data. This one is
+  // ours: the plugin converged on it three times unprompted, which makes it
+  // more likely to recur than any of the others.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'frontend-craft', 'SKILL.md'), 'utf8');
+  assert.match(skill, /nothing to look at/,
+    'frontend-craft no longer names the restraint idiom as a banned default');
+});

@@ -263,6 +263,16 @@ that beats an agent's frontmatter, and that lever is real. It takes no effort
 override — effort is fixed per agent definition — so the skill says so plainly
 rather than letting the lead write one and believe it took.
 
+## Restraint with no counterweight converges
+
+Three runs of the same brief produced three near-identical pages: near-black ground, a display serif with one word in italic accent, monospace letter-spaced labels, hairline rules, a right-aligned spec table, and nothing to look at. Each believed it had committed to its own direction. Each passed the banned-defaults check — because every entry there is a prohibition, and an empty page violates none of them.
+
+`story-direction`’s escalation ladder caused it. Words, structure, still, motion, with *stop as soon as the beat does its job* — every clause biasing toward less, and no rule anywhere saying a beat might require showing. A studio selling brand and interface systems shipped a page demonstrating none of its work, with a selected-work section listing client names as text.
+
+**The ladder now has that rung.** If a beat’s job is to show, showing is the job and type cannot substitute. The test is: *could this be the same page for a different company?* Where showing is genuinely impossible — no generator, no real work — say so, rather than substituting a list and letting it pass as the section it replaced.
+
+Two things follow. **Departing from a convention is not inverting it**: the audit found every competitor leading with a full-bleed reel, and the departure taken was *no imagery*, which discards what those pages did right. And the idiom is now a banned default in its own right, named beside Inter and the three cards — unlike those, this plugin produced it three times unprompted, which makes it the likeliest of all to recur.
+
 ## The page is directed, not assembled
 
 A page built section by section — each one competently designed — arrives looking like a list of components. `story-direction` runs before any visual decision and decides what the page is *for*: the claim in one sentence a reader could disagree with, then three to six beats with the job each one does, in order. **A beat that leaves the reader unchanged is a section you can delete.**
@@ -327,7 +337,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     254 tests, zero dependencies
+│  └─ test/                     256 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -345,7 +355,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 254 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 256 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

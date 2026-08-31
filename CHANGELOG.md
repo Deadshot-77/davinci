@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.23.0
+
+Restraint with no counterweight converges. Three runs of the same brief
+produced three near-identical pages -- near-black ground, display serif with
+one word in italic accent, monospace letter-spaced labels, hairline rules, a
+right-aligned spec table, and nothing to look at. Each believed it had
+committed to its own direction. Each passed the banned-defaults check, because
+every entry there is a prohibition and an empty page violates none of them.
+
+story-direction caused it. The ladder read words, structure, still, motion,
+with "stop as soon as the beat does its job" and "most beats need type, space
+and a sentence worth reading". Every clause biased toward less, and nothing
+said a beat might require showing. So a run with a generator available, credits
+to spend and permission for three assets shipped hand-authored SVG instead --
+and a studio selling brand and interface systems shipped a page demonstrating
+none of its work.
+
+The rung is now there: if a beat needs to show, showing is the job and type
+cannot substitute. The test is whether the same section could belong to a
+different company. Where showing is genuinely impossible, say so rather than
+substituting a list and letting it pass as the section it replaced.
+
+Departing from a convention is also not inverting it. The audit found every
+competitor leading with a full-bleed reel; the departure taken was no imagery,
+which throws away what those pages did right and lands somewhere equally
+predictable.
+
+And the idiom is a banned default in its own right now, named beside Inter and
+the three cards. Unlike those, this plugin generated it three times unprompted,
+which makes it the likeliest of them all to recur.
+
+Three guards, each confirmed to fail against a softened copy. Whether the rule
+changes what gets built is the next run to answer, not this commit.
+
+
 ## 0.22.0
 
 Adds story-direction: the skill that decides what a page is arguing, before

@@ -72,6 +72,37 @@ Work in this order, and stop as soon as the beat does its job:
 Number four is rare. If more than one or two beats reach it, you are decorating
 rather than directing.
 
+### Some beats cannot be done with type at all
+
+The ladder above is about not decorating beats that do not need it. It is not
+permission to ship a page with nothing to look at.
+
+**If a beat's job is to show something, showing is the job, and type cannot
+substitute for it.** A selected-work section that lists client names is a table
+of contents for a portfolio, not a portfolio. A product page with no product, a
+studio selling visual craft that demonstrates none, a case study with no case —
+each has failed at the one thing that section existed to do, however good the
+sentence above it is.
+
+Ask of every beat: *could this be the same page for a different company?* If a
+studio's work section would read identically for any other studio, it is showing
+nothing. That is the same failure as a centred hero over three cards, reached
+from the opposite direction — and it is the one this ladder makes easy, because
+stopping early always looks like discipline.
+
+When a beat needs showing and you genuinely cannot show — no generator, no real
+work to display, nothing but placeholders available — say that plainly in
+`assumptions` and in your handoff. Do not quietly substitute a list and let it
+pass as the section it replaced.
+
+### Departing from a convention is not inverting it
+
+If the audit says every competitor leads with a full-bleed reel, the departure
+is not "no imagery". It is *say something first, then show the work* — you have
+kept the thing that made their pages worth looking at and fixed the thing that
+made them say nothing. Inverting a convention throws away what it was doing
+right, and arrives somewhere just as predictable.
+
 ## 4. Motion has to earn the scroll
 
 When a beat genuinely wants scroll-linked behaviour, the `scrollytelling`

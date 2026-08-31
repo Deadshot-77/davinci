@@ -176,6 +176,14 @@ Each of these is a tell that no decision was made:
 - text laid over an image with no scrim or contrast treatment behind it
 - every section sharing the same vertical rhythm regardless of content weight
 - an icon glued to every bullet whether or not it adds information
+- **a page with nothing to look at**: near-black ground, a display serif with
+  one word in italic accent, monospace letter-spaced labels, hairline rules and
+  a right-aligned specification table. This is the current house style of
+  careful machine design — three separate runs of this plugin produced it
+  independently, each believing it had committed to its own direction — and it
+  is now as much a default as Inter and the three cards. If your page matches
+  more than three of those, you have arrived at the average by the scenic route.
+  Showing something real is the way out, not another prohibition.
 
 ## 7. Generated media
 
