@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.22.0
+
+Adds story-direction: the skill that decides what a page is arguing, before
+anything is styled or generated. Every other skill here executes a decision;
+this one makes it. The claim in a sentence, three to six beats with the job
+each does, and only then what any beat needs — words, structure, a still, or
+motion, in that order, stopping as soon as the beat does its job.
+
+Asset briefs are provider-neutral by construction. A brief names what the
+asset shows, what it must convey, its form, the shared treatment, and a
+"without it" fallback; the mapping onto a CLI, an MCP tool, a stock library or
+hand-written SVG is mechanical and comes last. A test fails the suite if any
+vendor name appears in the skill, so the brief survives the provider changing.
+
+Cohesion is one rule: decide the treatment once, before the first brief, and
+repeat it in every brief after. Assets generated independently look generated.
+
+frontend-craft now defers to the scrollytelling skill where installed, rather
+than paraphrasing it — it carries far more on pinned layouts and reveal
+patterns than belongs here, and its first principle is the right one: lead
+with the narrative, not the technique.
+
+frontend-engineer is told not to hand the build to a generation provider.
+Several offer to scaffold and deploy an entire site from a prompt, which would
+discard the scope map, the perception loop, code-craft and the review gates in
+one move. Providers make assets; the page is the agent to build.
+
+Three guards, and the falsification pass earned its place again: the vendor
+check was written with a single-backslash \b, which in a JS string is the
+backspace character rather than a word boundary. It could never have matched,
+and it passed with a vendor name sitting in the file. Now a plain substring
+check, which also catches "higgsfield-generate" that a boundary would have
+missed.
+
+
 ## 0.21.0
 
 A write denial now names the agent that does own the path. Three consecutive

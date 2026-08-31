@@ -383,3 +383,44 @@ test('every "<skill> section N" reference points at a heading that exists', () =
   assert.deepStrictEqual(broken, [],
     'reference(s) point at a skill section that does not exist: ' + broken.join(', '));
 });
+
+test('every agent that builds a user-facing surface carries the director skill', () => {
+  // A page assembled section by section arrives looking like a list of
+  // components. story-direction decides the claim and the beats before any of
+  // frontend-craft's visual decisions are made, so the agent that makes those
+  // decisions has to have it.
+  const byName = new Map(readAgents().map((a) => [a.name, a]));
+  const fe = byName.get('frontend-engineer');
+  assert.ok(fe, 'frontend-engineer.md is missing');
+  assert.ok(fe.skills.includes('story-direction'),
+    'frontend-engineer no longer carries story-direction: ' + fe.skills.join(', '));
+  assert.ok(fe.skills.indexOf('story-direction') < fe.skills.indexOf('frontend-craft'),
+    'story-direction should load before frontend-craft — it decides what the styling is for');
+});
+
+test('an asset brief cannot be written without a fallback', () => {
+  // Generation fails, credits run out, a provider is absent on the next
+  // machine. A beat whose fallback is a grey box was never designed, and the
+  // brief template is where that gets enforced.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(skill, /without it:/,
+    'the asset brief template no longer carries a fallback field');
+  assert.match(skill, /`without it` is not optional/,
+    'the fallback field is present but no longer required');
+});
+
+test('story-direction does not name a single generation provider', () => {
+  // The brief has to survive the provider being swapped. Naming one in the
+  // skill is how it quietly becomes the only one that works.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  const vendors = ['higgsfield', 'midjourney', 'dall-e', 'dalle', 'sora', 'runway', 'veo', 'firefly'];
+  // Substring, not a word-boundary regex. The first version of this used
+  // '\b' + v + '\b' written with a single backslash, which in a JS string is
+  // the backspace character rather than a boundary -- so the pattern could
+  // never match and the test could never fail. Plain inclusion also catches
+  // "higgsfield-generate", which a boundary would have missed anyway.
+  const haystack = skill.toLowerCase();
+  const named = vendors.filter((v) => haystack.includes(v));
+  assert.deepStrictEqual(named, [],
+    'story-direction names a specific provider, which is how it stops being portable: ' + named.join(', '));
+});

@@ -12,6 +12,14 @@ three cards, the same near-white greys, the same Inter. That average reads as
 characterless the moment a human looks at it. Breaking it takes a decision
 made before any code is written, not a cleanup pass after.
 
+## Before any of this: know what the page is arguing
+
+`story-direction` comes before everything in this file. A visual direction is
+a stance about type, colour and density; it is not a decision about what the
+page says, in what order, and why a reader is still there at the fourth
+section. Settle the claim and the beats first, then come back here and dress
+them.
+
 ## 1. Go and look at the category first
 
 A designer handed a brief does not start drawing. They find out what the
@@ -143,6 +151,11 @@ again — a layout that composes well at desktop width routinely breaks at
 phone width, and that only shows up by looking.
 
 ## 5. Companion skills
+
+If `scrollytelling` is installed, invoke it before building any scroll-linked
+sequence — it carries far more on pinned layouts, reveal patterns and the
+techniques that actually work than fits here, and it takes precedence over
+anything this file says about motion.
 
 If `design-taste-frontend` or `web-design-engineer` are installed, invoke
 them with the `Skill` tool and follow what they say — both carry far more

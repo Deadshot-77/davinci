@@ -263,6 +263,16 @@ that beats an agent's frontmatter, and that lever is real. It takes no effort
 override — effort is fixed per agent definition — so the skill says so plainly
 rather than letting the lead write one and believe it took.
 
+## The page is directed, not assembled
+
+A page built section by section — each one competently designed — arrives looking like a list of components. `story-direction` runs before any visual decision and decides what the page is *for*: the claim in one sentence a reader could disagree with, then three to six beats with the job each one does, in order. **A beat that leaves the reader unchanged is a section you can delete.**
+
+Only then does it ask what a beat needs, in escalating order: words and hierarchy, then structure, then a still, then motion. Most beats stop at the first. Motion is reserved for where the change itself is the point, and the page has to make its argument with every animation disabled — a beat that is incomprehensible without movement is staged rather than designed.
+
+**Asset briefs are provider-neutral.** The brief names what the asset shows, what it must make the reader understand, its form and duration, the shared treatment — and `without it`, the fallback if it cannot be made. Only then is it mapped onto whatever generator happens to exist: a CLI on `PATH`, an MCP tool, a stock library, or CSS and SVG by hand. The mapping is mechanical; the brief is the work, and it survives the provider being swapped. A test fails the suite if any vendor name appears in the skill.
+
+One more rule holds a page together: the treatment is decided **once**, before the first brief, and repeated in every one after it. Assets generated independently look generated — a moody long-lens hero above flat vector illustration is two art directions and no identity.
+
 ## The frontend agent researches before it designs
 
 A designer handed a brief does not start drawing — they find out what the category already looks like, by looking. The agent can now do that literally: `scripts/shoot.mjs` points at any URL, not only a local dev server, so it renders three or four real competitors and **reads the images** before deciding anything. Verified against a live site before the instruction was written.
@@ -309,7 +319,7 @@ davinci/
 ├─ commands/build.md            the /davinci:build entry command
 ├─ permissions.example.json     verification-only permission profile for agents
 ├─ agents/                      the seven agent definitions
-├─ skills/                      intake, delegation contract, work tiers, stack profile, foundation review, frontend craft, code craft, security audit
+├─ skills/                      intake, delegation contract, work tiers, stack profile, foundation review, story direction, frontend craft, code craft, security audit
 ├─ scripts/
 │  ├─ shoot.mjs                 zero-dependency headless screenshot tool
 │  └─ png-crop.mjs              dependency-free PNG crop, for true small viewports
@@ -317,7 +327,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     251 tests, zero dependencies
+│  └─ test/                     254 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -335,7 +345,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 251 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 254 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
