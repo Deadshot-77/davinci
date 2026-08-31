@@ -120,9 +120,15 @@ git clone https://github.com/Leonxlnx/taste-skill.git ~/.claude/skills/taste-ski
 
 `frontend-craft` invokes it when present and follows what it says; when it's absent, `frontend-craft` falls back to its own guidance. `taste-skill` is a separate MIT-licensed project, not part of Davinci.
 
-## Generated media (optional)
+## Generated media (optional, and often absent)
 
-`frontend-engineer` can drive a media MCP server to produce imagery or video. The server identifier is per-installation and can't be shipped in this repository, so the block is commented out by default — uncomment and fill in the `mcpServers:` block at the top of `agents/frontend-engineer.md` with your own connected server's name. Without it, the agent produces static design instead; nothing breaks either way.
+`frontend-engineer` can drive a media MCP server to produce imagery or video, and by default does not have one. Two facts decide whether it can, both measured rather than assumed:
+
+- **A wildcard in `tools:` does not work.** An agent declared with `tools: Read, mcp__*` receives exactly one tool — the pattern is dropped, not expanded. Every MCP tool must be named in full.
+- **A claude.ai connector is not visible to a `claude -p` run.** The team executes in a CLI subprocess whose MCP registry held only Notion and Spotify across two live runs, whatever the desktop session can see.
+
+So the server must be one the CLI itself knows about (`claude mcp add …`), and its tool names listed on the `tools:` line in `agents/frontend-engineer.md`. Without that the agent produces static design and records in `assumptions` that no media server was reachable — which is the honest outcome, not a silent downgrade.
+
 
 ## What is actually enforced
 

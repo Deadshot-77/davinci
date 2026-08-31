@@ -166,6 +166,13 @@ Each of these is a tell that no decision was made:
 
 ## 7. Generated media
 
+Check whether you actually have media tools before planning around them. A
+generated-media server is frequently absent — it must be one the CLI knows
+about, not a desktop connector — and a page designed around video that then
+ships without it is worse than one designed static from the start. If the tools
+are not in your context, say so in `assumptions` and design static. Never
+describe media you did not generate.
+
 When a media MCP server is configured: a poster frame on every video,
 `preload="none"`, lazy-loading below the fold, and a static fallback path for
 `prefers-reduced-motion`. Generate in batches — credits are metered, and a

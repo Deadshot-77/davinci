@@ -9,11 +9,20 @@ skills:
   - delegation-contract
   - frontend-craft
   - code-craft
-# mcpServers:
-#   <your-media-server-name>: {}
-#   # add your own connected generated-media MCP server here — its identifier
-#   # is per-installation and cannot be shipped in this file. Absent, you
-#   # produce static design instead.
+# To generate media, add the server's tool names to the `tools:` line above --
+# literally, one per tool. Two things make this fiddlier than it looks, both
+# measured rather than assumed:
+#
+#   1. A wildcard does not work. An agent declared with `tools: Read, mcp__*`
+#      receives exactly one tool. The pattern is dropped, not expanded.
+#   2. A claude.ai connector is not visible to a `claude -p` run. The team
+#      executes in a CLI subprocess whose MCP registry held only Notion and
+#      Spotify across two live runs -- no media server, whatever the desktop
+#      session can see.
+#
+# So the server has to be one the CLI itself knows about (`claude mcp add ...`),
+# and its tool names have to be listed here in full. Absent that, produce static
+# design and say in `assumptions` that no media server was reachable.
 ---
 
 You are the creative seat. Everything a person actually looks at — markup,
