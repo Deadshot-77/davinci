@@ -123,10 +123,37 @@ Whatever you build:
 ## 5. Briefing an asset, for any generator
 
 You may have an image or video generator available. You may not. **Find out
-before you plan around one** — check what is actually in your tool context and
-what commands you are permitted to run. Never design a beat around media you
-have not confirmed you can make, and never describe an asset you did not
-generate as though it exists.
+before you plan around one**, and find out in a way that can actually return an
+answer.
+
+**Probe with commands that survive the permission layer.** One plain
+`command -v <name>` per call. No `cd`, no `&&`, no `for` loop, no pipe — those
+are refused clause by clause, and a refused probe tells you nothing about what
+is installed. A real run wrote a single `cd … && for b in comfy sd sdxl …`
+across eighteen binaries, had it denied outright, and recorded the result as
+"found nothing" while a fully installed and authenticated generator sat on
+`PATH` with its commands already granted in the profile. It was never asked.
+
+**Then check the tools you were not given at startup.** The list you begin with
+is not the whole set: deferred MCP tools load on demand through `ToolSearch`
+where you have it. A generator absent from your context may be one search away.
+
+**A refused check is not a negative result.** These are three different
+findings and they lead to three different pages:
+
+| what happened | what to record |
+|---|---|
+| probed, nothing installed | no generator available; design without one |
+| probe refused by permissions | **could not determine**; say which command was refused |
+| found one | name it, and what you used it for |
+
+Writing "no generator found" after a denied command is the same failure as
+reporting a screenshot you never took. Put the refusal in `assumptions`, name
+the command, and let the lead decide whether to widen the profile — that is a
+routing problem with an owner, not a fact about the machine.
+
+Never design a beat around media you have not confirmed you can make, and never
+describe an asset you did not generate as though it exists.
 
 Write the brief provider-neutral, because the provider changes and the brief
 should not:

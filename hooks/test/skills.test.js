@@ -448,3 +448,23 @@ test('the banned defaults name the idiom this plugin actually produces', () => {
   assert.match(skill, /nothing to look at/,
     'frontend-craft no longer names the restraint idiom as a banned default');
 });
+
+test('a refused probe is distinguished from an absent generator', () => {
+  // A run wrote `cd … && for b in comfy sd sdxl …` across eighteen binaries,
+  // had it denied for being compound, and recorded "found nothing" -- while an
+  // installed, authenticated generator sat on PATH with its commands granted.
+  // The same shape as reporting a screenshot never taken.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(skill, /A refused check is not a negative result/,
+    'story-direction no longer separates a blocked probe from an absent generator');
+  assert.match(skill, /could not determine/,
+    'the three-outcome table no longer offers "could not determine"');
+});
+
+test('the discovery probe is shaped to survive the permission layer', () => {
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(skill, /One plain\s+`command -v <name>` per call/,
+    'the probe no longer specifies one plain command per call');
+  assert.match(skill, /ToolSearch/,
+    'the probe no longer mentions deferred tools, which is how the only working generator was found');
+});

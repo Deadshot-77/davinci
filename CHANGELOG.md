@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.24.0
+
+A refused check is not a negative result. A run probed for image generators with
+a single compound command -- cd, then a for loop over eighteen binaries -- which
+the permission layer refuses clause by clause. It was denied outright, and the
+agent recorded the outcome as "found nothing" while an installed, authenticated
+generator sat on PATH with its commands already granted in the profile. It was
+never asked, and the page was built with the second-choice provider.
+
+This is the third time a blocked check has been reported as a result rather than
+an error. The mobile screenshot rendered at 496px and reported 390. Five agents
+called criteria unverifiable when node -e was refused. Now a denied probe reads
+as an absent generator.
+
+story-direction now separates three outcomes that lead to three different pages:
+probed and nothing installed, probe refused, or found. A refusal goes in
+assumptions naming the command, because that is a routing problem with an owner
+rather than a fact about the machine.
+
+And the probe is shaped to survive: one plain command -v per call, no cd, no &&,
+no loop, no pipe. Followed by a ToolSearch pass, since the startup tool list is
+not the whole set -- which is how the only generator that did get used was found.
+
+Two guards, three mutations, each confirmed to fail.
+
+
 ## 0.23.1
 
 Corrects a claim shipped in 0.20 that measurement has since falsified.
