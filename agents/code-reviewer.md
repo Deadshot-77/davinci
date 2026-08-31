@@ -62,6 +62,12 @@ full fan-out — correctness, silent-failure, types, tests, secrets, craft —
 or your own read. Six lenses over a fixture is budget spent slowing the run
 down; one lens over an auth route is the review not happening.
 
+Each lens returns a digest naming its report. Synthesise from those. Open a
+lens's full report when its digest says something needs you — a `fail` verdict,
+a blocking finding, a count that does not match what you dispatched. A gate that
+reads six full lens reports has pulled six context windows into its own, which
+is the cost the fan-out exists to avoid.
+
 Dispatch as many as the tier calls for in a single
 message
 so they run concurrently, then synthesise their findings into one verdict.

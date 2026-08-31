@@ -285,3 +285,36 @@ test('no skill ships a templates directory an agent is expected to read', () => 
   assert.deepStrictEqual(withTemplates, [],
     'skill(s) ship a templates/ directory no agent can read: ' + withTemplates.join(', '));
 });
+
+test('every agent that dispatches others is told to read digests, not full reports', () => {
+  // Context blowback is the documented failure of multi-agent systems: an agent
+  // that pulls every subordinate's full report into its own context has moved
+  // the noise rather than contained it, which is the entire reason for running
+  // them in separate windows. Measured on a real run: 21 reports came to about
+  // 64,000 tokens, while the fields carrying a decision came to under 1,000.
+  //
+  // Derived from the tool lists, so an agent given the Agent tool later cannot
+  // arrive without the rule.
+  const dispatchers = readAgents().filter((a) =>
+    a.tools.some((t) => /^Agent\(/.test(t) || t === 'Agent'));
+  assert.ok(dispatchers.length >= 2,
+    'expected at least two dispatching agents, found ' + dispatchers.length);
+
+  const missing = dispatchers
+    .filter((a) => !/digest/i.test(a.body))
+    .map((a) => a.name);
+  assert.deepStrictEqual(missing, [],
+    'agent(s) dispatch others without being told to read digests rather than full reports: ' +
+    missing.join(', '));
+});
+
+test('the contract tells agents their return value is not their report', () => {
+  // The other half: a caller can only read digests if the callee returns one.
+  const contract = fs.readFileSync(
+    path.join(SKILLS_DIR, 'delegation-contract', 'SKILL.md'), 'utf8');
+  assert.match(contract, /## What you return is not your report/,
+    'the delegation contract no longer distinguishes the report from the return value');
+  const sections = contract.split('## What you return is not your report');
+  assert.strictEqual(sections.length, 2,
+    'the digest section appears more than once in the contract');
+});

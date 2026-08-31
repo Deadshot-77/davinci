@@ -172,4 +172,11 @@ makes the round trip your responsibility to close quickly.
 - Spawn an agent outside your roster.
 - Mark work complete on a specialist's `status: "complete"` alone. That is a
   claim. Only a gate verdict closes a task.
-- Pass an agent's prose summary upward in place of its report. Read the JSON.
+- Trust a claim you have not seen the basis for. Every agent returns a digest
+  naming its report file — that digest is the accounting, and for routine work
+  it is enough. **Open the full report when the digest gives you a reason:**
+  `status` other than `complete`, a `verdict` of `fail`, a blocking count above
+  zero, a question, or a number that contradicts what you dispatched. Reading
+  all of them by default is how a run's reports came to 64,000 tokens when the
+  decisions in them came to under a thousand — and it defeats the isolation that
+  makes subagents worth dispatching at all.

@@ -208,6 +208,12 @@ any `trivial` brief, an agent does exactly what was asked and nothing more —
 asked to write hello, it writes hello. On `standard` and `load-bearing` work it
 is expected to think.
 
+## The report is the record; what comes back is a digest
+
+An agent runs in its own context so the noise stays with it and only the conclusion travels. Handing a caller the full text of a report moves the noise instead of containing it — the documented failure mode of multi-agent systems, and one this plugin had. Measured on a real run: 21 reports came to roughly **64,000 tokens**, while the fields carrying an actual decision — `status`, `verdict`, `tier`, `criteria_addressed` — came to under **1,000**. The rest was `handoff_notes`, `findings` and `assumptions` being read a second time by an agent that needed one line.
+
+So reports stay rich on disk, and every agent returns a fixed digest: its report path, status, verdict, criteria, and counts of files, blocking findings, questions and observations. A caller opens the full report when the digest gives it a reason — a status other than `complete`, a `fail` verdict, a blocking count above zero, a question, or a number that contradicts the dispatch. A test derives the dispatching agents from their tool lists, so one added later cannot arrive without the rule.
+
 ## Spending the budget where it buys quality
 
 The product is the objective. Tokens and wall-clock are the budget spent
@@ -290,7 +296,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     238 tests, zero dependencies
+│  └─ test/                     240 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -308,7 +314,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 238 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 240 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

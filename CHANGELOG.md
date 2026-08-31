@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.18.0
+
+The report is the record; what comes back is a digest. An agent runs in its own
+context so the noise stays with it and the conclusion travels — and this plugin
+was moving the noise instead. Measured on a real run: 21 reports came to roughly
+64,000 tokens, while the fields carrying a decision came to under 1,000. The rest
+was handoff_notes, findings and assumptions being read a second time by an agent
+that needed one line. tech-lead was explicitly instructed to read every report in
+full.
+
+Reports stay rich on disk. Every agent now returns a fixed digest — report path,
+status, verdict, criteria, and counts of files, blocking findings, questions and
+observations — and adds up to three sentences only when blocked, failing, or
+carrying a blocking finding or a question. Callers open the full report when the
+digest gives them a reason.
+
+Applied to the three agents that fan out and to the entry command, which now
+summarises for the user rather than pasting the pile.
+
+Two guards, each confirmed to fail against a broken copy. The dispatcher list is
+derived from tool frontmatter, so an agent given the Agent tool later cannot
+arrive without the rule. The second catches the section being applied twice —
+which is exactly what I did to the contract while making this change.
+
+Borrowed rather than invented: the pattern is the one every surviving subagent in
+the field shares, and context blowback is the anti-pattern most often blamed for
+multi-agent systems costing more than they save.
+
+
 ## 0.17.0
 
 Agents can prove their work again. A live Astro run had five agents

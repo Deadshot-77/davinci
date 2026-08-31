@@ -273,6 +273,42 @@ If a command you genuinely need is still refused after that, it is a finding,
 not an obstacle to route around: record it in `observations` with what you were
 trying to prove, and use `verification` for what you did manage to run.
 
+## What you return is not your report
+
+Your report goes to disk in full. It is the record: rich, complete, and read by
+anyone who needs the detail later.
+
+**What you return to whoever dispatched you is a digest, and it is short.** Your
+final message is not the place to restate what you already wrote to a file. A
+run of twenty-one reports came to roughly 64,000 tokens; the fields carrying an
+actual decision — `status`, `verdict`, `tier`, `criteria_addressed` — came to
+under a thousand. Everything else was `handoff_notes`, `findings` and
+`assumptions` being read a second time by an agent that mostly needed one line.
+
+That is the whole reason you run in your own context: the noise stays with you
+and the conclusion travels. An agent that hands its caller the full text of its
+report has moved the noise instead of containing it.
+
+Return exactly this, and nothing after it:
+
+```
+report: .devteam/reports/<file>.json
+status: complete | blocked | needs_input
+verdict: pass | fail          (gates and lenses only; omit otherwise)
+criteria: AC-1, AC-3, AC-7    (or "none")
+files: 4 changed
+blocking: 0                   (count; list the criterion of each if above zero)
+questions: 0                  (count)
+observations: 2               (count)
+next: one sentence, only if something is needed from your caller
+```
+
+If you are blocked, or a gate's verdict is `fail`, or you filed a blocking
+finding or a question, add up to three sentences saying what and why. Those are
+the cases where your caller needs to act without opening a file. Everywhere
+else, the digest is the whole message — the detail is on disk and your caller
+will read it if it needs to.
+
 ## The rule that governs everything
 
 **You cannot declare yourself done.** `status: "complete"` is a claim. A task

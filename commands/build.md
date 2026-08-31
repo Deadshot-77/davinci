@@ -54,9 +54,13 @@ decision the user can correct afterwards; a run left paused is nothing at all.
 ## Handling the report
 
 Tell the user: what was built, which acceptance criteria passed, which failed
-and why, every entry from the specialists' `assumptions` fields, and every
-observation with the lead's ruling on it. Assumptions and deferred observations
-are where wrong work hides — surface them even when everything passed.
+and why, the assumptions the specialists recorded, and the observations with the
+lead's ruling on each. Assumptions and deferred observations are where wrong
+work hides — surface them even when everything passed.
+
+Summarise them; do not paste them. A run's reports come to tens of thousands of
+tokens and the user wants the decisions, not the transcript. Say where the
+reports are so any of it can be read in full on request.
 
 ## What you never do
 

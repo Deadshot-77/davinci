@@ -34,6 +34,11 @@ Issuing the calls one at a time serialises agents that have no reason to
 wait on each other and wastes the entire point of splitting the review into
 lenses.
 
+Synthesise from the digest each lens returns, and open a full report only when
+its digest says you need to — a `fail` verdict, a blocking finding, a count
+that does not match what you dispatched. Pulling every lens report into your
+own context undoes the isolation that made the fan-out worth doing.
+
 ## Verdict discipline
 
 - A **blocking** finding cites an `AC-<n>` from the brief, with one
