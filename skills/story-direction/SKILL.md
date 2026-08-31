@@ -134,9 +134,16 @@ across eighteen binaries, had it denied outright, and recorded the result as
 "found nothing" while a fully installed and authenticated generator sat on
 `PATH` with its commands already granted in the profile. It was never asked.
 
-**Then check the tools you were not given at startup.** The list you begin with
-is not the whole set: deferred MCP tools load on demand through `ToolSearch`
-where you have it. A generator absent from your context may be one search away.
+**Do not wait for a generator to appear in your tool list.** Deferred MCP tools
+load on demand through `ToolSearch`, and `ToolSearch` cannot be given to an
+agent -- an agent declared with it receives everything else and not it, the same
+silent drop as an `mcp__*` wildcard. So if you are an agent, the MCP route is
+closed to you no matter what the tool list says.
+
+What is open is a generator that installs as a binary. `command -v` reaches it,
+Bash drives it, and the profile has to grant the generating command explicitly
+because it spends real credits. If PATH has one and you lack permission to run
+it, that is the blocked-check case below -- not an absent generator.
 
 **A refused check is not a negative result.** These are three different
 findings and they lead to three different pages:

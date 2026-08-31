@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.25.0
+
+ToolSearch cannot be given to an agent. An agent declared `tools: Bash,
+ToolSearch` receives only Bash -- the same silent drop as an `mcp__*` wildcard,
+measured with a two-agent probe. 0.23.1 said an agent needing generated media
+"has to be given both the search and the tool it finds". That is not possible,
+and this release removes the claim.
+
+The deferred-MCP route is therefore closed to agents entirely: a tool that loads
+on demand has no schema until something searches for it, and only the entry
+command can search. Listing its name on an allowlist cannot help.
+
+What is open is a generator that installs as a binary. The same probe ran
+`command -v higgsfield` inside an agent and got a path back. So discovery
+targets PATH rather than the tool list, and the profile now grants
+`Bash(command -v:*)` -- a probe that cannot run reports an absent generator,
+which is a lie the page then gets built on. Generation stays opt-in per project,
+because it spends real credits; a binary found but not runnable is a blocked
+check, not an absent generator.
+
+This also corrects the diagnosis shipped in 0.24.0. The denied `cd && for` probe
+was real, but it was not why a run reached for the wrong provider. That run
+grepped its own `.devteam/` directory at intake, found the provider a previous
+run had used, and selected those tool names directly -- never searching, never
+comparing. Each run using a provider wrote more evidence that it was the one
+this project uses. Precedent, not discovery.
+
+Two guards, four mutations, each confirmed to fail.
+
+
 ## 0.24.0
 
 A refused check is not a negative result. A run probed for image generators with

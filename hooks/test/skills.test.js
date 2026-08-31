@@ -468,3 +468,27 @@ test('the discovery probe is shaped to survive the permission layer', () => {
   assert.match(skill, /ToolSearch/,
     'the probe no longer mentions deferred tools, which is how the only working generator was found');
 });
+
+test('the agent generator route is the CLI, not ToolSearch', () => {
+  // Measured: an agent declared `tools: Bash, ToolSearch` received only Bash.
+  // ToolSearch drops silently, exactly like an mcp__* wildcard. The same probe
+  // ran `command -v higgsfield` and got a path back, so the binary route works
+  // from inside an agent even though the deferred-MCP route cannot.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(skill, /`ToolSearch` cannot be given to an\s+agent/,
+    'story-direction still implies an agent can reach a deferred tool');
+  assert.match(skill, /installs as a binary/,
+    'story-direction no longer names the route that is actually open to an agent');
+});
+
+test('discovery is granted but generation is not', () => {
+  const profile = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', '..', 'permissions.example.json'), 'utf8'));
+  const allow = profile.permissions.allow;
+  assert.ok(allow.includes('Bash(command -v:*)'),
+    'a probe that cannot run reports an absent generator, which is a lie the page gets built on');
+  assert.ok(!allow.some((e) => /generate/i.test(e)),
+    'generation spends real credits and must stay opt-in per project');
+  assert.match(profile['//generators'] || '', /blocked check/,
+    'the profile no longer explains what to report when a binary is found but unrunnable');
+});

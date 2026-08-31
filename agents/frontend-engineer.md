@@ -16,15 +16,19 @@ skills:
 #
 #   1. A wildcard does not work. An agent declared with `tools: Read, mcp__*`
 #      receives exactly one tool. The pattern is dropped, not expanded.
-#   2. A connector missing from the session's tool list may still be reachable.
-#      Deferred MCP tools do not appear at startup and load on demand through
-#      ToolSearch -- a later run generated a photograph with
-#      mcp__claude_ai_Magnific__images_generate after loading it that way, on a
-#      run whose init list named only Notion, Spotify and Figma. An init
-#      listing is not an inventory. But ToolSearch is itself a tool, and it is
-#      not on the allowlist above, so today only the entry command can do this;
-#      an agent that needs generated media has to be given both the search and
-#      the tool it finds.
+#   2. ToolSearch cannot be given to an agent. Declaring `tools: Bash,
+#      ToolSearch` yields an agent holding only Bash -- measured, same silent
+#      drop as the wildcard. So the deferred-MCP route is closed here: a
+#      connector that loads on demand is reachable only from the entry command,
+#      and listing its tool names above cannot help, because a deferred tool
+#      has no schema until something searches for it.
+#
+#      The open route is a CLI generator over Bash. The same probe that found
+#      ToolSearch missing ran `command -v higgsfield` and got a path back, so
+#      an agent can find and drive a generator that installs as a binary. That
+#      is why story-direction's discovery step probes PATH rather than tools,
+#      and why the profile grants `command -v` but leaves the generator itself
+#      to be granted deliberately -- generation spends real credits.
 #
 # So the server has to be one the CLI itself knows about (`claude mcp add ...`),
 # and its tool names have to be listed here in full. Absent that, produce static
