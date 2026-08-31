@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.18.1
+
+Fixes a regression in the 0.18.0 digest rule, found by testing it the way
+superpowers tests skills: dispatch a subagent with the rule and without it, and
+compare what it actually does.
+
+Baseline, no rule: the agent read its report and returned ~500 words restating
+it — the blowback the rule exists to prevent, so the rule addresses something
+real. With the rule as shipped: the agent returned a correctly formatted digest
+saying the report file did not exist and there was no .devteam directory at all,
+having made zero tool calls. The file exists and is 5,211 bytes.
+
+"Return exactly this, and nothing after it" read as a description of the whole
+task. The format displaced the work — the same trap writing-skills documents for
+description fields, where an instruction that summarises the output becomes a
+shortcut agents take instead of doing the thing.
+
+The rule now states that the digest is derived from what was written and
+verified, that it governs the shape of the final message and not the amount of
+work, and that it never turns an unread file into a reported fact. Re-tested: the
+same scenario now produces a digest that names its uncertainty rather than
+asserting a falsehood in a confident format.
+
+docs/testing-skills.md records the method, this result, and a flaw in the test
+harness itself — the scenario forbade the tool use it was measuring.
+
+
 ## 0.18.0
 
 The report is the record; what comes back is a digest. An agent runs in its own

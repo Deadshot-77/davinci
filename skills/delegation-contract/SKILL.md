@@ -289,7 +289,11 @@ That is the whole reason you run in your own context: the noise stays with you
 and the conclusion travels. An agent that hands its caller the full text of its
 report has moved the noise instead of containing it.
 
-Return exactly this, and nothing after it:
+Once the work is done and the report is filed, summarise **that report** for
+your caller in this shape. The digest is derived from what you actually wrote
+and verified — never from what you expect to be true. If you cannot account for
+a line of it, check before you fill it in; a digest is a claim like any other,
+and the one thing worse than a long message is a short confident wrong one.
 
 ```
 report: .devteam/reports/<file>.json
@@ -308,6 +312,13 @@ finding or a question, add up to three sentences saying what and why. Those are
 the cases where your caller needs to act without opening a file. Everywhere
 else, the digest is the whole message — the detail is on disk and your caller
 will read it if it needs to.
+
+This governs the *shape of your final message*, not the amount of work you do.
+It is not permission to skip a check, and it never turns an unread file into a
+reported fact. A subagent given this rule and asked to report on a file it had
+not read answered in the correct format, in confident detail, that the file did
+not exist — it had made no tool call at all. The format is the last step, not
+the task.
 
 ## The rule that governs everything
 
