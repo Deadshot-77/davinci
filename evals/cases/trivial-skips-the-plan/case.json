@@ -1,0 +1,35 @@
+{
+  "name": "trivial-skips-the-plan",
+  "why": "A one-line change must not earn a plan, an approval loop and a slice.",
+  "prompt": "/davinci:build There is a typo in the page heading. It says \"Plumbline Studioo\" and should say \"Plumbline Studio\". Fix it.",
+  "timeoutMs": 900000,
+  "expect": [
+    {
+      "kind": "file-contains",
+      "path": "src/page.tsx",
+      "pattern": "Plumbline Studio<",
+      "why": "the typo was not actually fixed, so nothing else here means anything"
+    },
+    {
+      "kind": "file-absent",
+      "path": ".devteam/plan.md",
+      "why": "a one-line change earned a written plan — the ceremony costs more than the change"
+    },
+    {
+      "kind": "file-absent",
+      "path": ".devteam/progress.jsonl",
+      "why": "a trivial change opened a slice journal it will never use"
+    },
+    {
+      "kind": "stream-lacks",
+      "pattern": "plan-approved",
+      "why": "the user was asked to approve a plan for a typo"
+    },
+    {
+      "kind": "file-contains",
+      "path": ".devteam/brief.md",
+      "why": "no brief was written, so nothing recorded what was asked for",
+      "pattern": "trivial"
+    }
+  ]
+}

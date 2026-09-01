@@ -338,12 +338,13 @@ davinci/
 │  ├─ checkpoint.mjs            shadow-git workspace snapshots, so a slice can be taken back
 │  ├─ review-run.mjs            reads a finished run: refusals, leaked servers, churn, unused skills
 │  ├─ survey.mjs                orients in an existing codebase: shape, tests, churn, entry points, unknowns
+│  ├─ eval.mjs                  behavioural evals: real agent runs scored by mechanical assertions
 │  └─ png-crop.mjs              dependency-free PNG crop, for true small viewports
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     355 tests, zero dependencies
+│  └─ test/                     363 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -361,7 +362,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 355 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 363 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

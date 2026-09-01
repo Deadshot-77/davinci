@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(command -v:*)",
+      "Bash(node <PLUGIN>/scripts/checkpoint.mjs:*)",
+      "Bash(node <PLUGIN>/scripts/survey.mjs:*)",
+      "Write",
+      "Edit",
+      "Bash(mkdir:*)"
+    ]
+  }
+}
