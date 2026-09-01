@@ -125,7 +125,7 @@ function resolveSpecifier(root, fromFile, spec, allFiles) {
   return null;
 }
 
-export function analyse(root) {
+export function analyse(root, budget = {}) {
   if (!fs.existsSync(root)) return { ok: false, error: `no such directory: ${root}` };
   const files = walk(root);
   const allFiles = new Set(files.map((f) => path.resolve(f)));
@@ -200,7 +200,22 @@ export function analyse(root) {
   }
 
   assetWeights.sort((a, b) => b.bytes - a.bytes);
-  const findings = orphanModules.length + unreferencedAssets.length + brokenLinks.length;
+
+  // A budget is only enforced when one was given. A project without a stated
+  // budget gets its weight reported, never a number this tool invented.
+  const overBudget = [];
+  if (budget.maxTotalKb && totalAssetBytes > budget.maxTotalKb * 1024) {
+    overBudget.push({ what: 'total static weight', kb: Math.round(totalAssetBytes / 1024), limitKb: budget.maxTotalKb });
+  }
+  if (budget.maxAssetKb) {
+    for (const a of assetWeights) {
+      if (a.bytes > budget.maxAssetKb * 1024) {
+        overBudget.push({ what: a.path, kb: Math.round(a.bytes / 1024), limitKb: budget.maxAssetKb });
+      }
+    }
+  }
+
+  const findings = orphanModules.length + unreferencedAssets.length + brokenLinks.length + overBudget.length;
 
   return {
     ok: true,
@@ -210,6 +225,8 @@ export function analyse(root) {
     unreferencedAssets,
     brokenLinks,
     weight: { totalAssetBytes, heaviest: assetWeights.slice(0, 5) },
+    budget: Object.keys(budget).length ? budget : null,
+    overBudget,
     // Named, not swallowed: these files build paths at runtime, so a static
     // pass cannot see what they reach.
     confidence: dynamic.length
@@ -240,7 +257,13 @@ function report(r) {
     for (const b of r.brokenLinks) lines.push(`  ${b.href}  (${b.kind}, in ${b.from})`);
   }
 
-  lines.push('', `static weight: ${kb(r.weight.totalAssetBytes)} total`);
+  if (r.overBudget && r.overBudget.length) {
+    lines.push('', `over budget -- ${r.overBudget.length}:`);
+    for (const b of r.overBudget) lines.push(`  ${b.what}  ${b.kb}KB > ${b.limitKb}KB`);
+  }
+
+  lines.push('', `static weight: ${kb(r.weight.totalAssetBytes)} total` +
+    (r.budget ? '' : '  (no budget given -- reported, not enforced)'));
   for (const h of r.weight.heaviest) lines.push(`  ${h.path}  ${kb(h.bytes)}`);
 
   if (r.confidence.level !== 'full') {
@@ -267,7 +290,14 @@ if (invokedDirectly) {
   const args = process.argv.slice(2);
   const json = args.includes('--json');
   const root = path.resolve(args.find((a) => !a.startsWith('--')) || process.cwd());
-  const r = analyse(root);
+  const num = (flag) => {
+    const hit = args.find((a) => a.startsWith('--' + flag + '='));
+    return hit ? Number(hit.split('=')[1]) : undefined;
+  };
+  const budget = {};
+  if (num('max-total-kb')) budget.maxTotalKb = num('max-total-kb');
+  if (num('max-asset-kb')) budget.maxAssetKb = num('max-asset-kb');
+  const r = analyse(root, budget);
   if (json) {
     console.log(JSON.stringify(r, null, 2));
     process.exit(r.ok ? (r.findings ? 1 : 0) : 2);

@@ -10,6 +10,11 @@ A cache that is wrong is worse than no cache. A slow page annoys someone; a
 stale page misinforms them, and a mis-keyed one shows them somebody else's data.
 So this starts with the failure modes, and the mechanics come after.
 
+**Come here second.** A cache is one rung of a larger decision, and work that
+could have moved up a rung should never be hidden behind one instead.
+`davinci:work-placement` makes that call and sends you here when the answer
+really is a cache.
+
 ## 1. The cache key is a security boundary
 
 This is the one that turns a performance change into an incident.

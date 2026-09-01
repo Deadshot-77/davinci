@@ -165,8 +165,10 @@ Mechanical checks, not vibes — run through this before writing the report:
 - [ ] every new branch has a test you are confident fails without the change
 - [ ] `waste.mjs` run, its confidence line read, and anything it found either
       removed or explained
-- [ ] if the change serves or stores data, `davinci:caching` was invoked before
-      writing a cache — the key is a security boundary, not a performance detail
+- [ ] if the change makes a page or endpoint do work,
+      `davinci:work-placement` decided which rung that work belongs on before
+      it was written — and `davinci:caching` was invoked before any cache, since
+      the key is a security boundary and not a performance detail
 - [ ] nothing left behind: unused imports, debug logging, commented-out code,
       unowned `TODO`s
 - [ ] new modules, crossed layers, and new dependencies recorded in

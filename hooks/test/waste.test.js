@@ -140,3 +140,40 @@ test('build output and dependencies are never scanned', async () => {
   assert.deepStrictEqual(r.orphanModules, []);
   assert.ok(r.scanned.sources <= 2, 'scanned build output: ' + r.scanned.sources);
 });
+
+test('weight is reported but not enforced when no budget is given', async () => {
+  const run = await load();
+  const root = project({
+    'src/app/page.tsx': 'export default function H(){return <img src="/big.png"/>}\n',
+    'public/big.png': 'x'.repeat(50 * 1024),
+  });
+  const r = run(root);
+  assert.strictEqual(r.findings, 0, 'a tool that invents a threshold fails builds on a number nobody agreed');
+  assert.strictEqual(r.budget, null);
+  assert.deepStrictEqual(r.overBudget, []);
+  assert.ok(r.weight.totalAssetBytes > 0, 'weight should still be reported');
+});
+
+test('a budget that is exceeded becomes a finding', async () => {
+  const run = await load();
+  const root = project({
+    'src/app/page.tsx': 'export default function H(){return <img src="/big.png"/>}\n',
+    'public/big.png': 'x'.repeat(50 * 1024),
+  });
+  const r = run(root, { maxTotalKb: 10, maxAssetKb: 10 });
+  assert.ok(r.findings >= 2, 'expected the total and the single asset to both breach');
+  assert.ok(r.overBudget.some((b) => b.what === 'total static weight'));
+  assert.ok(r.overBudget.some((b) => b.what === 'public/big.png'));
+  assert.strictEqual(r.overBudget[0].limitKb, 10);
+});
+
+test('a budget that is met is not a finding', async () => {
+  const run = await load();
+  const root = project({
+    'src/app/page.tsx': 'export default function H(){return <img src="/ok.png"/>}\n',
+    'public/ok.png': 'x'.repeat(1024),
+  });
+  const r = run(root, { maxTotalKb: 500, maxAssetKb: 500 });
+  assert.deepStrictEqual(r.overBudget, []);
+  assert.strictEqual(r.findings, 0);
+});

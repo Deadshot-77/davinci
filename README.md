@@ -330,16 +330,16 @@ davinci/
 ├─ permissions.example.json     verification-only permission profile for agents
 ├─ agents/                      the seven agent definitions
 ├─ skills/                      intake, delegation contract, work tiers, stack profile, foundation review, story direction, frontend craft, code craft, security audit,
-│                               motion craft, caching + five invoked on demand: technique research, generating assets, parallax layers, glass surfaces, scroll video
+│                               motion craft, work placement + six invoked on demand: caching: technique research, generating assets, parallax layers, glass surfaces, scroll video
 ├─ scripts/
 │  ├─ shoot.mjs                 zero-dependency headless screenshot tool
-│  ├─ waste.mjs                 zero-dependency orphan, broken-link and asset-weight sweep
+│  ├─ waste.mjs                 zero-dependency orphan, broken-link and asset-weight sweep, with optional budget
 │  └─ png-crop.mjs              dependency-free PNG crop, for true small viewports
 ├─ hooks/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     282 tests, zero dependencies
+│  └─ test/                     287 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -357,7 +357,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 282 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 287 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.

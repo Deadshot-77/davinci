@@ -632,12 +632,44 @@ test('a cache is treated as a security boundary before a performance one', () =>
   assert.match(caching, /invalidation/i, 'caching no longer covers invalidation');
 
   const code = fs.readFileSync(path.join(SKILLS_DIR, 'code-craft', 'SKILL.md'), 'utf8');
-  assert.match(code, /`davinci:caching` was invoked before/,
+  assert.match(code, /`davinci:caching` was invoked before any cache/,
     'nothing triggers the caching skill, so it is only found by someone already looking');
 
+  // The entry point is the placement decision; caching is the rung it sends you
+  // to. Preloading the deep-dive made a cache look like the first answer rather
+  // than the last, which is how work that could have moved up a rung gets
+  // hidden behind one instead.
   const backend = readAgents().find((a) => a.name === 'backend-engineer');
-  assert.ok(backend.skills.includes('caching'),
-    'the agent that serves data does not carry the caching standard');
+  assert.ok(backend.skills.includes('work-placement'),
+    'the agent that serves data does not carry the placement decision');
+
+  const placement = fs.readFileSync(path.join(SKILLS_DIR, 'work-placement', 'SKILL.md'), 'utf8');
+  assert.match(placement, /`davinci:caching`/,
+    'work-placement no longer routes to caching, so the deep-dive is unreachable');
+});
+
+test('work is placed before it is optimised, and measured before either', () => {
+  // RED before USE, top-down, exists to stop something being optimised that
+  // nobody waits on. The ladder exists so a cache is never used to hide work
+  // that could have happened at build time instead.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'work-placement', 'SKILL.md'), 'utf8');
+  assert.match(skill, /A route that is dynamic because nobody decided otherwise is the bug/,
+    'the most common placement defect is no longer named');
+  assert.match(skill, /only a defect when it is on the\s+path something waits for/,
+    'work-placement no longer restrains optimising things nobody waits on');
+  for (const rung of ['build', 'edge', 'server', 'client']) {
+    assert.ok(skill.includes(rung), 'the ladder no longer names the "' + rung + '" rung');
+  }
+});
+
+test('a weight budget is enforced only when one was given', () => {
+  // A tool that invents a threshold fails builds on a number nobody agreed.
+  // Reporting weight is always right; enforcing it is the project's call.
+  const src = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'scripts', 'waste.mjs'), 'utf8');
+  assert.match(src, /no budget given -- reported, not enforced/,
+    'waste.mjs no longer distinguishes a reported weight from an enforced one');
+  assert.match(src, /max-total-kb/, 'the budget flag is gone');
 });
 
 test('a reference is read for what it names, never adopted whole', () => {

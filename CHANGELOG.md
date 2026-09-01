@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.30.0
+
+Work placement, taken from established practice rather than invented.
+
+The caching skill in 0.28.0 was one rung of a larger decision written as though
+it were the whole subject. Three bodies of practice say what the larger decision
+actually is.
+
+The ladder: build, edge, server, client. Work belongs on the highest rung its
+inputs allow, and a statically rendered route does no per-request work at all.
+Work moves down only when something specific forces it -- a cookie, a search
+param, per-user content, freshness. A route that is dynamic because nobody
+decided otherwise is the bug, and it is the common one because dynamic is
+usually the default and nothing complains.
+
+The diagnosis: RED then USE, in that order. Rate, Errors and Duration treat the
+thing as a black box and say whether a user is affected. Utilisation, Saturation
+and Errors say which resource is why. Top-down exists to stop something being
+optimised that nobody waits on -- work a page does for no reason is only a
+defect when it is on the path something waits for.
+
+The enforcement: budgets, asymmetric, at three points -- bundler, CI, production
+telemetry. The plugin owns the first. waste.mjs already computed total and
+per-asset weight, so it now takes --max-total-kb and --max-asset-kb and turns a
+breach into a finding. Given no budget it reports the weight and enforces
+nothing, because a tool that invents a threshold fails builds on a number nobody
+agreed to.
+
+backend-engineer now preloads work-placement instead of caching, and caching
+says come here second. Preloading the deep-dive made a cache look like the first
+answer rather than the last, which is how work that could have moved up a rung
+gets hidden behind one instead.
+
+Three guards, six mutations, each confirmed to fail -- one of them only after
+the mutation was corrected to replace both routes rather than the first.
+
+
 ## 0.29.1
 
 The greenfield gap, found by a measurement that was looking for something else.
