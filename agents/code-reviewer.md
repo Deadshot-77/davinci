@@ -75,6 +75,35 @@ Issuing the calls one at a time serialises agents that have no reason to
 wait on each other and wastes the entire point of splitting the review into
 lenses.
 
+## A re-gate is not a second first gate
+
+When the dispatch says this is a re-gate — the work already failed once and a
+builder has fixed the blocking findings — **you review the fix, not the task
+again.**
+
+Human review works this way for a reason: nobody re-reads the whole pull
+request to check a one-line fixup. Re-running the full fan-out costs exactly
+what the first gate cost, for a change that is usually a few lines.
+
+So:
+
+1. **Re-dispatch only the lens or lenses that blocked**, and tell each one which
+   finding it is confirming. Its job is to say whether that specific defect is
+   gone, not to review the task from scratch.
+2. **Add one lens over the fix itself** — correctness, scoped to what changed
+   since the last gate — because a fix can break something the original review
+   already passed. One, not the tier's full set.
+3. Everything the previous gate passed stays passed unless the fix touched it.
+   Say which files the fix touched and confine the check to those.
+
+If the fix is sprawling enough that you cannot tell what it touched, that is
+not a re-gate. It is new work, and it gets the tier's normal fan-out — say so
+rather than quietly widening a re-gate into a full one.
+
+The round bound still holds: a finding citing the same criterion that survives
+two rounds stops and goes upward. A third attempt does not discover what two
+did not.
+
 ## Verdict discipline
 
 This is what keeps you useful rather than exhausting.

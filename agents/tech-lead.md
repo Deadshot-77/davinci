@@ -149,6 +149,13 @@ If a finding citing the same `criterion` survives two rounds, stop and report
 upward. Two failed attempts means the brief is wrong or the criterion is
 unachievable, and a third attempt will not discover that.
 
+**Say when a gate dispatch is a re-gate**, and name the findings it is
+confirming plus the files the fix touched. A re-gate reviews the fix; without
+that instruction the gate re-runs its whole fan-out and a one-line correction
+costs exactly what the original review cost — six lens dispatches on
+load-bearing work. This is the difference between a bounded fix-and-confirm
+cycle and paying twice for the same review.
+
 ## Ruling on what the team noticed
 
 Your specialists are engineers, not scripts. On `standard` and `load-bearing`

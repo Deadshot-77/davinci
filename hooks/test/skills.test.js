@@ -954,3 +954,29 @@ test('the foundation is laid once, not once per slice', () => {
   assert.ok(!/architectural briefs always run the full foundation-first sequence/.test(lead),
     'the always-clause is back, and it contradicts the skip rule above it');
 });
+
+test('a re-gate reviews the fix, not the whole task again', () => {
+  // Measured: one slice cost nine dispatches, and the gate ran more than once.
+  // The re-gate was correct behaviour -- the designed fail-fix-confirm cycle,
+  // bounded at two rounds -- but nothing narrowed it, so a one-line fix
+  // re-ran the tier's whole fan-out: six lens dispatches on load-bearing work,
+  // costing exactly what the original review cost.
+  const gate = fs.readFileSync(path.join(AGENTS_DIR, 'code-reviewer.md'), 'utf8');
+  assert.match(gate, /A re-gate is not a second first gate/,
+    'a re-gate would again cost the same as the review it is confirming');
+  assert.match(gate, /Re-dispatch only the lens or lenses that blocked/,
+    'the whole fan-out would re-run to confirm one finding');
+  assert.match(gate, /a fix can break something the original review\s+already passed/,
+    'a narrowed re-gate with no regression check would let a fix break what passed');
+  assert.match(gate, /It is new work, and it gets the tier's normal fan-out/,
+    'a sprawling change could be waved through under a re-gate label');
+
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+  assert.match(lead, /Say when a gate dispatch is a re-gate/,
+    'the gate is never told it is confirming a fix, so it cannot narrow');
+
+  // The bound that makes the cycle terminate must survive the narrowing.
+  for (const f of [gate, lead]) {
+    assert.match(f, /two rounds/, 'the re-gate round bound went missing');
+  }
+});
