@@ -55,6 +55,31 @@ Good: "AC-3: `npm run build` exits 0 with no type errors."
 Good: "AC-4: every interactive control has a visible focus state at 3:1 contrast."
 Bad: "AC-5: the page looks modern."
 
+### Checkable is not the same as satisfiable
+
+A criterion can be perfectly mechanical and still impossible. A real run was
+given this one:
+
+> `git diff d79f57a -- package.json` is empty
+
+Entirely checkable — a command, an exit code, no judgement. It could also never
+pass: `package.json` entered the repository *after* that commit, so the diff
+always renders it as a new file. The builder did nothing wrong and the criterion
+could not be met by doing anything.
+
+So before a criterion goes in the brief, ask **what would make this true**, and
+in particular:
+
+- **Anchor a comparison to something that exists and means what you intend.**
+  For "this file was not modified", that is `git diff HEAD -- <path>` or the
+  slice's own checkpoint — the state the work started from. A pinned historical
+  commit asserts something about history, not about the work, and will be wrong
+  the moment the file is younger than the commit.
+- **Prefer a check whose result changes when the work happens.** If a criterion
+  reads the same before and after, it is measuring something else.
+- **Say what the check is for**, not just what it runs. "package.json is
+  untouched by this slice" survives being re-anchored; a bare command does not.
+
 ## Step 4 — Set the design dials
 
 For work with a visual surface, infer `DESIGN_VARIANCE`, `MOTION_INTENSITY` and

@@ -1010,3 +1010,27 @@ test('a reference implementation teaches its pattern, not its stack', () => {
   assert.match(research, /Named chapters, each with a scroll anchor/,
     'the transferable half of the pattern is gone');
 });
+
+test('a criterion must be satisfiable, not merely checkable', () => {
+  // A real run was given `git diff <old-sha> -- package.json` is empty, on a
+  // repository where package.json was created after that commit. Entirely
+  // mechanical -- a command, an exit code, no judgement -- and impossible. The
+  // builder could not have passed it by building anything.
+  const intake = fs.readFileSync(path.join(SKILLS_DIR, 'intake-brief', 'SKILL.md'), 'utf8');
+  assert.match(intake, /Checkable is not the same as satisfiable/,
+    'a criterion that can never pass could again be written into a brief');
+  assert.match(intake, /Anchor a comparison to something that exists and means what you intend/,
+    'the anchoring rule that made this criterion impossible is gone');
+  assert.match(intake, /Prefer a check whose result changes when the work happens/,
+    'a criterion measuring something the work cannot affect would pass review');
+});
+
+test('a criterion that fails before the work is defective, and the plan is not edited', () => {
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /against the untouched tree first/,
+    'nothing establishes the baseline, so a defective criterion reads as failed work');
+  assert.match(ledger, /\*\*defective rather than\s+unmet\*\*/,
+    'an impossible criterion would be reported as the builder having failed');
+  assert.match(ledger, /\*\*Do not edit\s+`plan\.md`\*\*/,
+    'a criterion could be rewritten to something the agent can pass, which empties the plan of meaning');
+});

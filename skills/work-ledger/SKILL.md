@@ -190,7 +190,25 @@ mess that costs more to clean than the slice cost to build.
    interrupted attempt. Inspect what is already on disk before writing anything
    — half-written files from the previous attempt are yours to finish or undo,
    not to duplicate.
-4. Append `started`, do the work, append `done` with evidence.
+4. **Run the slice's cheap criteria against the untouched tree first.** A
+   comparison or a file check costs nothing before you begin, and it tells you
+   something a later failure cannot: a criterion that already fails, for reasons
+   nothing to do with work you have not done yet, is **defective rather than
+   unmet**.
+
+   A real run was given `git diff <old-sha> -- package.json` is empty, on a
+   repository where that file was created after the commit named. Checkable,
+   unsatisfiable, and the builder could not have passed it by building anything.
+
+   When you find one: report it, name why it cannot be satisfied, and verify the
+   *intent* separately if you can work out what it was. **Do not edit
+   `plan.md`** — a criterion the user approved is theirs to change, and quietly
+   rewriting one to something you can pass is how a plan stops meaning anything.
+   It goes upward as an open question with the slice's other results.
+
+   Skip this for criteria that are expensive to run. The class of defect it
+   catches lives in comparisons and existence checks, which are the cheap ones.
+5. Append `started`, do the work, append `done` with evidence.
 
 ## Every slice is checkpointed before it starts
 
