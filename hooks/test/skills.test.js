@@ -226,8 +226,11 @@ test('the entry command dispatches an agent this plugin actually ships', () => {
   let dispatchesAnAgent = false;
   for (const file of commands) {
     const body = fs.readFileSync(path.join(dir, file), 'utf8');
+    // Not every command dispatches. review-run reads a finished run's record
+    // and interprets it -- it reaches no agent by design, and requiring one
+    // would mean inventing a dispatch to satisfy a test. What must hold is
+    // that references resolve, and that the build entry still reaches the team.
     const named = [...body.matchAll(/`davinci:([a-z-]+)`/g)].map((m) => m[1]);
-    assert.ok(named.length > 0, file + ' names no agent to dispatch');
     for (const ref of named) {
       if (!shipped.has(ref)) broken.push(file + ' -> davinci:' + ref);
       if (shippedAgents.has(ref)) dispatchesAnAgent = true;
@@ -888,4 +891,19 @@ test('trivial work skips the plan entirely', () => {
   const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
   assert.match(ledger, /Not everything gets a ledger/,
     'work-ledger claims authority over work that should bypass it');
+});
+
+test('a finished run can be read back by the plugin itself', () => {
+  // Every real defect in this plugin's history was found by a human reading a
+  // run record by hand. That does not scale to someone using it alone, and the
+  // records were sitting there the whole time.
+  const dir = path.join(PLUGIN_ROOT, 'commands');
+  const review = path.join(dir, 'review-run.md');
+  assert.ok(fs.existsSync(review), 'the plugin can no longer read its own runs');
+  const body = fs.readFileSync(review, 'utf8');
+  assert.match(body, /review-run\.mjs/, 'the command no longer runs the reader');
+  assert.match(body, /Do not summarise a run you did not read/,
+    'a refused reader could produce a summary of a record nobody opened');
+  assert.match(body, /prompt, not a verdict/,
+    'the suspicion heuristic could be reported as a confirmed defect');
 });
