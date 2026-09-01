@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.32.0
+
+Leaked servers, found by trying to delete a directory.
+
+frontend-craft told agents to run npx --yes serve on the build output to get a
+real http:// origin, then screenshot it. serve never exits. Four of them were
+found still running hours later, holding ports 4173 and 4195 and a directory
+handle that made the project undeletable. Nothing in the plugin ever stopped
+what it started.
+
+shoot.mjs --root <dir> <path> <out.png> now owns the lifetime: it spawns a
+zero-dependency static server on an ephemeral port, takes the shot, and stops it
+in a finally. The worker also self-destructs after two minutes in case the
+parent dies badly. A server that cannot outlive its screenshot cannot leak, so
+the three serve grants are gone from the profile entirely -- the case is covered
+without a grant that can be misused.
+
+One trap found while testing it. Git Bash rewrites a leading-slash argument into
+a Windows path, so --root out /jobs/ arrived as C:/Program Files/Git/jobs/ and
+produced a 2901-byte screenshot of a 404 that reads as a broken layout. A
+plausible wrong answer is worse than an error, so that is refused with the fix
+named: write jobs/, not /jobs/.
+
+Three of the tests written for this were weak and were rewritten after
+falsification caught them. The traversal test asked for /etc/passwd, absent on
+Windows, so it passed with the guard removed; the real case is percent-encoded,
+because new URL normalises a literal ../ away before the handler sees it.
+Nothing exercised stop() at all, so startOwnedServer is now exported and tested
+directly. And a mangled-path fixture lost its backslashes to a heredoc and
+asserted on nothing.
+
+
 ## 0.31.0
 
 SEO, and the alt-text rule that was missing from the accessibility floor.

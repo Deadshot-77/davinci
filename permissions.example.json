@@ -30,7 +30,6 @@
       "Bash(node scripts/shoot.mjs:*)",
       "Bash(node scripts/waste.mjs:*)",
       "Bash(node scripts/seo.mjs:*)",
-      "Bash(npx --yes serve:*)",
       "Bash(npm run build)",
       "Bash(npm run lint)",
       "Bash(npm run typecheck)",
@@ -52,8 +51,6 @@
       "Bash(git show:*)",
       "Bash(git cat-file:*)",
       "Bash(git ls-tree:*)",
-      "Bash(npx --yes http-server:*)",
-      "Bash(python -m http.server:*)",
       "Bash(npm run test)",
       "Bash(pytest)",
       "Bash(pytest:*)",
@@ -83,5 +80,6 @@
   "//generators": "Discovery is granted (command -v) because a probe that cannot run reports an absent generator, which is a lie the page is then built on. Generation is not granted: it spends real credits, so the generating command is opt-in per project -- add e.g. Bash(higgsfield generate:*) and Bash(higgsfield workflow:*) alongside its account/model subcommands. Without them an agent finds the binary, correctly reports a blocked check, and still ships static -- honest, but not the outcome anyone wanted. An agent that finds a binary it may not run must report that as a blocked check, never as no generator.",
   "//waste": "The waste sweep lives in the plugin directory like the screenshot tool, so its absolute path differs per installation and cannot be listed here. To let builders see what their change orphaned, add: \"Bash(node /absolute/path/to/davinci/scripts/waste.mjs:*)\". It only reads. Without it an agent reports the sweep as unrun rather than reporting the project as clean.",
   "//scaffold": "Greenfield gap, found by measurement: npm run build/lint/test are granted above but need node_modules, and npm install is not granted -- so on an empty directory every verification command is inert and the agent cannot prove anything it wrote. This is deliberate. npm install runs a package's own postinstall scripts, which is arbitrary code execution and strictly worse than the node -e escape hatch refused above. To scaffold a new project, either run the generator yourself before dispatching (npx create-next-app, npm create astro, etc, then npm install), which is the recommended path, or opt in for that run by adding: \"Bash(npm install)\", \"Bash(npm ci)\", \"Bash(npx --yes create-next-app:*)\". An agent that finds these denied should hand-write the scaffold, mark it unverified, and say so -- never report it as built and working.",
-  "//seo": "The SEO and markup check lives in the plugin directory like the other tools, so its absolute path differs per installation. Add: \"Bash(node /absolute/path/to/davinci/scripts/seo.mjs:*)\". It only reads, and it reads built output rather than source -- so it needs a build to have run. Without the grant an agent reports the check as unrun, never the page as fine."
+  "//seo": "The SEO and markup check lives in the plugin directory like the other tools, so its absolute path differs per installation. Add: \"Bash(node /absolute/path/to/davinci/scripts/seo.mjs:*)\". It only reads, and it reads built output rather than source -- so it needs a build to have run. Without the grant an agent reports the check as unrun, never the page as fine.",
+  "//serving": "Deliberately absent: npx serve, npx http-server, python -m http.server. A static server started by an agent outlives the screenshot that wanted it -- four were once found still running hours later, holding ports and a directory handle that blocked deleting the project. shoot.mjs --root <dir> <path> <out.png> serves the built output on an ephemeral port and stops it in a finally, so the case is covered without a grant that can leak. A dev server is refused for a different reason: it never exits, so it hangs the call that started it."
 }

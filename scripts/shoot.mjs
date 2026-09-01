@@ -9,13 +9,27 @@
 // .png path — would let an agent believe it looked when it did not.
 //
 // Usage: node scripts/shoot.mjs <url> <out.png> [width] [height]
+//        node scripts/shoot.mjs --root <dir> <path> <out.png> [width] [height]
+//
+// Write <path> WITHOUT a leading slash — "jobs/" not "/jobs/". Git Bash rewrites
+// a leading-slash argument into a Windows path, and the shot silently becomes a
+// picture of a 404 that looks like a broken page. That is refused, not rendered.
+//
+// The --root form exists because the alternative leaked. Agents were told to
+// run `npx --yes serve <dir>` for a real http:// origin and then screenshot it,
+// and `serve` never exits: four of them were found still running hours later,
+// holding ports and a directory handle that blocked deleting the project. A
+// server whose lifetime is owned by the process that needs it cannot leak, so
+// this starts one, shoots, and kills it in a finally -- and the child also
+// self-destructs on a timer in case the parent dies badly.
 
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
+import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { cropPng } from './png-crop.mjs';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const DEFAULT_WIDTH = 1280;
@@ -110,6 +124,26 @@ export function findBrowser(candidates = browserCandidates(), platform = process
 // Parses `<url> <out.png> [width] [height]`. Throws with a message meant to
 // be printed directly — no wrapping needed by the caller.
 export function parseArgs(argv) {
+  // --root <dir> <path> <out.png> [w] [h]
+  if (argv[0] === '--root') {
+    const [, root, urlPath, out, widthArg, heightArg] = argv;
+    if (!root) throw new Error('missing required argument: <dir> after --root');
+    if (!urlPath) throw new Error('missing required argument: <path>');
+    if (!out) throw new Error('missing required argument: <out.png>');
+    // Git Bash rewrites a leading-slash argument into a Windows path, so
+    // "/jobs/" arrives as "C:/Program Files/Git/jobs/". Left alone it produces a
+    // screenshot of a 404 that reads as a broken layout -- a plausible-looking
+    // wrong answer, which is worse than an error. Refuse it and say the fix.
+    if (/^[a-zA-Z]:[/\\]/.test(urlPath) || urlPath.includes('\\')) {
+      throw new Error(
+        `path looks shell-mangled: "${urlPath}". ` +
+        'Write it without a leading slash — "jobs/" rather than "/jobs/".');
+    }
+    const normalised = urlPath.startsWith('/') ? urlPath : '/' + urlPath;
+    const rest = parseArgs(['http://placeholder' + normalised, out, widthArg, heightArg]);
+    return { ...rest, root, urlPath: normalised };
+  }
+
   const [url, out, widthArg, heightArg] = argv;
 
   if (!url) {
@@ -302,8 +336,84 @@ export function shoot({ url, out, width, height }, opts = {}) {
   return { path: absOut, width: dims.width, height: dims.height, bytes: buffer.length };
 }
 
+const MIME = {
+  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
+  '.avif': 'image/avif', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
+  '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8',
+};
+
+// Runs in a child process so that spawnSync in the parent -- which blocks the
+// event loop completely -- cannot starve the server it is trying to talk to.
+export function serveWorker(root, readyFile) {
+  const abs = path.resolve(root);
+  const server = http.createServer((req, res) => {
+    let rel;
+    try { rel = decodeURIComponent(new URL(req.url, 'http://x').pathname); }
+    catch { res.writeHead(400); return res.end('bad request'); }
+
+    let file = path.join(abs, rel);
+    // Never serve outside the root, whatever the request says.
+    if (path.relative(abs, file).startsWith('..')) { res.writeHead(403); return res.end('forbidden'); }
+    try {
+      if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
+      else if (!fs.existsSync(file) && fs.existsSync(file + '.html')) file += '.html';
+      if (!fs.existsSync(file)) { res.writeHead(404); return res.end('not found'); }
+      const body = fs.readFileSync(file);
+      res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream' });
+      res.end(body);
+    } catch (err) { res.writeHead(500); res.end(String(err.message)); }
+  });
+
+  server.listen(0, '127.0.0.1', () => {
+    fs.writeFileSync(readyFile, String(server.address().port));
+  });
+  // Backstop: if the parent dies without killing us, do not become the leak
+  // this whole mode exists to prevent.
+  setTimeout(() => process.exit(0), 120000).unref?.();
+  return server;
+}
+
+// Starts the worker, hands back its port, and a stop() the caller must call.
+export function startOwnedServer(root, opts = {}) {
+  const spawnImpl = opts.spawnImpl || spawn;
+  const readyFile = path.join(os.tmpdir(),
+    'shoot-serve-' + process.pid + '-' + Math.abs(hashString(root)) + '.port');
+  try { fs.unlinkSync(readyFile); } catch { /* not there */ }
+
+  const child = spawnImpl(process.execPath,
+    [fileURLToPath(import.meta.url), '--serve-worker', root, readyFile],
+    { stdio: 'ignore' });
+
+  const stop = () => {
+    try { child.kill(); } catch { /* already gone */ }
+    try { fs.unlinkSync(readyFile); } catch { /* already gone */ }
+  };
+
+  if (!waitForFile(readyFile, 10000)) {
+    stop();
+    throw new Error('static server did not start within 10s for root: ' + root);
+  }
+  const port = Number(fs.readFileSync(readyFile, 'utf8').trim());
+  if (!Number.isInteger(port) || port <= 0) { stop(); throw new Error('static server reported no port'); }
+  return { port, stop };
+}
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
+  return h;
+}
+
 function main() {
   const argv = process.argv.slice(2);
+
+  if (argv[0] === '--serve-worker') {
+    serveWorker(argv[1], argv[2]);
+    return;
+  }
   let parsed;
   try {
     parsed = parseArgs(argv);
@@ -314,12 +424,21 @@ function main() {
     return;
   }
 
+  let server = null;
   try {
-    const result = shoot(parsed);
+    let target = parsed;
+    if (parsed.root) {
+      server = startOwnedServer(parsed.root);
+      target = { ...parsed, url: `http://127.0.0.1:${server.port}${parsed.urlPath}` };
+    }
+    const result = shoot(target);
     console.log(`wrote ${result.path} ${result.width}x${result.height} ${result.bytes} bytes`);
   } catch (err) {
     console.error(`shoot.mjs: ${err.message}`);
     process.exitCode = 1;
+  } finally {
+    // The whole point: the server cannot outlive the screenshot.
+    if (server) server.stop();
   }
 }
 

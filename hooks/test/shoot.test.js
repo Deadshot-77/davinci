@@ -334,3 +334,117 @@ test('shoot refuses the write before launching a browser', async () => {
   );
   assert.strictEqual(spawned, false, 'the browser must not run for a refused path');
 });
+
+test('--root parses into a served root and a path', async () => {
+  const { parseArgs } = await loadShoot();
+  const a = parseArgs(['--root', 'out', 'jobs/', 'shot.png', '900', '500']);
+  assert.strictEqual(a.root, 'out');
+  assert.strictEqual(a.urlPath, '/jobs/');
+  assert.strictEqual(a.out, 'shot.png');
+  assert.strictEqual(a.width, 900);
+  assert.strictEqual(a.height, 500);
+});
+
+test('a shell-mangled path is refused, not rendered', async () => {
+  // Git Bash rewrites a leading-slash argument into a Windows path, so "/jobs/"
+  // arrives as "C:/Program Files/Git/jobs/". Served, that returns 404 and the
+  // screenshot becomes a picture of a not-found page that an agent reads as a
+  // broken layout. A plausible wrong answer is worse than an error.
+  const { parseArgs } = await loadShoot();
+  assert.throws(
+    () => parseArgs(['--root', 'out', 'C:/Program Files/Git/jobs/', 'shot.png']),
+    /shell-mangled/);
+  // Built from a char code so no shell or editor quoting layer can eat it --
+  // an earlier version of this test silently asserted on a backslash-free
+  // string and passed while checking nothing.
+  const bs = String.fromCharCode(92);
+  assert.throws(
+    () => parseArgs(['--root', 'out', `C:${bs}Program Files${bs}Git${bs}jobs`, 'shot.png']),
+    /shell-mangled/);
+});
+
+test('--root still requires the arguments the plain form requires', async () => {
+  const { parseArgs } = await loadShoot();
+  assert.throws(() => parseArgs(['--root']), /<dir> after --root/);
+  assert.throws(() => parseArgs(['--root', 'out']), /<path>/);
+  assert.throws(() => parseArgs(['--root', 'out', 'jobs/']), /<out\.png>/);
+});
+
+test('the plain url form is unchanged by the addition of --root', async () => {
+  const { parseArgs } = await loadShoot();
+  const a = parseArgs(['http://localhost:3000/', 'shot.png']);
+  assert.strictEqual(a.url, 'http://localhost:3000/');
+  assert.strictEqual(a.root, undefined);
+});
+
+test('the static worker serves a directory, an index, and nothing above the root', async () => {
+  const { serveWorker } = await loadShoot();
+  const os = require('node:os');
+  const fsx = require('node:fs');
+  const px = require('node:path');
+  const root = fsx.mkdtempSync(px.join(os.tmpdir(), 'shoot-serve-'));
+  fsx.mkdirSync(px.join(root, 'jobs'), { recursive: true });
+  fsx.writeFileSync(px.join(root, 'index.html'), '<h1>root</h1>');
+  fsx.writeFileSync(px.join(root, 'jobs', 'index.html'), '<h1>jobs</h1>');
+  const readyFile = px.join(root, '.port');
+
+  const server = serveWorker(root, readyFile);
+  try {
+    for (let i = 0; i < 50 && !fsx.existsSync(readyFile); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    const port = fsx.readFileSync(readyFile, 'utf8').trim();
+    const get = async (p) => {
+      const res = await fetch(`http://127.0.0.1:${port}${p}`);
+      return { status: res.status, body: await res.text() };
+    };
+    assert.strictEqual((await get('/')).body, '<h1>root</h1>');
+    assert.strictEqual((await get('/jobs/')).body, '<h1>jobs</h1>', 'a directory should resolve to its index');
+    assert.strictEqual((await get('/jobs')).body, '<h1>jobs</h1>');
+    assert.strictEqual((await get('/nope')).status, 404);
+
+    // Escaping the root would let a screenshot pull in anything on disk. The
+    // target has to be a file that really exists just above the root -- an
+    // earlier version of this test asked for /etc/passwd, which is absent on
+    // Windows, so it passed whether or not the guard was there.
+    // The traversal has to be percent-encoded. `new URL` normalises a literal
+    // "/../" away before the handler ever sees it, so an unencoded attempt
+    // proves nothing -- it passes with the guard removed. "%2e%2e%2f" survives
+    // URL parsing and is expanded by decodeURIComponent, which is exactly the
+    // case the guard exists for.
+    const secret = px.join(px.dirname(root), 'outside-the-root.txt');
+    fsx.writeFileSync(secret, 'SECRET');
+    try {
+      const escaped = await get('/%2e%2e%2f' + px.basename(secret));
+      assert.notStrictEqual(escaped.body, 'SECRET', 'served a file above the root');
+    } finally {
+      fsx.unlinkSync(secret);
+    }
+  } finally {
+    server.close();
+  }
+});
+
+test('the owned server stops when told, so it cannot outlive the screenshot', async () => {
+  // The defect this mode exists for. Four npx serve processes were once found
+  // still running hours later, holding ports and a directory handle that
+  // blocked deleting the project. main() calls stop() in a finally; this checks
+  // stop() genuinely closes the port rather than only killing a handle.
+  const { startOwnedServer } = await loadShoot();
+  const os = require('node:os');
+  const fsx = require('node:fs');
+  const px = require('node:path');
+  const root = fsx.mkdtempSync(px.join(os.tmpdir(), 'shoot-stop-'));
+  fsx.writeFileSync(px.join(root, 'index.html'), '<h1>up</h1>');
+
+  const { port, stop } = startOwnedServer(root);
+  const res = await fetch(`http://127.0.0.1:${port}/`);
+  assert.strictEqual(await res.text(), '<h1>up</h1>', 'server did not come up');
+
+  stop();
+  await new Promise((r) => setTimeout(r, 500));
+
+  let stillUp = false;
+  try { await fetch(`http://127.0.0.1:${port}/`); stillUp = true; } catch { /* refused, as it should be */ }
+  assert.strictEqual(stillUp, false, 'the server survived stop() -- this is the leak');
+});

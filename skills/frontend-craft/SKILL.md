@@ -119,14 +119,25 @@ blind is the single most common way this goes wrong, and shipping unlooked-at
 work is the failure mode this section exists to prevent. Verify in this
 order, don't skip steps, and don't stop after one pass:
 
-1. **Serve, then shoot.** A dev server is refused by the permission profile —
-   it never exits, so it would hang the call that started it. Build first, then
-   serve the output directory: `npm run build` followed by
-   `npx --yes serve <dist|out|build>` gives you a real `http://` URL for the
-   thing that would actually ship, which is the more honest surface to judge
-   anyway. Then run
-   `node <plugin>/scripts/shoot.mjs <url> <out.png>` and **`Read` the
-   resulting PNG**. Taking the screenshot is not the step — looking at it is.
+1. **Build, then shoot the output.** Do not start a server yourself. A dev
+   server never exits, so it hangs the call that started it, and a static one
+   started by hand outlives the screenshot: four `npx serve` processes were
+   once found still running hours later, holding ports and a directory handle.
+
+   ```
+   npm run build
+   node <plugin>/scripts/shoot.mjs --root out jobs/ shot.png
+   ```
+
+   `--root` serves the built directory on an ephemeral port, takes the shot,
+   and stops the server in a `finally` — so it cannot leak. Write the path
+   **without a leading slash** (`jobs/`, not `/jobs/`): a leading slash is
+   rewritten by Git Bash into a Windows path, and the tool refuses that rather
+   than handing you a picture of a 404 that looks like a broken layout.
+
+   Judging the built output is the more honest surface anyway — it is the thing
+   that would actually ship. Then **`Read` the resulting PNG**. Taking the
+   screenshot is not the step — looking at it is.
    Critique the image against the checks below, revise, and re-shoot until it
    actually passes.
 2. **A browser preview MCP happens to be available** (`preview_start`,

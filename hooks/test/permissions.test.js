@@ -65,11 +65,23 @@ test('the profile still grants the commands an agent needs to prove its work', (
   // and useless: reports come back with empty verification arrays, and the
   // design's central rule -- prove completion with commands -- cannot be met.
   const required = [
-    /npm test/, /node --test/, /npm run build/, /git status/, /git diff/, /npx --yes serve/,
+    /npm test/, /node --test/, /npm run build/, /git status/, /git diff/,
   ];
   const unmet = required.filter((re) => !allow.some((entry) => re.test(entry)));
   assert.deepStrictEqual(unmet.map(String), [],
     'profile no longer grants a command agents need to verify anything');
+
+  // Visual verification used to run through `npx --yes serve`, which never
+  // exits: four were once found still alive hours later holding ports and a
+  // directory handle. shoot.mjs --root replaced it and owns the server's
+  // lifetime, but its path is per-installation and cannot be listed here -- so
+  // what this profile owes is the explanation of how to grant it.
+  const notes = Object.entries(profile)
+    .filter(([k]) => k.startsWith('//')).map(([, v]) => String(v)).join('\n');
+  assert.match(notes, /shoot\.mjs/,
+    'nothing tells an installer how to let an agent see its own work');
+  assert.ok(!allow.some((e) => /npx --yes serve|http-server|http\.server/.test(e)),
+    'a hand-started static server outlives the screenshot that wanted it');
 });
 
 test('the profile explains why the escape hatches are absent', () => {
