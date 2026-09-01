@@ -1051,3 +1051,37 @@ test('setting up is a command, not a page of instructions', () => {
   assert.match(body, /Ask them to hand-write a path, a glob, or a JSON file/,
     'the rule against making a person write paths by hand is gone');
 });
+
+test('motion that is the beat is not capped like motion that decorates it', () => {
+  // The ladder said rung four is rare and more than two beats means decorating
+  // -- stated absolutely, with no reference to the dials. On a site whose claim
+  // is "this gets better", the change IS the content, so every beat legitimately
+  // reaches four. The brief would say MOTION_INTENSITY 9 and the ladder would
+  // argue it down at every checkpoint.
+  const sd = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(sd, /some pages argue by changing/i,
+    'the ladder again caps motion on a page whose argument is the change itself');
+  assert.match(sd, /MOTION_INTENSITY/,
+    'the ladder ignores the dial the brief sets, so the two can contradict');
+  assert.match(sd, /never a cap on motion\s+that \*is\* the beat/,
+    'the distinction between decorating a beat and being one is gone');
+  // The guard must survive: ordinary pages still get the restraint.
+  assert.match(sd, /rare \*\*on a page whose argument is made in words\*\*/,
+    'the restraint was removed rather than qualified');
+});
+
+test('a supplied document informs the work, it does not specify it', () => {
+  // A brand book handed over with authority reads as a specification, and the
+  // design step collapses into transcription -- the generic outcome the work
+  // exists to escape. Facts about the business are binding; decisions somebody
+  // made once are the current answer, not the required one.
+  const intake = fs.readFileSync(path.join(SKILLS_DIR, 'intake-brief', 'SKILL.md'), 'utf8');
+  assert.match(intake, /A supplied document is a source, not a specification/,
+    'nothing stops a handed-over document being treated as a spec');
+  assert.match(intake, /Prior decisions — treat as the current answer, not the required one/,
+    'the split between fact and prior decision is gone');
+  assert.match(intake, /The failure to avoid is deference/,
+    'nothing names transcription as the failure mode');
+  assert.match(intake, /that is the user's call, not yours/,
+    'an agent could silently change a decision that makes a stated fact untrue');
+});

@@ -69,8 +69,26 @@ Work in this order, and stop as soon as the beat does its job:
    the point: a before and after, a process with steps, a thing revealing its
    parts.
 
-Number four is rare. If more than one or two beats reach it, you are decorating
-rather than directing.
+Number four is rare **on a page whose argument is made in words**. If more than
+one or two beats reach it there, you are decorating rather than directing.
+
+**But some pages argue by changing.** A site whose claim is *this gets better*,
+or *watch what happens*, cannot make that claim in a still — the change is the
+content, not an ornament on it. On those, motion is not the decoration the rung
+guards against; it is the thing being sold, and every beat may legitimately
+reach four.
+
+Two things tell you which page you are on, and they are not your taste:
+
+- **`MOTION_INTENSITY` in the brief.** The dials are set at intake from what the
+  work is for. A high one is a decision already taken, not an invitation to
+  overrule it downward. If you think it is wrong, say so as an observation —
+  do not quietly build the page you would have preferred.
+- **Whether the beat survives being told instead of shown.** "Our process is
+  thorough" survives. "This is what a rebuild looks like" does not.
+
+The rung is a guard against motion that decorates. It was never a cap on motion
+that *is* the beat.
 
 **Rung four is not "motion", it is motion that beats its own still.** Every
 moving thing has a frame it falls back to when it does not load, and shipping

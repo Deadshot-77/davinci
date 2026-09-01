@@ -46,6 +46,36 @@ stated assumptions. Halting with questions and no brief produces nothing at
 all, which is strictly worse than a brief with assumptions the user can
 correct.
 
+## Step 2b — A supplied document is a source, not a specification
+
+Someone will hand you a brand book, a style guide, an old design file, a
+competitor's site. Read all of it. Then split what you found in two, because the
+halves have opposite standing:
+
+**Facts — carry them through unchanged.** What the company does and for whom.
+The claim it makes. The logo. The colours it owns. Names, markets, the audience.
+These are true of the business, and inventing an alternative is fabrication, not
+design.
+
+**Prior decisions — treat as the current answer, not the required one.** The
+typeface someone chose. How the palette was assigned to roles. The layout, the
+spacing scale, the component set, the tokens. Somebody decided these once, with
+what they knew then. They may still be right. They may be beatable.
+
+Record which is which in the brief. A fact goes under **Decided**; a prior
+decision goes under **Assumed** with a line saying where it came from, so a
+builder knows it can be improved on rather than treating it as a constraint.
+
+**The failure to avoid is deference.** A document handed over with authority
+reads as a specification, and the whole design step collapses into transcription
+— which is exactly the generic outcome the work is trying to escape. If the
+existing answer turns out to be better than what you arrive at, take it and say
+why. That is a result, not a retreat.
+
+If a fact and a prior decision conflict — a book claiming "these exact tokens
+ship" while the user asks for a fresh palette — surface it. Changing the
+decision may make the fact untrue, and that is the user's call, not yours.
+
 ## Step 3 — Write acceptance criteria that a machine can check
 
 This is the most important thing you produce. Gate agents may only block on a
