@@ -41,6 +41,34 @@ A single yes on **exposure** or **reversibility** makes it load-bearing. This is
 a floor, not an average — a task does not get to be cheap because three of the
 four answers were reassuring.
 
+### The two floors are not the same floor
+
+They arrive at the same tier and they buy different things, and collapsing them
+is how this rubric overspends.
+
+**Exposure** says the code is dangerous to get wrong. It earns the full review
+*and* the security gate.
+
+**Reversibility** says the code is expensive to change later. Everything
+downstream copies its shape, so it has to be right — which earns the full craft
+review, and nothing about the security gate. A design token system being wrong
+costs a refactor. It is not a breach.
+
+So when reversibility is the only yes, take the load-bearing **review** and the
+`standard` **gates**: code review always, security only if the change touches a
+route, an input boundary, config, or a dependency.
+
+This matters most where the two are easiest to conflate. On a greenfield build
+almost every early task passes the reversibility test — the scaffold, the
+tokens, the first components everything after them copies. That is a fact about
+the calendar, not about the code, and answering it honestly is not the same as
+paying for exposure that is not there.
+
+A live run classified 21 of 24 dispatches `load-bearing` on a static marketing
+page whose only interactive elements were a skip link and an email address, and
+bought six review lenses and a security audit on each. The lead was obeying this
+rubric exactly. The rubric was wrong.
+
 ## The three tiers
 
 ### load-bearing
@@ -56,7 +84,14 @@ and the scaffold every other agent copies.
   not the first.
 - **review** — full fan-out: correctness, silent-failure, types, tests,
   secrets, craft, dispatched in a single message so they run concurrently.
-- **gates** — both.
+
+  **Drop any lens whose subject does not appear in the diff, and say which you
+  dropped.** A secrets lens over a diff with no credential, no environment read
+  and no network call spends a dispatch to report nothing. The fan-out is a
+  ceiling, not a quota — six lenses on a stylesheet is the overspend this
+  rubric exists to prevent, arrived at from the cautious direction.
+- **gates** — both when **exposure** is the yes. When **reversibility** is the
+  only yes, take the `standard` gates below.
 - The `CRAFT` floor below blocks here.
 
 ### standard

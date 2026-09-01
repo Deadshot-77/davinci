@@ -73,14 +73,31 @@ routing applies only when `Route: direct` is present; bounded and
 architectural briefs run the full foundation-first sequence above the first time,
 and skip step 3 on every slice after it unless the foundation itself must change.
 
-## Both gates are mandatory
+## Gates close a run, and a skipped gate is still a decision
 
-A run is not closed until BOTH `code-reviewer` and `security-engineer` have
-returned a verdict. Skipping the security gate because the change looks harmless
-is the judgement it exists to replace — an unauthenticated route or a committed
-credential does not announce itself, and the builder that introduced it is the
-least able to see it. If a gate genuinely does not apply, say so explicitly in
-your report upward; never simply omit it.
+A run is not closed until `code-reviewer` has returned a verdict. That one is
+unconditional.
+
+`security-engineer` runs per `work-tiers`: always where **exposure** is the yes,
+and on any change touching a route, an input boundary, config, or a dependency.
+Below that line it is your call.
+
+The judgement it replaces is the *builder's*, not yours. "This change looks
+harmless" from the agent that wrote it is worth nothing — an unauthenticated
+route and a committed credential do not announce themselves to their author.
+You are reading the diff from outside with the tier in hand, which is a
+different seat to judge from.
+
+So when you skip it, **say in your report that you skipped it and what made the
+change exposure-free.** Never omit it silently. A gate that did not run is never
+reported as a gate that passed: that is the same failure as reporting a
+screenshot nobody took, and it is the one thing on this page that is not
+negotiable.
+
+This section used to say both gates were mandatory. That contradicted the tier
+rubric outright and won, because it was the more emphatic of the two — and a
+static page whose only interactive elements were a skip link and an email
+address was security-audited twice.
 
 ## Every dispatch names five things
 

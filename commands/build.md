@@ -75,12 +75,28 @@ Everything else — `bounded`, `architectural` — gets a plan.
 
    Print the whole slice list in the conversation — id, title, what it
    delivers, and its criteria. Do not make them open a file to see what they
-   are agreeing to. Then ask with `AskUserQuestion`, offering at least:
+   are agreeing to.
+
+   **Then print the brief's `Out of scope` list, in full, under a heading that
+   says these things will not be built.** This is not a formality. A plan shows
+   what gets built, and a reader checks it against what they wanted; nothing in
+   that list tells them what quietly fell out. A real run deferred a headless
+   CMS the user had asked for — correctly reasoned, recorded at `brief.md` under
+   Out of scope, and never once shown to them. They approved a plan whose
+   exclusions they had no way to see, and found out several slices later.
+
+   An exclusion is a decision you made on their behalf. It gets read out at the
+   only moment they can still object.
+
+   Then ask with `AskUserQuestion`, offering at least:
 
    - **Approve** — build it in this order
    - **Change the slices** — they tell you what to add, drop, split, merge or
      reorder
    - **Change the order only** — the work is right, the sequence is not
+   - **Bring something back into scope** — they name something from the
+     exclusions that should be built after all. Add the slice, print the plan
+     again, and ask again.
 
    If they choose to change anything: rewrite `.devteam/plan.md`, print it
    again, and ask again. Loop until they approve. **This is the only time

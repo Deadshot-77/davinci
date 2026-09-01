@@ -1085,3 +1085,80 @@ test('a supplied document informs the work, it does not specify it', () => {
   assert.match(intake, /that is the user's call, not yours/,
     'an agent could silently change a decision that makes a stated fact untrue');
 });
+
+test('approval shows what will NOT be built, not only what will', () => {
+  // A plan lists what gets built, and a reader checks it against what they
+  // wanted. Nothing in that list tells them what quietly fell out. A live run
+  // deferred a headless CMS the user had explicitly asked for -- reasoned
+  // correctly, recorded under Out of scope in the brief, and never shown at the
+  // one moment the user could still object. They found out several slices later.
+  const build = fs.readFileSync(path.join(PLUGIN_ROOT, 'commands', 'build.md'), 'utf8');
+
+  assert.match(build, /`Out of scope` list, in full/,
+    'approval no longer prints the exclusions, so a dropped requirement is invisible at the only moment it can be caught');
+  assert.match(build, /An exclusion is a decision you made on their behalf/,
+    'nothing frames an exclusion as a decision the user is owed');
+  assert.match(build, /Bring something back into scope/,
+    'the user is shown the exclusions with no option to reverse one');
+});
+
+test('the tier rubric keeps exposure and reversibility apart', () => {
+  // Both floors reach load-bearing and they buy different things. Collapsing
+  // them is what makes greenfield work overspend: on a new project almost
+  // every early task passes reversibility -- the scaffold, the tokens, the
+  // first components everything copies -- which is a fact about the calendar,
+  // not the code. A live run put 21 of 24 dispatches on the top tier for a
+  // static page whose only interactive elements were a skip link and an email
+  // address, and bought six lenses and a security audit on each one.
+  const tiers = fs.readFileSync(path.join(SKILLS_DIR, 'work-tiers', 'SKILL.md'), 'utf8');
+
+  assert.match(tiers, /The two floors are not the same floor/,
+    'the rubric collapsed exposure and reversibility back into one floor');
+  assert.match(tiers, /\*\*Reversibility\*\* says the code is expensive to change later/,
+    'reversibility is no longer distinguished from danger, so cost-to-change buys a security audit again');
+  assert.match(tiers, /It is not a breach/,
+    'the rubric lost the line separating expensive-to-change from dangerous');
+  assert.match(tiers, /load-bearing \*\*review\*\*/,
+    'reversibility-only work no longer routes to review depth without the security gate');
+  assert.match(tiers, /Drop any lens whose subject does not appear in the diff/,
+    'the fan-out became a quota again -- six lenses run over a stylesheet with nothing for four of them to find');
+});
+
+test('a skipped gate is stated, never silently omitted', () => {
+  // The safety property survives the tier fix. tech-lead used to say both gates
+  // were mandatory, which contradicted work-tiers outright and won, being the
+  // more emphatic of the two. Loosening it must not reintroduce the older and
+  // worse failure: a gate that did not run reported as one that passed.
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+
+  assert.match(lead, /`security-engineer` runs per `work-tiers`/,
+    'the security gate no longer defers to the tier rubric, so the contradiction is back');
+  assert.match(lead, /Never omit it silently/,
+    'a skipped security gate can now vanish from the report entirely');
+  assert.match(lead, /did not run is never/,
+    'the rule that an unrun gate is never reported as passing has been lost');
+  assert.doesNotMatch(lead, /## Both gates are mandatory/,
+    'the contradicting heading is back and will override the tier rubric again');
+});
+
+test('the stack profile separates the contract from its evidence', () => {
+  // Every agent reads the profile before it does anything, so its length is a
+  // cost paid per dispatch rather than per project. A live run grew it to 36KB
+  // -- a third of it evidence for decisions, required by an acceptance
+  // criterion -- and re-read the whole thing twenty-six times. The evidence is
+  // legitimate and stays; it just belongs below the point a builder can stop.
+  const infra = fs.readFileSync(path.join(AGENTS_DIR, 'infra-architect.md'), 'utf8');
+  const contract = fs.readFileSync(path.join(SKILLS_DIR, 'delegation-contract', 'SKILL.md'), 'utf8');
+  const HEADING = 'Evidence \u2014 the reasoning behind the decisions above';
+
+  assert.ok(infra.includes(HEADING),
+    'infra-architect no longer names the boundary heading, so nothing marks where the contract ends');
+  assert.match(infra, /Use that heading verbatim/,
+    'the heading is no longer required verbatim, so readers cannot rely on finding it');
+  assert.ok(contract.includes(HEADING),
+    'delegation-contract and infra-architect disagree about the boundary heading, which makes it unfindable');
+  assert.match(contract, /Read the contract\s+every time/,
+    'agents are no longer told to always read the contract portion');
+  assert.match(contract, /it is all contract/,
+    'the fallback for a profile with no boundary is gone, so agents may skip a profile that has no evidence section');
+});

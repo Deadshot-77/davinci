@@ -160,6 +160,16 @@ front of you answer most of what looks like a question. One you could have
 answered by looking wastes a round trip through three agents, and it is the
 fastest way to make the channel something people learn to ignore.
 
+The profile has a boundary in it. Everything above the heading
+`## Evidence — the reasoning behind the decisions above` is the contract you
+obey; everything below it is why those decisions were made. **Read the contract
+every time. Go below the line only when you need the reasoning** — a conclusion
+that looks wrong, or a question its one-line form does not settle. On a live
+project the evidence was a third of a 36KB file that every one of twenty-six
+dispatches read in full before writing a line.
+
+If the profile has no such heading, it is all contract. Read it all.
+
 Having read, ask in either of these two cases.
 
 **One — you cannot proceed correctly without the answer.** Any tier. You are

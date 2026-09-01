@@ -25,6 +25,33 @@ worktree, what you build is immediately visible to the agents that depend on it.
 3. `.devteam/scope-map.json`, the write scopes for **this** project.
 4. A report at `.devteam/reports/infra-architect-<n>.json`.
 
+## The profile is read by everyone, so it is shaped for reading
+
+Every agent in the chain reads `.devteam/stack-profile.md` before it does
+anything. That makes its length a cost paid once per dispatch, not once per
+project — a live run reached 36KB and was re-read twenty-six times.
+
+Most of that growth is legitimate. A criterion asking you to record a rendering
+strategy *with its evidence* is asking for evidence, and you should give it. But
+a builder needs the **decision**; only a reviewer or a human needs the argument
+behind it.
+
+So write the file in two parts, in this order:
+
+1. **The contract** — the seven sections above. What every agent must obey:
+   framework, language, package manager, directory map, naming conventions,
+   testing, commands. Short, declarative, no argument. A decision made on
+   evidence appears here as its one-line conclusion.
+2. **`## Evidence — the reasoning behind the decisions above`**, and everything
+   justifying a choice goes below it: which documentation resolved a version,
+   why this rendering strategy over the alternative, what was measured.
+
+Use that heading verbatim. It is the boundary agents stop at, and a heading they
+cannot find is a boundary that does not exist.
+
+Nothing is dropped by this and nothing is shortened — the same words, ordered so
+a builder can stop reading at the point the rest stops being instructions.
+
 ## How to work
 
 Run real generators rather than writing config from memory. Fetch current

@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.45.0
+
+Proportion, and the decision you were never shown.
+
+A real greenfield build classified 21 of 24 dispatches load-bearing and paid
+six review lenses and a security audit on each -- for a static marketing page
+whose only interactive elements were a skip link and an email address. One
+slice took 97 minutes. The lead was obeying the rubric exactly.
+
+The rubric already carried a note about this failure, from an earlier run that
+put 19 of 21 dispatches on the top tier. That fix decoupled the model from the
+tier and stopped there, leaving review depth and gate selection keyed to the
+same signal -- so the overspend moved one axis across and carried on.
+
+The cause is that two floors reach load-bearing and buy different things.
+Exposure says the code is dangerous to get wrong; reversibility says it is
+expensive to change later. On a greenfield build almost every early task passes
+reversibility -- the scaffold, the tokens, the first components everything
+copies -- which is a fact about the calendar, not the code. A token system
+being wrong costs a refactor. It is not a breach. Reversibility alone now takes
+the load-bearing review and the standard gates, and the fan-out is a ceiling
+rather than a quota: a lens whose subject is absent from the diff is dropped,
+and named as dropped.
+
+tech-lead said both gates were mandatory. That contradicted the rubric outright
+and won, being the more emphatic of the two. It now defers on which gates run
+and keeps the part that was actually load-bearing: a skipped gate is stated
+with its reason, and a gate that did not run is never reported as one that
+passed.
+
+Separately, and worse: approval printed the plan and never the exclusions. A
+run deferred a headless CMS the user had asked for -- reasoned correctly,
+recorded under Out of scope, and never once shown to them. They approved a plan
+whose exclusions they had no way to see and found out several slices later. The
+exclusions are now read out with the slices, and bringing one back into scope
+is an option at the same prompt. An exclusion is a decision made on the user's
+behalf, and it gets surfaced where they can still object to it.
+
+The stack profile reached 36KB and was re-read by all twenty-six dispatches,
+a third of it evidence an acceptance criterion had asked for. The evidence
+stays; it now sits below a named heading that a builder stops at.
+
 ## 0.33.0
 
 A work ledger: runs resume, and work ships one slice at a time.
