@@ -770,7 +770,7 @@ test('the entry command plans before it builds, and stops after one slice', () =
 
   assert.match(build, /is there a plan already\?/,
     'the entry command no longer checks for an existing plan, so nothing can resume');
-  assert.match(build, /this is a resume/,
+  assert.match(build, /this is a\s+resume/,
     'a run with unfinished slices would be re-interviewed instead of continued');
   assert.match(build, /which single\s+slice to build/,
     'the entry command no longer dispatches one slice at a time');
@@ -792,4 +792,58 @@ test('the plan is a contract no agent may edit', () => {
     'a resume would trust a status field over the working tree');
   assert.match(ledger, /walking skeleton/,
     'slicing guidance lost the rule that makes the first slice cheap and end-to-end');
+});
+
+test('the plan is shown and approved before anything is built', () => {
+  // A plan the user never saw is a proposal, not a contract. A run that dies
+  // between writing plan.md and showing it leaves exactly that, and a resume
+  // would otherwise start building it.
+  const build = fs.readFileSync(path.join(PLUGIN_ROOT, 'commands', 'build.md'), 'utf8');
+  assert.match(build, /Print the whole slice list in the conversation/,
+    'the user would have to open a file to see what they are agreeing to');
+  assert.match(build, /Change the slices/,
+    'approval offers no way to modify the plan, only to accept it');
+  assert.match(build, /Loop until they approve/,
+    'a single rejection would leave the plan unrevised');
+  assert.match(build, /\{"event":"plan-approved"\}/,
+    'nothing records that approval happened, so no later run can tell');
+  assert.match(build, /is a draft, not a plan/,
+    'an unapproved plan could be resumed into and built');
+
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /only time `plan\.md` may be rewritten|Before it, the plan is a proposal/,
+    'work-ledger no longer distinguishes a draft from a contract');
+});
+
+test('slice boundaries are drawn where the gate could split them', () => {
+  // Adapted from superpowers' plan skills: split only where a reviewer could
+  // meaningfully reject one unit while approving its neighbour. It fits this
+  // plugin better than its source because there is an actual gate agent, so
+  // the test is not hypothetical.
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /reject one slice while\s*>?\s*approving its neighbour/,
+    'the sizing rule lost the only boundary test that is actually checkable');
+  assert.match(ledger, /Fold setup into the slice that needs it/,
+    '"set up the tooling" could again become a slice that delivers nothing');
+  assert.match(ledger, /A step is not a slice/,
+    'nothing stops a plan being written as a list of two-minute actions');
+});
+
+test('a draft plan writes nothing, and main is not written to unasked', () => {
+  // Work started before agreement is work the user must undo before they can
+  // disagree. And a user who wanted a branch and got commits on main has a
+  // mess costing more than the slice was worth.
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /the project is read-only/,
+    'a draft plan could scaffold, install, or branch before anyone agreed to it');
+  assert.match(ledger, /default\s+branch/,
+    'nothing checks whether the first slice is about to write to main');
+});
+
+test('an agent may object to a slice but never edit one', () => {
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /\*\*Objecting is allowed; editing is not\.\*\*/,
+    'the plan could be revised by whoever is executing it, which is the drift');
+  assert.match(ledger, /Read the slice \*\*critically\*\*/,
+    'a slice known to be wrong would be built anyway');
 });

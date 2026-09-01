@@ -78,6 +78,17 @@ function parseProgress(text) {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       errors.push(`progress.jsonl line ${i + 1} is not a JSON object.`); return;
     }
+    // Plan-level events carry no slice. Approval is the one that matters: a run
+    // that died after writing plan.md but before the user saw it would
+    // otherwise resume and start building a plan nobody agreed to.
+    if (parsed.event) {
+      if (parsed.event !== 'plan-approved') {
+        errors.push(`progress.jsonl line ${i + 1} has unknown event "${parsed.event}".`);
+        return;
+      }
+      events.push(parsed);
+      return;
+    }
     if (!parsed.slice) { errors.push(`progress.jsonl line ${i + 1} names no slice.`); return; }
     if (!STATUSES.has(parsed.status)) {
       errors.push(`progress.jsonl line ${i + 1} has status "${parsed.status}"; expected one of ${[...STATUSES].join(', ')}.`);
@@ -86,6 +97,12 @@ function parseProgress(text) {
     events.push(parsed);
   });
   return { events, errors };
+}
+
+// A plan nobody approved is a draft, whatever else the journal says. Building
+// from one is the "drove away on its own" failure in its earliest form.
+function planApproved(events) {
+  return events.some((e) => e.event === 'plan-approved');
 }
 
 // Last event wins, so a blocked slice that was later finished reads as done.
@@ -132,7 +149,7 @@ function summarise(slices, events) {
 }
 
 module.exports = {
-  parsePlan, validatePlan, parseProgress,
+  parsePlan, validatePlan, parseProgress, planApproved,
   statusOf, evidenceFor, nextSlice, lastDone, summarise,
   TERMINAL, STATUSES,
 };

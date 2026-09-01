@@ -119,3 +119,34 @@ test('a summary counts every slice exactly once', () => {
   assert.strictEqual(s.done, 1);
   assert.strictEqual(s.pending, 1);
 });
+
+test('a plan is a draft until the user approves it', () => {
+  // The earliest form of "it drove away on its own": a run dies after writing
+  // plan.md but before the user ever saw it, then a resume finds slices that
+  // are not done and starts building a plan nobody agreed to.
+  const { planApproved } = require('../lib/ledger.js');
+  assert.strictEqual(planApproved(parseProgress('').events), false,
+    'an empty journal must not read as approval');
+  assert.strictEqual(
+    planApproved(parseProgress('{"slice":"S1","status":"started"}').events), false,
+    'starting work is not the same as the plan having been approved');
+  assert.strictEqual(
+    planApproved(parseProgress('{"event":"plan-approved"}').events), true);
+});
+
+test('an unknown plan-level event is reported, not silently accepted', () => {
+  const { events, errors } = parseProgress('{"event":"plan-rewritten"}');
+  assert.strictEqual(events.length, 0);
+  assert.ok(errors.some((e) => /unknown event "plan-rewritten"/.test(e)));
+});
+
+test('approval events do not disturb slice status', () => {
+  const slices = parsePlan(PLAN);
+  const { events, errors } = parseProgress([
+    '{"event":"plan-approved"}',
+    '{"slice":"S1","status":"done","evidence":[{"cmd":"npm run build","exit_code":0}]}',
+  ].join('\n'));
+  assert.deepStrictEqual(errors, []);
+  assert.strictEqual(statusOf('S1', events), 'done');
+  assert.strictEqual(nextSlice(slices, events).slice.id, 'S2');
+});

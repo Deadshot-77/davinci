@@ -19,8 +19,16 @@ re-reads**, rather than a memory it is trusted to keep.
 
 ## Two files, and the split is the point
 
-**`.devteam/plan.md` — the contract.** Written once at intake, with the user,
-before anything is dispatched. Never rewritten.
+**`.devteam/plan.md` — the contract.** Drafted at intake, shown to the user in
+full, revised until they approve it, and never rewritten afterwards.
+
+The draft-to-contract moment is exact: it is the `{"event":"plan-approved"}`
+line in the journal. Before it, the plan is a proposal and rewriting it is the
+whole point. After it, the plan is fixed and changing it is a conversation.
+
+**A plan with no approval line is a draft**, however complete it looks — a run
+that died between writing it and showing it leaves exactly that. Do not build
+from one.
 
 **`.devteam/progress.jsonl` — the journal.** One JSON object per line, appended,
 never edited.
@@ -44,13 +52,33 @@ screenshot loop all work before any judgement is spent on content.
 Then thicken. Each later slice adds one visible capability to something that
 already runs.
 
+### Where to draw the boundary
+
+The sharpest test — adapted from `superpowers`' plan skills, and it fits here
+better than it fits there because this plugin has an actual gate:
+
+> **Split only where the reviewer could meaningfully reject one slice while
+> approving its neighbour.**
+
+If a bounce on the first would automatically invalidate the second, they are one
+slice. If the gate could sensibly pass one and fail the other, they are two.
+
+Two consequences worth stating, because both are commonly got wrong:
+
+- **Fold setup into the slice that needs it.** Scaffolding, config, a dependency,
+  a fixture, the documentation for a thing — these belong inside the slice whose
+  deliverable requires them, never as a slice of their own. "Set up the tooling"
+  delivers nothing a reviewer can accept or reject.
+- **A step is not a slice.** "Write the test, run it, see it fail, implement,
+  see it pass" is five steps inside one slice. If the user would see no
+  difference, it is a step.
+
 Size a slice so that:
 
 - it is **independently verifiable** — its criteria can be checked without the
   slices after it existing
 - it leaves the project **working** — a slice never ends with the build broken
-- it is **worth looking at** — if the user would see no difference, it is not a
-  slice, it is a step inside one
+- it is **worth looking at** — the user can see what changed
 
 Three to eight slices is the usual range. More than that and they are steps;
 fewer and they are projects.
@@ -107,10 +135,33 @@ that turns out to need something the plan did not anticipate returns
 If the plan is genuinely wrong, that is a conversation with the user and a new
 plan, not an edit made in passing.
 
+## Nothing is written until the plan is approved
+
+While the plan is a draft, the project is read-only. Read the repository as much
+as you like — that is how a good plan gets written — but do not scaffold, do not
+install, do not create the branch. Claude Code's own plan mode works this way
+and the reason is sound: work started before agreement is work the user has to
+undo before they can disagree.
+
+The first write of the build belongs to S1, after approval.
+
+**And check where you are about to write.** If the repository is on its default
+branch — `main`, `master` — say so and get consent before the first slice
+writes anything. A user who wanted a branch and got commits on `main` has a
+mess that costs more to clean than the slice cost to build.
+
 ## Starting a slice
 
 1. Read `plan.md` and the journal. **Re-read the goal from the file** — this is
    the re-anchoring that stops drift; do not work from what you remember.
+
+   Read the slice **critically**, not just receptively. You know things now that
+   nobody knew when the plan was written — what the last slice actually cost,
+   what the codebase turned out to look like. If the slice is wrong, say so
+   before building it: return `needs_input` with what you would change and why.
+   **Objecting is allowed; editing is not.** The plan changes when the user
+   changes it, and a slice built against an objection you swallowed is worse
+   than a slice delayed by a question.
 2. If the previous slice is marked `done`, **re-run its acceptance criteria
    before continuing.** A status is a claim and the working tree is the fact; a
    killed run can leave the two disagreeing. If they disagree, say so and stop.

@@ -17,10 +17,16 @@ back to you to ask.
 
 Read `.devteam/plan.md` and `.devteam/progress.jsonl` before anything else.
 
-**If a plan exists and has slices that are not done, this is a resume.** Skip
-intake entirely. Say which slice is next and what the journal shows, then go
-to "Running one slice" below. Do not re-interview the user about a brief they
-already approved.
+**If a plan exists but the journal has no `{"event":"plan-approved"}` line, it
+is a draft, not a plan.** A previous run wrote it and stopped before the user
+ever saw it. Do not build from it: print it, and go to the approval step below.
+Building a plan nobody agreed to is the drifting-away failure in its earliest
+and most avoidable form.
+
+**If a plan exists, is approved, and has slices that are not done, this is a
+resume.** Skip intake entirely. Say which slice is next and what the journal
+shows, then go to "Running one slice" below. Do not re-interview the user about
+a brief they already approved.
 
 **If a plan exists and every slice is done**, say so and treat the incoming
 request as a new plan on top of the finished one.
@@ -35,9 +41,27 @@ request as a new plan on top of the finished one.
 4. Write `.devteam/brief.md` with objectively checkable acceptance criteria.
 5. Invoke `davinci:work-ledger` and write `.devteam/plan.md` — the ordered
    slices, walking skeleton first.
-6. **Show the user the slice list and get it approved before dispatching
-   anything.** This is the one moment the whole plan is cheap to change, and an
-   approved plan is what every later slice re-anchors to. Unattended, proceed on
+6. **Show the user the plan and get it approved before dispatching anything.**
+
+   Print the whole slice list in the conversation — id, title, what it
+   delivers, and its criteria. Do not make them open a file to see what they
+   are agreeing to. Then ask with `AskUserQuestion`, offering at least:
+
+   - **Approve** — build it in this order
+   - **Change the slices** — they tell you what to add, drop, split, merge or
+     reorder
+   - **Change the order only** — the work is right, the sequence is not
+
+   If they choose to change anything: rewrite `.devteam/plan.md`, print it
+   again, and ask again. Loop until they approve. **This is the only time
+   `plan.md` may be rewritten** — before approval it is a draft, after approval
+   it is a contract.
+
+   When they approve, append `{"event":"plan-approved"}` to
+   `.devteam/progress.jsonl`. That line is what later runs read to know the
+   plan was actually agreed rather than merely written.
+
+   Unattended, proceed on
    the plan you wrote and say you did.
 
 ## Running one slice
