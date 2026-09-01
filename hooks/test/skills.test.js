@@ -720,3 +720,30 @@ test('a greenfield project is checked for runnability before it is written', () 
   assert.ok(!profile.permissions.allow.some((e) => /npm (install|ci)\b/.test(e)),
     'npm install grants arbitrary code execution through postinstall and must stay opt-in');
 });
+
+test('alt text is a decision tree, not an instruction to describe everything', () => {
+  // "Add alt text to every image" produces worse accessibility than the tree:
+  // it turns decoration into noise a screen reader must read past. And the two
+  // states mean opposite things -- alt="" hides a decorative image, a missing
+  // attribute makes a screen reader announce the filename.
+  const craft = fs.readFileSync(path.join(SKILLS_DIR, 'frontend-craft', 'SKILL.md'), 'utf8');
+  assert.match(craft, /Alt text is a decision, not a field to fill/,
+    'the accessibility floor no longer carries the alt decision tree');
+  assert.match(craft, /`alt=""` and no `alt` attribute are opposites/,
+    'the distinction that makes the tree worth having is gone');
+  assert.match(craft, /Never omit the attribute/,
+    'nothing now stops an agent leaving alt off entirely');
+});
+
+test('SEO scope stops where the plugin runs out of evidence', () => {
+  // Keyword strategy needs search-volume data and business context the plugin
+  // does not have. Producing it anyway is confident output with nothing behind
+  // it, which is the failure mode this whole plugin is built against.
+  const seo = fs.readFileSync(path.join(SKILLS_DIR, 'technical-seo', 'SKILL.md'), 'utf8');
+  assert.match(seo, /It does not cover keyword strategy/,
+    'technical-seo no longer refuses the part it cannot evidence');
+  assert.match(seo, /Do not write an llms\.txt/,
+    'the plugin no longer declines a widely-marketed file measured to do nothing');
+  assert.match(seo, /the check does not run\*\*, and it says so/,
+    'an unbuilt project could again be reported as passing its SEO check');
+});

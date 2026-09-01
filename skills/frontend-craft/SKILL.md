@@ -234,9 +234,43 @@ unshippable in production is a failure, not a draft.
 
 Non-negotiable regardless of direction or dial values: visible focus states
 on every interactive element, 4.5:1 contrast on body text,
-`prefers-reduced-motion` honoured, everything reachable by keyboard alone.
+`prefers-reduced-motion` honoured, everything reachable by keyboard alone,
+a `lang` on `<html>`, one `<h1>` per page with no skipped heading levels, and
+every image resolved through the tree below.
 
-## 9. Pre-flight, before you report
+### Alt text is a decision, not a field to fill
+
+"Add alt text to every image" produces worse accessibility than the tree,
+because it turns decoration into noise a screen reader must read past.
+
+For each image, in order:
+
+1. **Does it carry information the surrounding text does not?** Write that
+   information. Not what the picture *is* — what it *says*. A photograph of a
+   bound document beside a caption about handover does not need "a photograph of
+   a bound document".
+2. **Is it a link or a control?** Describe the destination or the action, never
+   the graphic. `alt="Home"`, not `alt="logo"`.
+3. **Does it repeat adjacent text?** Then it is decorative here, whatever it
+   depicts. Duplicated alt makes a screen reader say everything twice.
+4. **Otherwise it is decorative.** `alt=""`.
+
+**`alt=""` and no `alt` attribute are opposites.** Empty alt tells assistive
+technology to skip the image, which is correct for decoration. A *missing*
+attribute makes a screen reader announce the filename instead — so
+`hero-final-v3.jpg` gets read aloud. Never omit the attribute.
+
+Long-form alt belongs in the page, not the attribute: if a chart needs a
+paragraph, put the paragraph on the page where everyone gets it.
+
+## 9. What the page declares
+
+A public page is read by machines as well as people, and what it declares —
+its title, its language, its structure, its schema — is part of the build, not
+a marketing afterthought. `davinci:technical-seo` covers what that means and
+carries a check that runs against real build output.
+
+## 10. Pre-flight, before you report
 
 Mechanical checks, not vibes — run through this before writing the report:
 

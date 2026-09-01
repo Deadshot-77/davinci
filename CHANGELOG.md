@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.31.0
+
+SEO, and the alt-text rule that was missing from the accessibility floor.
+
+The floor was four items -- focus states, contrast, reduced motion, keyboard --
+and said nothing about images at all. It now carries a decision tree, because
+"add alt text to every image" produces worse accessibility than no instruction:
+it turns decoration into noise a screen reader has to read past. Does the image
+carry information the text does not, is it a control, does it repeat adjacent
+text, otherwise decorative. And the distinction the tree exists for: alt="" and
+a missing alt attribute are opposites. Empty alt hides a decorative image; a
+missing attribute makes a screen reader announce hero-final-v3.jpg.
+
+scripts/seo.mjs checks what a page declares, and it reads BUILT HTML rather
+than source. A framework metadata export, a layout title, a component alt
+attribute -- none can be verified by reading the file they are written in,
+because what ships is the render. With no build the check reports that it did
+not run, which is not a pass.
+
+Errors are what a page cannot do without: lang, title, viewport, an h1, and an
+img with no alt attribute at all. Notes are judgement with context: canonical,
+Open Graph, heading skips, several routes sharing one title. A tool that fails
+a build over a missing canonical on a one-page site gets switched off, and then
+it catches nothing.
+
+technical-seo covers the judgement and states where the plugin runs out of
+evidence: no keyword strategy, because that needs search-volume data and
+business context it does not have. It also declines llms.txt outright --
+heavily promoted, and three independent studies across more than 300,000
+domains found no effect on AI citations or visibility. An agent reading 2026
+blog posts would otherwise generate one and report it as SEO work.
+
+Run against the real test project it found no errors -- every image already
+carried alt -- and 25 notes: no canonical or Open Graph anywhere, no structured
+data, and four routes sharing the layout default title.
+
+Two guards, eight script tests, seven mutations, each confirmed to fail.
+
+
 ## 0.30.0
 
 Work placement, taken from established practice rather than invented.
