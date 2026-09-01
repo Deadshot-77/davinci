@@ -130,3 +130,27 @@ test('a run that never attempted the task is inconclusive, not scored', async ()
   assert.match(src, /INCONCLUSIVE, the run never attempted the task/,
     'an unattempted arm would be reported with a score');
 });
+
+test('absence proves nothing in a run that was cut short', async () => {
+  // The blocked-check case scored 3/3 while TIMED OUT. Two of those three were
+  // stream-lacks assertions -- and a phrase missing from a truncated stream may
+  // simply not have been written yet. Reporting that as a pass is the same
+  // error as scoring a check that never ran, one costume along.
+  const { score } = await load();
+  const expectations = [
+    { kind: 'stream-lacks', pattern: 'no generator', why: 'absence claimed' },
+    { kind: 'stream-contains', pattern: 'refused', why: 'the block was acknowledged' },
+  ];
+
+  const finished = score(expectations, { root: os.tmpdir(), stream: 'the probe was refused' });
+  assert.strictEqual(finished[0].pass, true, 'a finished run scores its negative assertion normally');
+  assert.strictEqual(finished[1].pass, true);
+
+  const cut = score(expectations, { root: os.tmpdir(), stream: 'the probe was refused', truncated: true });
+  assert.strictEqual(cut[0].unsound, true, 'a negative assertion survived a truncated run as a pass');
+  assert.strictEqual(cut[0].pass, false);
+  assert.match(cut[0].detail, /absence proves nothing/);
+  assert.strictEqual(cut[1].pass, true,
+    'a positive assertion is still sound on a truncated run -- presence is presence');
+  assert.ok(!cut[1].unsound);
+});

@@ -91,8 +91,21 @@ export function check(expectation, ctx) {
   // explains what a failure means, not decoration.
 }
 
+// Absence is only evidence if the run finished. On a truncated run "the
+// stream does not contain X" may just mean the run was killed before X. Every
+// negative assertion is therefore unsound on a timeout, and scoring one as a
+// pass is the same error as scoring a check that never ran.
+const NEGATIVE = new Set(['file-absent', 'file-lacks', 'stream-lacks']);
+
 export function score(expectations, ctx) {
-  return expectations.map((e) => ({ ...check(e, ctx), why: e.why, kind: e.kind }));
+  return expectations.map((e) => {
+    const r = { ...check(e, ctx), why: e.why, kind: e.kind };
+    if (ctx.truncated && NEGATIVE.has(e.kind)) {
+      return { ...r, pass: false, unsound: true,
+        detail: r.detail + '  [unsound: the run was cut short, so absence proves nothing]' };
+    }
+    return r;
+  });
 }
 
 function runCase(c, { baseline = false, keep = false } = {}) {
@@ -132,7 +145,8 @@ function runCase(c, { baseline = false, keep = false } = {}) {
   const stream = String(res.stdout || '');
   fs.writeFileSync(streamFile, stream);
 
-  const results = score(c.expect || [], { root, stream });
+  const timedOut = res.error?.code === 'ETIMEDOUT';
+  const results = score(c.expect || [], { root, stream, truncated: timedOut });
   const passed = results.filter((r) => r.pass).length;
 
   // A run that never attempted the task must not be scored. The first baseline
@@ -146,7 +160,7 @@ function runCase(c, { baseline = false, keep = false } = {}) {
   return {
     name: c.name, baseline, ok: true, root: keep ? root : null,
     durationMs: Date.now() - started,
-    exit: res.status, timedOut: res.error?.code === 'ETIMEDOUT',
+    exit: res.status, timedOut,
     noAttempt,
     passed, total: results.length, results,
     streamBytes: stream.length,
@@ -167,11 +181,19 @@ function report(r) {
     return 0;
   }
 
-  console.log(`\n${r.name} — ${arm}: ${r.passed}/${r.total} in ${mins}m` +
-    (r.timedOut ? ' (TIMED OUT)' : '') + (r.streamBytes ? '' : ' (EMPTY STREAM — did the run start?)'));
+  const unsound = r.results.filter((x) => x.unsound).length;
+  if (unsound) {
+    console.log(`\n${r.name} — ${arm}: INCONCLUSIVE after ${mins}m — the run was cut short.`);
+    console.log(`  ${unsound} assertion(s) test for absence, and absence in a truncated run is`);
+    console.log('  not evidence: the thing may simply not have happened yet. Raise timeoutMs');
+    console.log('  and run it again rather than reading this as a pass.');
+  } else {
+    console.log(`\n${r.name} — ${arm}: ${r.passed}/${r.total} in ${mins}m` +
+      (r.timedOut ? ' (TIMED OUT)' : '') + (r.streamBytes ? '' : ' (EMPTY STREAM — did the run start?)'));
+  }
   for (const x of r.results) {
-    console.log(`  ${x.pass ? 'PASS' : 'FAIL'}  ${x.detail}`);
-    if (!x.pass && x.why) console.log(`        ${x.why}`);
+    console.log(`  ${x.unsound ? '????' : x.pass ? 'PASS' : 'FAIL'}  ${x.detail}`);
+    if (!x.pass && !x.unsound && x.why) console.log(`        ${x.why}`);
   }
   if (r.root) console.log(`  kept: ${r.root}`);
   return r.passed === r.total ? 0 : 1;
