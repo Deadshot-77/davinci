@@ -606,3 +606,36 @@ test('the foundation gate makes a project declare what is already installed', ()
   assert.match(skill, /## Available to build with/,
     'the gate requires a section the skill never tells anyone to write');
 });
+
+test('the deletion pass reaches past the file that was changed', () => {
+  // code-craft's pass asks an agent to clean the file it touched, which is
+  // structurally blind to what that change orphaned elsewhere: the component
+  // nothing imports now, the image still shipping after its section was
+  // rewritten. Those are reference-graph facts, so a script answers them.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'code-craft', 'SKILL.md'), 'utf8');
+  assert.match(skill, /This pass is file-scoped, and that is its limit/,
+    'code-craft no longer admits the deletion pass cannot see past one file');
+  assert.match(skill, /waste\.mjs/,
+    'nothing routes to the sweep that finds what a change orphaned');
+  assert.match(skill, /a check\s+you could not run is not a clean project/,
+    'an unrunnable sweep could again be reported as a clean project');
+});
+
+test('a cache is treated as a security boundary before a performance one', () => {
+  // A mis-keyed cache serves one user another user's response. That is an
+  // incident, not a slow page, so the key rule leads and the trigger lives in
+  // the skill every source-writing agent already preloads.
+  const caching = fs.readFileSync(path.join(SKILLS_DIR, 'caching', 'SKILL.md'), 'utf8');
+  assert.match(caching, /The cache key is a security boundary/,
+    'caching no longer leads with the failure that makes it dangerous');
+  assert.match(caching, /stampede/i, 'caching no longer covers stampede');
+  assert.match(caching, /invalidation/i, 'caching no longer covers invalidation');
+
+  const code = fs.readFileSync(path.join(SKILLS_DIR, 'code-craft', 'SKILL.md'), 'utf8');
+  assert.match(code, /`davinci:caching` was invoked before/,
+    'nothing triggers the caching skill, so it is only found by someone already looking');
+
+  const backend = readAgents().find((a) => a.name === 'backend-engineer');
+  assert.ok(backend.skills.includes('caching'),
+    'the agent that serves data does not carry the caching standard');
+});

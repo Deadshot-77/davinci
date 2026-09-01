@@ -7,6 +7,7 @@ color: blue
 tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, Skill, WebFetch, WebSearch
 skills:
   - delegation-contract
+  - caching
   - code-craft
 ---
 

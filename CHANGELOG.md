@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.28.0
+
+Two numbers made the case: 529 lines of guidance on motion and generated
+imagery, and zero on caching. Not one mention of the word anywhere in the
+plugin. The design side had been getting all the attention.
+
+code-craft has always had a deletion pass, and it is file-scoped -- it asks an
+agent to clean the file it just changed. That is structurally blind to what the
+change orphaned somewhere else: the component nothing imports now, the route
+gone dead, the photograph still shipping after the section using it was
+rewritten. Those are reference-graph facts rather than judgement, so scripts/
+waste.mjs answers them exactly: orphaned modules, unreferenced assets with
+their weight, and links pointing at nothing. Entry points are never orphans,
+aliased imports resolve, and build output is never scanned.
+
+It also refuses to overstate itself. A project that builds paths at runtime
+cannot be resolved statically, so the report drops to partial confidence and
+names the files responsible instead of calling itself clean -- the same rule
+this plugin has now learned four times about refused commands and disabled
+features. An unrunnable sweep is reported as unrun, never as a clean project.
+
+The caching skill leads with the failure that makes caching dangerous rather
+than the mechanics that make it fast: a key missing a user or tenant serves one
+person another person's response, which is an incident and not a slow page.
+Then invalidation, stampede, measuring before caching, choosing a layer, and
+proving a hit, a miss and an invalidation instead of asserting "added caching".
+
+backend-engineer preloads it. The trigger lives in code-craft, which every
+source-writing agent already carries, because a skill you must know to look for
+is one you will not invoke when you most need it.
+
+Two guards and nine script tests, eight mutations, each confirmed to fail.
+
+
 ## 0.27.0
 
 The agent could already research. It just could not see anything but pictures.

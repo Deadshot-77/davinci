@@ -28,6 +28,7 @@
       "Bash(test -f:*)",
       "Bash(test -d:*)",
       "Bash(node scripts/shoot.mjs:*)",
+      "Bash(node scripts/waste.mjs:*)",
       "Bash(npx --yes serve:*)",
       "Bash(npm run build)",
       "Bash(npm run lint)",
@@ -78,5 +79,6 @@
   },
   "//shoot": "The screenshot tool lives in the plugin directory, whose absolute path differs per installation, so it cannot be listed here. To let frontend-engineer see its own work, add: \"Bash(node /absolute/path/to/davinci/scripts/shoot.mjs:*)\". Without it the agent reports that visual verification was impossible rather than implying it looked.",
   "//verification": "Deliberately absent: node -e, node -p, and running an arbitrary script file. A builder is not bash-guarded by the write-scope hook (only read-only agents are), so this allowlist is the only thing standing between a builder and writing outside its scope through node fs. Granting node -e would remove the plugin's central safety property to save an agent one command. An assertion that needs real code belongs in a test run with node --test -- see \"Proving something the allowlist will not run\" in the delegation contract.",
-  "//generators": "Discovery is granted (command -v) because a probe that cannot run reports an absent generator, which is a lie the page is then built on. Generation is not granted: it spends real credits, so the generating command is opt-in per project -- add e.g. Bash(higgsfield generate:*) and Bash(higgsfield workflow:*) alongside its account/model subcommands. Without them an agent finds the binary, correctly reports a blocked check, and still ships static -- honest, but not the outcome anyone wanted. An agent that finds a binary it may not run must report that as a blocked check, never as no generator."
+  "//generators": "Discovery is granted (command -v) because a probe that cannot run reports an absent generator, which is a lie the page is then built on. Generation is not granted: it spends real credits, so the generating command is opt-in per project -- add e.g. Bash(higgsfield generate:*) and Bash(higgsfield workflow:*) alongside its account/model subcommands. Without them an agent finds the binary, correctly reports a blocked check, and still ships static -- honest, but not the outcome anyone wanted. An agent that finds a binary it may not run must report that as a blocked check, never as no generator.",
+  "//waste": "The waste sweep lives in the plugin directory like the screenshot tool, so its absolute path differs per installation and cannot be listed here. To let builders see what their change orphaned, add: \"Bash(node /absolute/path/to/davinci/scripts/waste.mjs:*)\". It only reads. Without it an agent reports the sweep as unrun rather than reporting the project as clean."
 }

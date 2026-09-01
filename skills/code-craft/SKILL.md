@@ -61,6 +61,23 @@ Then record it: state in `assumptions` what you removed and why, or state
 plainly that nothing was made redundant. An unrecorded deletion pass is
 indistinguishable from one that never happened.
 
+**This pass is file-scoped, and that is its limit.** Reading the file you changed
+cannot show you what the change orphaned somewhere else: the component nothing
+imports now, the route gone dead, the image still shipping after the section
+that used it was rewritten. Those are reference-graph facts, so run the graph:
+
+```
+node <plugin>/scripts/waste.mjs .
+```
+
+It reports orphaned modules, unreferenced assets with their weight, and links
+pointing at nothing. Read its confidence line before acting — a project that
+builds paths at runtime cannot be fully resolved statically, and the report says
+so rather than calling itself clean. Adjudicate what it flags; a file reached
+only through a template literal is not waste. Delete what is genuinely dead and
+record it. If the command is not permitted, say that in `assumptions` — a check
+you could not run is not a clean project.
+
 ## 4. Structure
 
 - **Dependency runs one way.** Transport calls application, application calls
@@ -146,6 +163,10 @@ Mechanical checks, not vibes — run through this before writing the report:
 - [ ] deletion pass taken, and its result recorded in `assumptions` either way
 - [ ] no tell from section 7 present in what you wrote
 - [ ] every new branch has a test you are confident fails without the change
+- [ ] `waste.mjs` run, its confidence line read, and anything it found either
+      removed or explained
+- [ ] if the change serves or stores data, `davinci:caching` was invoked before
+      writing a cache — the key is a security boundary, not a performance detail
 - [ ] nothing left behind: unused imports, debug logging, commented-out code,
       unowned `TODO`s
 - [ ] new modules, crossed layers, and new dependencies recorded in
