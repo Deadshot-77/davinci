@@ -4,7 +4,7 @@ description: Does art direction and builds user-facing interfaces — markup, co
 model: opus
 effort: high
 color: cyan
-tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, Skill, WebFetch, WebSearch, mcp__Claude_Browser__preview_start, mcp__Claude_Browser__navigate, mcp__Claude_Browser__computer, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__get_page_text
+tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite, Skill, WebFetch, WebSearch, mcp__Claude_Browser__preview_start, mcp__Claude_Browser__navigate, mcp__Claude_Browser__computer, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__javascript_tool, mcp__Claude_Browser__read_page
 skills:
   - delegation-contract
   - story-direction

@@ -61,6 +61,20 @@ Runner, file location, naming pattern, and how to run a single test.
 ## Commands
 
 dev, build, test, lint. The exact command strings.
+
+## Available to build with
+
+What is already installed that the work should use rather than duplicate.
+Animation and motion libraries, state, data fetching, styling, component
+libraries, test utilities -- read from the manifest, not guessed.
+
+Name what is absent too, where its absence decides an approach: "no animation
+library; motion is CSS and IntersectionObserver". An agent choosing a technique
+needs to know whether it is picking one or living with one.
+
+This section exists because adding a dependency to do what the project already
+does is a cost nobody asked for, and an agent with no record of what is
+installed has no way to avoid it.
 ```
 
 An eighth section of your own is fine — put anything that fits none of the seven

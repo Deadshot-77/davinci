@@ -87,6 +87,11 @@ Do not read these speculatively. Invoke the one you have committed to, with the
 `generating-assets` comes first because it is the one that tells you whether you
 can make anything at all. The other three assume an asset exists.
 
+**When the technique you need is not one of these four**, do not improvise from
+memory and do not read an article about it. Invoke `davinci:technique-research`
+and go read a live implementation. These four skills are a starting set, not the
+boundary of what a page may do.
+
 ## What gives a motion page away
 
 The equivalents of banned defaults, for movement:

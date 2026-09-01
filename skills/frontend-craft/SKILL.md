@@ -48,6 +48,11 @@ Do this when the work has a real visual surface and the tier is `standard` or
    category does the same way, so that when you do it too it is a decision
    rather than a default — and so that you can see what none of them is doing.
 
+Looking at images answers *what does this look like*. When you need to know
+*how something works* — a motion technique, a load strategy, an effect you can
+see but not explain — that is a different pass with different tools, and
+`davinci:technique-research` runs it.
+
 **Research is for finding the gap, not the average.** The failure mode here is
 convergence: four sites use a centred hero over a gradient, you absorb that as
 "what this category looks like", and you produce a fifth. You have then used

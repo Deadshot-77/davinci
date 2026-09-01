@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.27.0
+
+The agent could already research. It just could not see anything but pictures.
+
+frontend-craft has always sent it to look at the category -- find the real
+competitive set, screenshot three or four, name the convention, find the gap.
+Every tool in that pass returns an image. So the agent could describe a page and
+could not read how it worked, and technique had to be hand-authored into skills
+one at a time, which does not scale and dates badly.
+
+frontend-engineer now carries javascript_tool and read_page. Those two produced
+every real finding in a study of a live product page: the video count, the
+declarative plugin composition, the progress keyframes, the load timeout, and
+the capability flag that nearly produced a false one. Two tool names on one
+line, and the agent moves from imitating a look to reading a mechanism.
+
+technique-research teaches that second pass. Read the artifact, not the article.
+Extract mechanism, not aesthetic. And check whether a technique was switched off
+before concluding it is absent -- a page reported readyState 0 on all sixteen of
+its videos because its own detection had disabled inline media, and "this page
+does not scrub video" was one inference away. An absent technique and a disabled
+one look identical and mean opposite things.
+
+Findings persist with provenance: date, source, measured, inferred, unchecked.
+The last two fields are what make a finding safe to keep -- a note separating
+what was seen from what was concluded can be corrected; one that merges them
+becomes folklore. That is the direct lesson of six records naming a provider
+until a run picked it without comparing anything.
+
+stack-profile gains a required eighth section, "Available to build with", so an
+agent choosing an approach knows what the project already carries. Adding a
+dependency to do what the stack already does is a cost nobody asked for.
+
+Four guards, seven mutations, each confirmed to fail.
+
+
 ## 0.26.0
 
 Five skills for motion and generated imagery, split so that four of them cost

@@ -13,6 +13,7 @@ function profile(overrides) {
     'Naming conventions': 'kebab-case files',
     Testing: 'vitest',
     Commands: 'npm run dev',
+    'Available to build with': 'framer-motion 11; no GSAP',
   };
   Object.assign(body, overrides || {});
   return REQUIRED_SECTIONS.map((s) => `## ${s}\n\n${body[s] || ''}\n`).join('\n');

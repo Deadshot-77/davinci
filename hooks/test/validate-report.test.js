@@ -56,6 +56,7 @@ test('a genuine scaffold with a complete stack profile passes', () => {
     '## Naming conventions', '', 'kebab-case', '',
     '## Testing', '', 'vitest', '',
     '## Commands', '', 'npm run dev', '',
+    '## Available to build with', '', 'framer-motion 11; no GSAP', '',
   ].join('\n');
   const errors = foundationErrors('infra-architect', ['package.json'], [], profile, null);
   assert.deepStrictEqual(errors, []);

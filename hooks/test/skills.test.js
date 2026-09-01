@@ -525,7 +525,7 @@ test('the technique skills are reached on demand, not preloaded', () => {
   // thin-skill split exists to avoid. Measured: a subagent holding only Bash
   // and Skill invoked a plugin skill it did not preload and returned a marker
   // it could not have guessed, so on-demand is a real route, not a hope.
-  const onDemand = ['parallax-layers', 'glass-surfaces', 'scroll-video', 'generating-assets'];
+  const onDemand = ['parallax-layers', 'glass-surfaces', 'scroll-video', 'generating-assets', 'technique-research'];
   const preloaded = readAgents().flatMap((a) =>
     onDemand.filter((s) => a.skills.includes(s)).map((s) => a.name + ' preloads ' + s));
   assert.deepStrictEqual(preloaded, [],
@@ -556,4 +556,53 @@ test('generating-assets keeps the probe shape and the blocked-check distinction'
     'the probe no longer shows one plain command per call');
   assert.match(skill, /`ToolSearch` cannot be given to an agent/,
     'an agent could again wait for a deferred tool that can never arrive');
+});
+
+test('the agent that researches technique can read a mechanism, not only see a picture', () => {
+  // frontend-craft already sends it to look at the category, but every tool in
+  // that pass returns an image. Measured on a real study of a live product
+  // page: the video count, the plugin composition attributes, the progress
+  // keyframes, the load timeout and the capability flag that nearly produced a
+  // false finding all came from javascript_tool. With screenshots alone the
+  // agent can describe a page and cannot read how it works.
+  const fe = readAgents().find((a) => a.name === 'frontend-engineer');
+  assert.ok(fe, 'frontend-engineer is not on disk');
+  for (const tool of ['mcp__Claude_Browser__javascript_tool', 'mcp__Claude_Browser__read_page']) {
+    assert.ok(fe.tools.includes(tool),
+      'frontend-engineer lost ' + tool + ', so technique research drops back to screenshots');
+  }
+});
+
+test('research separates what was disabled from what is absent', () => {
+  // A live page reported readyState 0 on all sixteen of its videos because its
+  // own detection had set no-inline-media on the root element. "This page does
+  // not scrub video" was one inference away and would have been wrong -- the
+  // same shape as a refused command recorded as a negative result.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'technique-research', 'SKILL.md'), 'utf8');
+  assert.match(skill, /disable its own technique in your browser/,
+    'research no longer warns that a page can hide the technique while you look at it');
+  assert.match(skill, /prefers-reduced-motion/,
+    'the check for a switched-off technique no longer names the obvious gate');
+});
+
+test('a finding carries what was inferred and what was not checked', () => {
+  // A record that merges observation with conclusion becomes folklore. Six
+  // records naming a provider once accumulated in one project until a run
+  // selected it without comparing anything.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'technique-research', 'SKILL.md'), 'utf8');
+  for (const field of ['measured:', 'inferred:', 'unchecked:']) {
+    assert.ok(skill.includes(field),
+      'the findings format no longer carries "' + field + '", so it cannot be corrected');
+  }
+  assert.match(skill, /A finding is not a preference/,
+    'research no longer distinguishes a dated measurement from an accumulated preference');
+});
+
+test('the foundation gate makes a project declare what is already installed', () => {
+  const { REQUIRED_SECTIONS } = require('../lib/foundation.js');
+  assert.ok(REQUIRED_SECTIONS.includes('Available to build with'),
+    'an agent choosing a technique has no record of what the project already carries');
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'stack-profile', 'SKILL.md'), 'utf8');
+  assert.match(skill, /## Available to build with/,
+    'the gate requires a section the skill never tells anyone to write');
 });

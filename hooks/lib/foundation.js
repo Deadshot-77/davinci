@@ -7,6 +7,7 @@ const { effectiveScopeMap } = require('./scope-map.js');
 
 const REQUIRED_SECTIONS = [
   'Framework', 'Language', 'Package manager', 'Directory map',
+  'Available to build with',
   'Naming conventions', 'Testing', 'Commands',
 ];
 
