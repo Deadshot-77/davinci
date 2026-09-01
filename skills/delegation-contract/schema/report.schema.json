@@ -9,7 +9,8 @@
     "criteria_addressed",
     "verification",
     "assumptions",
-    "handoff_notes"
+    "handoff_notes",
+    "model"
   ],
   "properties": {
     "agent": {
@@ -158,6 +159,15 @@
           }
         }
       }
+    },
+    "model": {
+      "enum": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "unspecified"
+      ]
     }
   }
 }

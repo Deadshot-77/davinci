@@ -232,6 +232,7 @@ test('a successful validation clears any prior attempt counter', () => {
     fs.writeFileSync(path.join(devteam, 'reports', 'frontend-engineer-1.json'), JSON.stringify({
       agent: 'frontend-engineer',
       status: 'complete',
+      model: 'sonnet',
       files_changed: ['app/page.tsx'],
       criteria_addressed: ['AC-1'],
       verification: [{ cmd: 'npm run build', exit_code: 0 }],
@@ -295,6 +296,7 @@ function writeReviewLensReport(cwd, overrides) {
   const report = Object.assign({
     agent: 'review-lens',
     status: 'complete',
+    model: 'sonnet',
     files_changed: [],
     criteria_addressed: ['AC-1'],
     verification: [{ cmd: 'git diff --stat HEAD~1', exit_code: 0 }],

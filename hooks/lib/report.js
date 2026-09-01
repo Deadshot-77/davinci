@@ -4,8 +4,16 @@ const { knownAgents } = require('./agents.js');
 
 const REQUIRED = [
   'agent', 'status', 'files_changed', 'criteria_addressed',
-  'verification', 'assumptions', 'handoff_notes',
+  'verification', 'assumptions', 'handoff_notes', 'model',
 ];
+// The model the dispatch named, echoed back. Required rather than optional,
+// and "unspecified" is a legal value on purpose: work-tiers tells the lead to
+// choose a model on every dispatch, nothing checked it, and a run of 26
+// dispatches left no record of what any of them ran on. An optional field
+// would be absent exactly where the decision was skipped, which is the case
+// worth counting. Required, every report answers -- and "unspecified" is the
+// lead admitting it let a default decide.
+const MODELS = ['opus', 'sonnet', 'haiku', 'fable', 'unspecified'];
 const STATUSES = ['complete', 'blocked', 'needs_input'];
 const VERDICTS = ['pass', 'fail'];
 const MAX_QUESTIONS = 2;
@@ -127,6 +135,10 @@ function validateReport(report, agentName) {
 
   if (Object.prototype.hasOwnProperty.call(report, 'tier') && !TIERS.includes(report.tier)) {
     errors.push(`Unknown tier "${report.tier}". Must be one of: ${TIERS.join(', ')}.`);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(report, 'model') && !MODELS.includes(report.model)) {
+    errors.push(`Unknown model "${report.model}". Must be one of: ${MODELS.join(', ')}. Echo what your dispatch named; write "unspecified" if it named none.`);
   }
 
   // An observation is something noticed in passing and handed to the lead. It

@@ -1162,3 +1162,31 @@ test('the stack profile separates the contract from its evidence', () => {
   assert.match(contract, /it is all contract/,
     'the fallback for a profile with no boundary is gone, so agents may skip a profile that has no evidence section');
 });
+
+test('the model a dispatch chose is on the record', () => {
+  // work-tiers told the lead to choose a model on every dispatch and nothing
+  // checked it. A 26-dispatch run left no trace of what any of them ran on:
+  // no report field, and subagents produce no sidechain in the session
+  // transcript. Five of seven agents default to opus, so a dispatch that names
+  // no model spends the most expensive option by not deciding -- and that was
+  // invisible.
+  const contract = fs.readFileSync(path.join(SKILLS_DIR, 'delegation-contract', 'SKILL.md'), 'utf8');
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+
+  assert.match(contract, /this one is required/,
+    'the model field went back to optional, so it will be absent exactly where the decision was skipped');
+  assert.match(contract, /"model": "sonnet"/,
+    'the copyable report example lost its model field, and the example is what agents actually copy');
+  assert.match(contract, /write `"unspecified"`/,
+    'agents are no longer told what to write when the dispatch named no model, so they will guess or omit');
+  assert.match(lead, /## Every dispatch names six things/,
+    'the dispatch contract dropped back to five things and no longer carries the model');
+  assert.match(lead, /stated on \*\*every\*\* dispatch/,
+    'naming a model is no longer required on every dispatch');
+  assert.match(lead, /made by not deciding/,
+    'the lead is no longer told that omitting the model is itself a decision to spend the most');
+  assert.match(lead, /Then report what you spent/,
+    'the tally never reaches the user, so the field is recorded and never read');
+  assert.match(lead, /not the one that ran/,
+    'the lead may now claim the field proves what executed, which it does not');
+});

@@ -99,7 +99,7 @@ rubric outright and won, because it was the more emphatic of the two — and a
 static page whose only interactive elements were a skip link and an email
 address was security-audited twice.
 
-## Every dispatch names five things
+## Every dispatch names six things
 
 - `brief` — the path `.devteam/brief.md`
 - `task` — what this agent must do
@@ -127,6 +127,16 @@ address was security-audited twice.
 - `tier` — `load-bearing`, `standard`, or `scaffolding`, plus the one fact
   that decided it, and — on load-bearing work — the explicit instruction that a
   revision pass against `code-craft` is required before reporting
+- `model` — `opus`, `sonnet`, `haiku` or `fable`, stated on **every** dispatch.
+  The agent echoes it into its report, so the choice is on the record next to
+  what the choice bought. Say it in the dispatch text too, not only in the
+  `Agent` call, because the agent cannot see the call — it can only report what
+  you told it.
+
+  When you omit it the agent reports `"model": "unspecified"`, and that is the
+  measurement working, not a bug to route around. Five of the seven agents here
+  default to `opus`, so a dispatch with no model is a decision to spend the most
+  expensive option, made by not deciding.
 
 Omit any of the first four and the agent will report `blocked`, correctly.
 
@@ -147,6 +157,21 @@ definition — so never write one into a dispatch and believe it took.
 Set the model explicitly on every dispatch rather than falling through to the
 agent's default. A default is not a decision, and the point of the tier is that
 the spend was decided.
+
+**Then report what you spent.** Every report you receive carries a `model`, so
+close your own report with the tally: how many dispatches ran on each model, and
+how many came back `"unspecified"`. Two lines.
+
+That tally is the only place this becomes visible. A run of twenty-six
+dispatches left no record of what any of them ran on — subagents produce no
+sidechain in the session transcript, so nothing outside your report can
+reconstruct it afterwards. An `unspecified` count above zero is not a failure to
+apologise for; it is you telling the truth about which choices a default made
+for you, and it is the number that says whether this rubric is working.
+
+Note what you cannot claim: the field records the model your dispatch **named**,
+not the one that ran. Those match when you name one. When you do not, the agent
+falls to its own default and the honest record is that nobody chose.
 
 ## Arbitrating verdicts
 

@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.46.0
+
+What ran on Opus? Nobody knew.
+
+work-tiers has told the lead to choose a model on every dispatch for several
+releases. Nothing ever checked. A 26-dispatch run finished leaving no record of
+what any of them ran on -- reports carried no model field, and subagents write
+no sidechain into the session transcript, so it could not be reconstructed
+afterwards either. Five of the seven agents default to opus, which means a
+dispatch that names no model spends the most expensive option by not deciding.
+
+That made the largest cost in the system unmeasurable, and every proposal to
+reduce it a guess -- including the plausible ones. Measuring the session first
+killed the most obvious candidate: prompt caching was already running at a 93%
+hit rate, 25.7M cache reads against 556 fresh input tokens. There was nothing
+there to win.
+
+So: model is now a required field on every report, echoing what the dispatch
+named, validated against a closed set. Required rather than optional on
+purpose -- an optional field goes missing exactly where the decision was
+skipped, which is the case worth counting. `unspecified` is a legal value
+and is the point of the design: it records a default deciding instead of the
+lead, and an agent must never guess at what it is running on, because a
+confident wrong number is worse than none.
+
+The lead closes its report with the tally -- how many dispatches on each model,
+how many unspecified. That tally is the only place this becomes visible.
+
+One thing the field does not claim: it records the model that was *named*, not
+the one that ran. Those coincide when the lead names one, and when it does not,
+the honest record is that nobody chose.
+
+394 tests; 11 new guards each mutated and proven to fail.
+
 ## 0.45.0
 
 Proportion, and the decision you were never shown.

@@ -54,6 +54,14 @@ agents have been denied `Read` on it by scope, so do not try to open it.
 - `tier` echoes back the tier your dispatch named — `load-bearing`,
   `standard`, or `scaffolding` — so what you were asked to spend is visible
   next to what you did. Omit it only if your dispatch named none.
+- `model` echoes back the model your dispatch named — `opus`, `sonnet`,
+  `haiku` or `fable`. **Unlike `tier`, this one is required.** If your dispatch
+  named no model, write `"unspecified"`. That is not a failure on your part and
+  you should not guess at what you are running on: it records that a default
+  decided instead of the lead, which is the case worth counting. A live run of
+  twenty-six dispatches left no trace of what any of them ran on, which made
+  the largest cost in the system impossible to measure and every proposal to
+  reduce it a guess.
 
 Copy this. It is the whole shape — do not invent your own fields:
 
@@ -61,6 +69,7 @@ Copy this. It is the whole shape — do not invent your own fields:
 {
   "agent": "infra-architect",
   "status": "complete",
+  "model": "sonnet",
   "files_changed": ["package.json", "scripts/build.js"],
   "criteria_addressed": ["AC-1", "AC-3"],
   "verification": [

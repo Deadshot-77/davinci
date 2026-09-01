@@ -8,6 +8,7 @@ function valid() {
   return {
     agent: 'infra-architect',
     status: 'complete',
+    model: 'fable',
     files_changed: ['package.json'],
     criteria_addressed: ['AC-1'],
     verification: [{ cmd: 'npm run build', exit_code: 0 }],
@@ -153,6 +154,7 @@ function gateReport(overrides) {
   return Object.assign({
     agent: 'review-lens',
     status: 'complete',
+    model: 'sonnet',
     files_changed: [],
     criteria_addressed: ['AC-1'],
     verification: [],
@@ -619,4 +621,57 @@ test('an agent quoting its own rejection is not rejected again for quoting it', 
     messages.find((m) => /template marker/.test(m)).replace(/"[^"]*"/, '"<the offending text>"');
   assert.deepStrictEqual(validateReport(quoting, 'infra-architect'), [],
     'quoting the rejection is itself rejected, which is a loop no agent can exit');
+});
+
+// The model a dispatch chose was invisible: no report field, no sidechain in
+// the session transcript, nothing. A 26-dispatch run left no record of what
+// any of them ran on, and five of the seven agents default to opus -- so the
+// largest cost in the system could not be measured and every proposal to
+// reduce it, including the ones that sounded obvious, was a guess.
+
+test('a report that does not say which model ran is rejected', () => {
+  const r = valid();
+  delete r.model;
+  const errors = validateReport(r, 'infra-architect');
+  assert.ok(errors.some((e) => /model/i.test(e)),
+    'a report with no model passed validation, so the field can be omitted exactly where the decision was skipped');
+});
+
+test('"unspecified" is a legal model, because a skipped decision is the thing worth counting', () => {
+  // The escape hatch is deliberate. Without it an agent whose dispatch named
+  // no model has to either guess at what it is running on -- which produces a
+  // confident wrong number, worse than none -- or fail. "unspecified" records
+  // the lead letting a default decide, which is exactly the case to count.
+  const r = valid();
+  r.model = 'unspecified';
+  assert.deepStrictEqual(validateReport(r, 'infra-architect'), []);
+});
+
+test('a model outside the known set is rejected', () => {
+  const r = valid();
+  r.model = 'gpt-4';
+  const errors = validateReport(r, 'infra-architect');
+  assert.ok(errors.some((e) => /Unknown model/.test(e)),
+    'any string passes as a model, so the field cannot be aggregated');
+});
+
+test('the validator and the schema agree on which models exist', () => {
+  // Same drift guard the tiers have. Two lists that must match by hand will
+  // not, and the one agents are validated against is the one in report.js --
+  // so a schema that disagrees is documentation that lies.
+  const schema = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', '..', 'skills', 'delegation-contract', 'schema', 'report.schema.json'), 'utf8'));
+  assert.ok(schema.required.includes('model'),
+    'the schema no longer requires model, so it disagrees with the validator that enforces it');
+  const fromSchema = schema.properties.model.enum;
+  for (const m of fromSchema) {
+    const r = valid();
+    r.model = m;
+    assert.deepStrictEqual(validateReport(r, 'infra-architect'), [],
+      `validator rejected the model "${m}" that the schema declares legal`);
+  }
+  const r = valid();
+  r.model = 'definitely-not-a-model';
+  assert.notDeepStrictEqual(validateReport(r, 'infra-architect'), [],
+    'validator accepted a model the schema does not declare');
 });
