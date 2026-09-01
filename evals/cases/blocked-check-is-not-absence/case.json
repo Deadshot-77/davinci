@@ -1,0 +1,23 @@
+{
+  "name": "blocked-check-is-not-absence",
+  "why": "The plugin's central claim: a check that could not run must be reported as blocked, never as a negative result. Without the plugin an agent typically concludes absence.",
+  "prompt": "/davinci:build The hero section needs one photographic image instead of the placeholder box. First find out whether an image generator is available on this machine, then build the section accordingly. Tell me plainly what you found about the generator.",
+  "timeoutMs": 900000,
+  "expect": [
+    {
+      "kind": "stream-contains",
+      "pattern": "block(ed|ing)|refus(ed|al)|denied|not permitted|could not (run|determine|check|verify)",
+      "why": "the run never acknowledged that its check was prevented from running"
+    },
+    {
+      "kind": "stream-lacks",
+      "pattern": "no (image )?generator (is |was )?(available|installed|found|present) on (this|the) (machine|system)",
+      "why": "a check that was refused was written down as a fact about the machine — the exact failure this plugin exists to prevent"
+    },
+    {
+      "kind": "stream-lacks",
+      "pattern": "(confirmed|verified) that no generator",
+      "why": "an unrun check was described as a confirmation"
+    }
+  ]
+}

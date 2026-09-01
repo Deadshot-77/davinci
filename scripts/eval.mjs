@@ -135,10 +135,19 @@ function runCase(c, { baseline = false, keep = false } = {}) {
   const results = score(c.expect || [], { root, stream });
   const passed = results.filter((r) => r.pass).length;
 
+  // A run that never attempted the task must not be scored. The first baseline
+  // arm answered "Unknown command: /davinci:build" in zero turns for $0.00 and
+  // scored 3/5 -- every one of those passes was an assertion about a file that
+  // was absent because nothing had run. Scoring that as a delta would have
+  // been a fabricated result, which is precisely what this harness exists to
+  // prevent elsewhere.
+  const noAttempt = /Unknown command:/.test(stream) || /"num_turns":0/.test(stream.replace(/\s/g, ''));
+
   return {
     name: c.name, baseline, ok: true, root: keep ? root : null,
     durationMs: Date.now() - started,
     exit: res.status, timedOut: res.error?.code === 'ETIMEDOUT',
+    noAttempt,
     passed, total: results.length, results,
     streamBytes: stream.length,
   };
@@ -148,6 +157,16 @@ function report(r) {
   if (!r.ok) { console.log(`  ${r.name}: ${r.error}`); return 1; }
   const arm = r.baseline ? 'baseline (no plugin)' : 'with plugin';
   const mins = Math.round(r.durationMs / 60000);
+
+  if (r.noAttempt) {
+    console.log(`\n${r.name} — ${arm}: INCONCLUSIVE, the run never attempted the task.`);
+    console.log('  Its assertions are not scored: they would pass on absence caused by nothing');
+    console.log('  having happened. A case whose prompt is a plugin command cannot be ablated,');
+    console.log('  because the baseline arm has no such command to run.');
+    if (r.root) console.log(`  kept: ${r.root}`);
+    return 0;
+  }
+
   console.log(`\n${r.name} — ${arm}: ${r.passed}/${r.total} in ${mins}m` +
     (r.timedOut ? ' (TIMED OUT)' : '') + (r.streamBytes ? '' : ' (EMPTY STREAM — did the run start?)'));
   for (const x of r.results) {
@@ -180,11 +199,14 @@ if (invokedDirectly) {
     const chosen = name ? cases.filter((c) => c.name === name) : cases;
     if (!chosen.length) { console.error('no such case: ' + name); process.exit(2); }
     console.log(`running ${chosen.length} case(s). These are real agent runs — minutes and money.`);
+    const keep = flags.includes('--keep');
+    // --baseline-only exists so an arm already measured is not paid for twice.
+    const onlyBaseline = flags.includes('--baseline-only');
     let worst = 0;
     for (const c of chosen) {
-      worst = Math.max(worst, report(runCase(c, { keep: flags.includes('--keep') })));
-      if (flags.includes('--baseline')) {
-        worst = Math.max(worst, report(runCase(c, { baseline: true, keep: flags.includes('--keep') })));
+      if (!onlyBaseline) worst = Math.max(worst, report(runCase(c, { keep })));
+      if (onlyBaseline || flags.includes('--baseline')) {
+        worst = Math.max(worst, report(runCase(c, { baseline: true, keep })));
       }
     }
     process.exit(worst);

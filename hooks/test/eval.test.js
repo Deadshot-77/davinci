@@ -108,3 +108,25 @@ test('the shipped cases are all loadable and their patterns compile', async () =
     }
   }
 });
+
+test('a run that never attempted the task is inconclusive, not scored', async () => {
+  // The first baseline arm answered "Unknown command: /davinci:build" in zero
+  // turns for $0.00 and scored 3/5 -- every pass was an assertion about a file
+  // absent because nothing had run. Scoring that as a delta would have been a
+  // fabricated result, which is the failure this harness exists to catch
+  // everywhere else.
+  const { score } = await load();
+  const stream = '{"type":"assistant","message":{"content":[{"type":"text","text":"Unknown command: /davinci:build"}]}}';
+  const results = score(
+    [{ kind: 'file-absent', path: 'plan.md', why: 'no plan was written' }],
+    { root: os.tmpdir(), stream });
+  assert.strictEqual(results[0].pass, true,
+    'the assertion itself still passes -- which is exactly why the arm must be marked unattempted');
+
+  const src = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'scripts', 'eval.mjs'), 'utf8');
+  assert.match(src, /const noAttempt =/,
+    'nothing detects a run that never started, so absence reads as success');
+  assert.match(src, /INCONCLUSIVE, the run never attempted the task/,
+    'an unattempted arm would be reported with a score');
+});
