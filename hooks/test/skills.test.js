@@ -907,3 +907,35 @@ test('a finished run can be read back by the plugin itself', () => {
   assert.match(body, /prompt, not a verdict/,
     'the suspicion heuristic could be reported as a confirmed defect');
 });
+
+test('an existing codebase is discovered, not assumed', () => {
+  // stack-profile opened with "Generate, do not author" -- run the scaffolder.
+  // That is right for an empty directory and wrong for everything else, and a
+  // profile written from assumption becomes a contract every other agent obeys.
+  const profile = fs.readFileSync(path.join(SKILLS_DIR, 'stack-profile', 'SKILL.md'), 'utf8');
+  assert.match(profile, /If the project already exists, this section does not apply/,
+    'greenfield scaffolding advice is again the first thing an agent reads on any project');
+  assert.match(profile, /`davinci:brownfield`/,
+    'nothing routes an existing project away from the generate-first path');
+
+  const bf = fs.readFileSync(path.join(SKILLS_DIR, 'brownfield', 'SKILL.md'), 'utf8');
+  assert.match(bf, /discover, do not assume/,
+    'brownfield lost the rule that mirrors generate-do-not-author');
+  assert.match(bf, /survey\.mjs/, 'brownfield no longer starts from the map');
+  assert.match(bf, /write down what you did not look at/i,
+    'an unread area could again be reported as an absence');
+});
+
+test('behaviour is pinned before it is changed', () => {
+  // The hardest problem in existing code is not knowing what it currently
+  // does, so you cannot tell whether you broke it.
+  const bf = fs.readFileSync(path.join(SKILLS_DIR, 'brownfield', 'SKILL.md'), 'utf8');
+  assert.match(bf, /captures what it does \*\*right now\*\*/,
+    'nothing tells an agent to pin current behaviour before changing it');
+  assert.match(bf, /Code not protected by tests cannot\s+be changed safely/,
+    'an untested codebase could be treated as an ordinary one');
+  assert.match(bf, /nothing that used to work\s+stopped/,
+    'verification could again mean only that the new thing works');
+  assert.match(bf, /Generated files/,
+    'nothing warns against editing generated output');
+});

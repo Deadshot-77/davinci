@@ -18,6 +18,13 @@ afterwards.
 
 ## 1. Read the neighbours before you write
 
+On a codebase this team did not write, that means the whole project and not one
+file — and it is worth the extra care, because you are changing something other
+people depend on with tests you did not write. `davinci:brownfield` covers
+orienting, pinning current behaviour before changing it, and knowing the blast
+radius.
+
+
 The clearest tell of outside authorship is code that works and does not
 belong. Before the first line, read the two or three files nearest the change
 and take from them:

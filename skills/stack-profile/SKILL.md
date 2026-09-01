@@ -41,6 +41,21 @@ command was denied, stopped at `needs_input`, and asked whether to open the
 permission layer or accept a hand-written scaffold. That is the behaviour to
 copy.
 
+## If the project already exists, this section does not apply
+
+"Generate, do not author" is advice for an empty directory. On a project that
+already has code there is nothing to generate, and a profile written from
+assumption becomes a contract every other agent then obeys.
+
+Check first — `ls`, or the survey below. If there is source already,
+**invoke `davinci:brownfield` and follow it instead of this section.** It
+starts with `node <plugin>/scripts/survey.mjs .`, which reports where the code
+is, the test ratio, the entry points, where the churn is, what is generated, and
+what it could not establish.
+
+Everything after "Fill every section" still applies. What changes is where the
+answers come from: discovered, not decided.
+
 ## Generate, do not author
 
 Where a real generator exists, run it. `create-next-app`, a framework CLI, a
