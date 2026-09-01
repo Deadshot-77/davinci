@@ -20,7 +20,7 @@ const CRITERION = /^-\s+\[( |x|X)\]\s+(.+?)\s*$/;
 const DELIVERS = /^\*\*Delivers:\*\*\s*(.+?)\s*$/;
 
 const TERMINAL = new Set(['done', 'blocked']);
-const STATUSES = new Set(['started', 'done', 'blocked']);
+const STATUSES = new Set(['started', 'done', 'blocked', 'reverted']);
 
 // Parses plan.md into ordered slices. Deliberately tolerant of surrounding
 // prose: the file is written for a person to read and approve.

@@ -66,16 +66,34 @@ request as a new plan on top of the finished one.
 
 ## Running one slice
 
-7. Append `{"slice":"S<n>","status":"started"}` to `.devteam/progress.jsonl`.
+7. **Take a checkpoint first**, so the slice can be taken back:
+   `node <plugin>/scripts/checkpoint.mjs save . S<n>`. If it refuses — git
+   missing, usually — say so before building, because a slice with no
+   checkpoint cannot be undone and the user should know that before they get
+   the result. Then append `{"slice":"S<n>","status":"started"}` to
+   `.devteam/progress.jsonl`.
 8. Dispatch `davinci:tech-lead` with the brief, the plan, and **which single
    slice to build**. Not the whole plan — one slice.
 9. When the lead reports, append `done` with the evidence, or `blocked`.
 10. **Stop.** Report what shipped, the evidence, and what the next slice is.
     Do not start it.
 
-The user decides whether to continue, change something, or stop. That decision
-is the point: it turns an hour of unattended building into a sequence of small
-deliveries each of which can be looked at.
+The user decides: continue, change something, stop — or **take this slice
+back**.
+
+If they reject it:
+`node <plugin>/scripts/checkpoint.mjs restore . S<n>` puts the tree back to
+exactly how it was before the slice started, and saves the discarded state
+first so the rejection is itself reversible. Then append
+`{"slice":"S<n>","status":"reverted"}` to the journal and ask what they want
+different. The slice is pending again, not done.
+
+Show them what changed before they decide:
+`node <plugin>/scripts/checkpoint.mjs changes . S<n>`.
+
+That decision is the point: it turns an hour of unattended building into a
+sequence of small deliveries, each of which can be looked at and any of which
+can be taken back.
 
 ## Three rules that hold even if that skill did not load
 

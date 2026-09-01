@@ -150,3 +150,21 @@ test('approval events do not disturb slice status', () => {
   assert.strictEqual(statusOf('S1', events), 'done');
   assert.strictEqual(nextSlice(slices, events).slice.id, 'S2');
 });
+
+test('a reverted slice becomes pending again, not done', async () => {
+  // Rejecting a slice puts the tree back; the work is to be done differently,
+  // not continued. If reverted read as terminal the plan would march past a
+  // slice the user explicitly refused.
+  const slices = parsePlan(PLAN);
+  const { events, errors } = parseProgress([
+    '{"event":"plan-approved"}',
+    '{"slice":"S1","status":"done","evidence":[{"cmd":"npm run build","exit_code":0}]}',
+    '{"slice":"S2","status":"done","evidence":[{"cmd":"npm run lint","exit_code":0}]}',
+    '{"slice":"S2","status":"reverted"}',
+  ].join('\n'));
+  assert.deepStrictEqual(errors, [], 'reverted must be a status the journal accepts');
+  assert.strictEqual(statusOf('S2', events), 'reverted');
+  const next = nextSlice(slices, events);
+  assert.strictEqual(next.slice.id, 'S2', 'a rejected slice was skipped past');
+  assert.strictEqual(next.resuming, false, 'a rejected slice starts fresh, it does not resume');
+});

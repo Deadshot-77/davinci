@@ -847,3 +847,21 @@ test('an agent may object to a slice but never edit one', () => {
   assert.match(ledger, /Read the slice \*\*critically\*\*/,
     'a slice known to be wrong would be built anyway');
 });
+
+test('a slice is checkpointed before it starts and can be taken back', () => {
+  // A checkpoint without a rollback is half a checkpoint: you can inspect the
+  // work, but your only options are accept it or unpick it by hand.
+  const build = fs.readFileSync(path.join(PLUGIN_ROOT, 'commands', 'build.md'), 'utf8');
+  assert.match(build, /Take a checkpoint first/,
+    'a slice could be built with no way to undo it');
+  assert.match(build, /checkpoint\.mjs restore/,
+    'the entry command offers no way to reject a slice');
+  assert.match(build, /"status":"reverted"/,
+    'a rejection would not be recorded, so the plan would march past it');
+
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /the project's own git history is never touched/,
+    'checkpoints could start writing to a history the user cares about');
+  assert.match(ledger, /If the checkpoint could not be taken, say so before building/,
+    'an unbacked slice could be built without the user knowing it cannot be undone');
+});

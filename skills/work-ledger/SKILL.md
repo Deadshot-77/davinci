@@ -114,7 +114,9 @@ Append one line when a slice starts, and one when it ends:
 {"slice":"S1","status":"done","evidence":[{"cmd":"npm run build","exit_code":0}]}
 ```
 
-`status` is `started`, `done` or `blocked`. **`done` requires evidence** — the
+`status` is `started`, `done`, `blocked` or `reverted`. A `reverted` slice
+is pending again — the checkpoint put the tree back and the work is to be done
+differently, not continued. **`done` requires evidence** — the
 same commands and exit codes a report carries. A `done` with an empty evidence
 array is the "declaring half-finished work done" failure with a tick next to it.
 
@@ -170,6 +172,20 @@ mess that costs more to clean than the slice cost to build.
    — half-written files from the previous attempt are yours to finish or undo,
    not to duplicate.
 4. Append `started`, do the work, append `done` with evidence.
+
+## Every slice is checkpointed before it starts
+
+`scripts/checkpoint.mjs save . S<n>` before the first write, and the tree can
+be put back exactly with `restore`. It uses a shadow git repository under
+`.devteam/` — the project's own git history is never touched, and nothing here
+needs the `git commit` grant the profile withholds.
+
+A rejection is not destructive: restoring saves the discarded state first, so
+if the rejection was the mistake, the work comes back.
+
+**If the checkpoint could not be taken, say so before building.** A slice with
+no checkpoint cannot be undone, and the user should learn that before they see
+the result rather than after they ask for it back.
 
 ## Ending a slice
 
