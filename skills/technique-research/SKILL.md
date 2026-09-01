@@ -60,6 +60,38 @@ decided for the page you are building.
 So: extract the technique, name it in your findings, and implement it inside the
 system the page already has.
 
+## Read the pattern, not the stack it happens to use
+
+`mengto.github.io/kage` is worth reading live as a scroll-driven narrative done
+well. What it is built from is the least transferable thing about it.
+
+Inspected, it is Three.js — four canvases, 173KB of inline script,
+`WebGLRenderer`, `PerspectiveCamera`, `FogExp`. **None of that is the lesson.**
+The lesson is the shape underneath:
+
+- **Named chapters, each with a scroll anchor.** `CHAPTER 00 — THE HIDDEN GATE`,
+  `01 — THE SANMON`, and so on. Beats, in the `story-direction` sense, made
+  navigable.
+- **One continuous subject the reader moves through**, rather than a separate
+  picture per section. That continuity is what makes it feel like a place
+  instead of a list.
+- **Text arriving with its chapter**, revealed by word as the beat does.
+- **Only `transform` and `opacity` move**, and `prefers-reduced-motion` is
+  honoured — a static, complete page, not a degraded one.
+- **A designed loading state**, because a continuous subject has a build cost.
+
+Every one of those is implementable without Three.js. The continuous subject can
+be a scrubbed clip, a decomposed layer set, a sprite sequence, a canvas, or a
+sequence of stills cross-faded on scroll. In a React or Next.js project it is a
+client component, an `IntersectionObserver`, and CSS transforms — reach for a 3D
+library only if the project already carries one, or the beat genuinely needs
+geometry that nothing flatter can give.
+
+**Extract the pattern; choose the implementation from the project's stack and
+budget.** Copying the stack is how a studio site ends up shipping a 2.4MB WebGL
+bundle to render what four images and a scroll handler would have said better —
+and how a technique arrives as a dependency nobody on the project can maintain.
+
 ## The trap that will catch you
 
 **A page can disable its own technique in your browser.** Feature detection,

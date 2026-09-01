@@ -50,6 +50,29 @@ lower rungs do not:
 
 If you cannot name what the beat gains for those three, build the still.
 
+## What the reader looks at while it loads
+
+A still is what a beat falls back to when its motion never arrives. This is the
+other gap: what they see while it is arriving.
+
+Anything continuous — a scrubbed clip, a decomposed layer set, a rendered scene —
+has a build cost before the first frame. A scroll-driven site studied for this
+skill opens on a designed loading state naming what it is doing and how far along
+it is, and only then reveals the scene. That state is part of the work, not a
+spinner bolted on: it is the first thing every visitor sees, and on a slow
+connection it may be the only thing.
+
+So for anything that cannot paint immediately:
+
+- **Design the waiting state**, in the page's own language. A percentage and a
+  sentence beats a spinner, because it tells the reader the wait is finite.
+- **Reserve the space it will occupy** so nothing jumps when it arrives.
+- **Give it a deadline and a way out.** If the scene has not built by then, the
+  still is the page — the same rule as a video's load timeout.
+- **Never block the words on it.** Text should be readable while the visual is
+  still assembling; a reader who came for the argument should not wait for the
+  scenery.
+
 ## Four things Apple does that transfer
 
 Measured off a live product page, not recalled:

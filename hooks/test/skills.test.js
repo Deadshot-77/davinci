@@ -980,3 +980,33 @@ test('a re-gate reviews the fix, not the whole task again', () => {
     assert.match(f, /two rounds/, 'the re-gate round bound went missing');
   }
 });
+
+test('a continuous visual has a designed waiting state', () => {
+  // A still is what a beat falls back to when its motion never arrives. This
+  // is the other gap: what the reader sees while it is arriving. A scroll-driven
+  // site studied for this opened on a loading state naming what it was doing
+  // and how far along -- the first thing every visitor sees, and on a slow
+  // connection possibly the only thing.
+  const craft = fs.readFileSync(path.join(SKILLS_DIR, 'motion-craft', 'SKILL.md'), 'utf8');
+  assert.match(craft, /What the reader looks at while it loads/,
+    'nothing covers the gap between the page arriving and the visual arriving');
+  assert.match(craft, /\*\*Design the waiting state\*\*/,
+    'a heavy scene could ship with a spinner and call it handled');
+  assert.match(craft, /Never block the words on it/,
+    'a reader who came for the argument could be made to wait for the scenery');
+});
+
+test('a reference implementation teaches its pattern, not its stack', () => {
+  // The site read for this is Three.js, and that is the least transferable
+  // thing about it. Copying the stack is how a studio site ships a WebGL
+  // bundle to say what four images and a scroll handler would have said.
+  const research = fs.readFileSync(path.join(SKILLS_DIR, 'technique-research', 'SKILL.md'), 'utf8');
+  assert.match(research, /Read the pattern, not the stack it happens to use/,
+    'a reference implementation could be copied wholesale, dependency and all');
+  assert.match(research, /None of that is the lesson/,
+    'the skill no longer separates what a reference is built from from what it teaches');
+  assert.match(research, /choose the implementation from the project's stack and\s+budget/,
+    'nothing routes the technique back to what the project actually carries');
+  assert.match(research, /Named chapters, each with a scroll anchor/,
+    'the transferable half of the pattern is gone');
+});
