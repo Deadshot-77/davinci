@@ -29,11 +29,41 @@ shows, then go to "Running one slice" below. Do not re-interview the user about
 a brief they already approved.
 
 **If a plan exists and every slice is done**, say so and treat the incoming
-request as a new plan on top of the finished one.
+request as new work — which goes through the classification below, exactly like
+any other.
 
-**Otherwise it is a new build**, and you do intake.
+**Otherwise it is a new request**, and you classify it.
 
-## Intake, for a new build
+## Trivial work does not get a plan
+
+Classify first, with the `intake-brief` skill. **If the answer is `trivial` —
+a typo, a rename, a one-line change — stop reading this section and do it:**
+
+1. Take a checkpoint: `node <plugin>/scripts/checkpoint.mjs save . trivial`.
+   Small work should still be undoable.
+2. Write `.devteam/brief.md` with its single acceptance criterion and the
+   `Route: direct — <agent-name>` line.
+3. Dispatch `davinci:tech-lead`, which honours that line and skips its own
+   planning.
+4. Report the result and how to undo it.
+
+**No plan, no approval loop, no slices, no journal.** Ceremony that costs more
+than the change it governs is not rigour, it is friction, and a user who asked
+for a blue button and got a five-slice plan to approve has been badly served.
+
+Two things to hold on to:
+
+- **`trivial` is narrow, and it is not an escape hatch.** A typo, a rename, one
+  line. If you find yourself calling something trivial because the plan would
+  be tedious to write, it is not trivial.
+- **If it stops being trivial while you are in it, stop.** A one-line change
+  that turns out to need three files is a `bounded` request that was
+  misclassified. Say so, and go and write the plan. Continuing is how a small
+  change quietly becomes an unreviewed large one.
+
+Everything else — `bounded`, `architectural` — gets a plan.
+
+## Intake, for anything larger than trivial
 
 1. Invoke the `intake-brief` skill with the `Skill` tool and follow it.
 2. Classify the request and say the classification out loud.

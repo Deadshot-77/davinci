@@ -865,3 +865,27 @@ test('a slice is checkpointed before it starts and can be taken back', () => {
   assert.match(ledger, /If the checkpoint could not be taken, say so before building/,
     'an unbacked slice could be built without the user knowing it cannot be undone');
 });
+
+test('trivial work skips the plan entirely', () => {
+  // A regression introduced with the ledger: every new build wrote and got
+  // approval for a plan, so "change this button to blue" earned intake, a
+  // slice list and an approval loop. Ceremony costing more than the change it
+  // governs is friction, and it teaches a user to route around the tool.
+  const build = fs.readFileSync(path.join(PLUGIN_ROOT, 'commands', 'build.md'), 'utf8');
+  assert.match(build, /Trivial work does not get a plan/,
+    'trivial work is back inside the planning ceremony');
+  assert.match(build, /\*\*No plan, no approval loop, no slices, no journal\.\*\*/,
+    'the fast path no longer says what it skips, so it will drift back');
+  assert.match(build, /is not an escape hatch/,
+    'nothing stops larger work being called trivial to dodge the plan');
+  assert.match(build, /If it stops being trivial while you are in it, stop/,
+    'a misclassified change could quietly become an unreviewed large one');
+  // The fast path must still be undoable -- small work is not exempt from that.
+  const trivialSection = build.split('Trivial work does not get a plan')[1].split('## Intake')[0];
+  assert.match(trivialSection, /checkpoint\.mjs save/,
+    'trivial work is built with no way to take it back');
+
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /Not everything gets a ledger/,
+    'work-ledger claims authority over work that should bypass it');
+});

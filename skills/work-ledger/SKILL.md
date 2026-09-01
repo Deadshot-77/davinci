@@ -17,6 +17,20 @@ quietly changing what is being built.
 The fix is not a longer prompt. It is to make the plan an **artifact the agent
 re-reads**, rather than a memory it is trusted to keep.
 
+## Not everything gets a ledger
+
+A plan is for work large enough that the plan earns its cost. A typo does not
+need slices, an approval loop and a journal — that is friction wearing rigour's
+clothes, and it teaches the user to route around the tool.
+
+`trivial` work skips all of this: a checkpoint, the change, a report. The entry
+command handles it before this skill is ever invoked. Everything `bounded` or
+larger gets a ledger.
+
+If work classified trivial turns out not to be, stop and re-classify rather than
+carrying on. A one-line change that becomes three files is a misclassification,
+and continuing is how a small change becomes an unreviewed large one.
+
 ## Two files, and the split is the point
 
 **`.devteam/plan.md` — the contract.** Drafted at intake, shown to the user in
