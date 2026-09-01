@@ -10,6 +10,7 @@ skills:
   - story-direction
   - frontend-craft
   - code-craft
+  - motion-craft
 # To generate media, add the server's tool names to the `tools:` line above --
 # literally, one per tool. Two things make this fiddlier than it looks, both
 # measured rather than assumed:
@@ -29,6 +30,10 @@ skills:
 #      is why story-direction's discovery step probes PATH rather than tools,
 #      and why the profile grants `command -v` but leaves the generator itself
 #      to be granted deliberately -- generation spends real credits.
+#
+#      The recipes live in `davinci:generating-assets`, invoked with the
+#      `Skill` tool rather than read as a file. Skills reach an agent that did
+#      not preload them; files inside this directory never do.
 #
 # So the server has to be one the CLI itself knows about (`claude mcp add ...`),
 # and its tool names have to be listed here in full. Absent that, produce static

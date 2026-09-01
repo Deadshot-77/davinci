@@ -492,3 +492,68 @@ test('discovery is granted but generation is not', () => {
   assert.match(profile['//generators'] || '', /blocked check/,
     'the profile no longer explains what to report when a binary is found but unrunnable');
 });
+
+test('every davinci: skill named in a skill body exists on disk', () => {
+  // The new failure mode this design introduces. motion-craft is deliberately
+  // thin and points at four skills to invoke on demand; a pointer to a skill
+  // that does not exist is the same trap as the template an agent could not
+  // read -- authoritative-looking and unreachable -- except it fails at the
+  // Skill call instead of the Read.
+  // A `davinci:` prefix names either a skill to invoke or an agent to dispatch,
+  // so both resolve. delegation-contract cites `davinci:infra-architect` as a
+  // counter-example of how not to write an agent name, which is legitimate.
+  const available = new Set([
+    ...fs.readdirSync(SKILLS_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory()).map((d) => d.name),
+    ...fs.readdirSync(AGENTS_DIR).filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, '')),
+  ]);
+  const dangling = [];
+  for (const dir of fs.readdirSync(SKILLS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory())) {
+    const body = fs.readFileSync(path.join(SKILLS_DIR, dir.name, 'SKILL.md'), 'utf8');
+    for (const m of body.matchAll(/`davinci:([a-z-]+)`/g)) {
+      if (!available.has(m[1])) dangling.push(dir.name + ' -> ' + m[1]);
+    }
+  }
+  assert.deepStrictEqual(dangling, [],
+    'skill(s) point at a davinci skill that does not exist: ' + dangling.join(', '));
+});
+
+test('the technique skills are reached on demand, not preloaded', () => {
+  // Preloading them would put roughly 400 lines of technique into every
+  // frontend context whether or not motion is in scope -- the clutter the
+  // thin-skill split exists to avoid. Measured: a subagent holding only Bash
+  // and Skill invoked a plugin skill it did not preload and returned a marker
+  // it could not have guessed, so on-demand is a real route, not a hope.
+  const onDemand = ['parallax-layers', 'glass-surfaces', 'scroll-video', 'generating-assets'];
+  const preloaded = readAgents().flatMap((a) =>
+    onDemand.filter((s) => a.skills.includes(s)).map((s) => a.name + ' preloads ' + s));
+  assert.deepStrictEqual(preloaded, [],
+    'technique skill(s) preloaded instead of invoked on demand: ' + preloaded.join(', '));
+
+  const craft = fs.readFileSync(path.join(SKILLS_DIR, 'motion-craft', 'SKILL.md'), 'utf8');
+  for (const s of onDemand) {
+    assert.ok(craft.includes('`davinci:' + s + '`'),
+      'motion-craft no longer names ' + s + ', so nothing routes to it');
+  }
+});
+
+test('motion has to beat its own still before a beat climbs to it', () => {
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'story-direction', 'SKILL.md'), 'utf8');
+  assert.match(skill, /motion that beats its own still/,
+    'the ladder no longer makes rung four earn its place against the still it replaces');
+  for (const cost of ['credits', 'failure surface', 'attention']) {
+    assert.ok(skill.includes(cost),
+      'the ladder no longer names "' + cost + '" as a cost rung four carries');
+  }
+});
+
+test('generating-assets keeps the probe shape and the blocked-check distinction', () => {
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'generating-assets', 'SKILL.md'), 'utf8');
+  assert.match(skill, /blocked check/,
+    'a generator found but not runnable would read as an absent generator again');
+  assert.match(skill, /command -v higgsfield/,
+    'the probe no longer shows one plain command per call');
+  assert.match(skill, /`ToolSearch` cannot be given to an agent/,
+    'an agent could again wait for a deferred tool that can never arrive');
+});

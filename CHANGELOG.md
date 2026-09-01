@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.26.0
+
+Five skills for motion and generated imagery, split so that four of them cost
+nothing until a beat commits to a technique.
+
+The gap was never technique. An installed scrollytelling skill already carries
+929 lines on sticky patterns, IntersectionObserver, GSAP and reduced motion --
+and zero mentions of video scrubbing or backdrop-filter. What nothing connected
+was the production chain: beat, to what it must show, to what asset that needs,
+to how that asset gets made. An agent that knows fifty scroll techniques and has
+no route to making anything worth scrolling through reaches for what it can draw
+in markup and calls the restraint deliberate. Three runs on one project did
+exactly that while a generator sat unused on PATH.
+
+motion-craft is preloaded and thin: the chain, the costs motion carries that a
+still does not, four things measured off a shipping Apple product page, and the
+tells that give a motion page away. It routes to generating-assets,
+parallax-layers, glass-surfaces and scroll-video, invoked with the Skill tool.
+
+That routing was measured before it was built on. Reference FILES inside a
+plugin are unreadable from an agent -- the plugin sits outside the project
+working directory and every such read is denied, which an existing test already
+enforces after infra-architect guessed at a template it could not open. Skills
+are different: a subagent holding only Bash and Skill invoked a plugin skill it
+had not preloaded and returned a marker it could not have guessed.
+
+story-direction rung four is now motion that beats its own still, against three
+costs the lower rungs do not carry: credits, failure surface, attention. Shipping
+pages already work this way -- Apple gives every scroll-driven video a
+three-second load timeout and a static poster, on every beat.
+
+Four guards, seven mutations, each confirmed to fail. One of them caught a real
+dangling pointer on its first run.
+
+
 ## 0.25.0
 
 ToolSearch cannot be given to an agent. An agent declared `tools: Bash,

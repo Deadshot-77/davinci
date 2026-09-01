@@ -72,6 +72,24 @@ Work in this order, and stop as soon as the beat does its job:
 Number four is rare. If more than one or two beats reach it, you are decorating
 rather than directing.
 
+**Rung four is not "motion", it is motion that beats its own still.** Every
+moving thing has a frame it falls back to when it does not load, and shipping
+pages plan for that: a scroll-driven video on an Apple product page carries a
+three-second load timeout and a static poster behind it, on every beat. Nothing
+is load-bearing on the motion arriving.
+
+So before a beat climbs to four, name what it gains against three costs the
+lower rungs do not carry:
+
+| cost | what it means |
+|---|---|
+| credits | generation spends real money per attempt, including discarded ones |
+| failure surface | a decode limit, a breakpoint variant, a reduced-motion path, a fallback frame |
+| attention | movement competes with the words beside it for the same reader |
+
+If you cannot name the gain against all three, build the still. When you can,
+`davinci:motion-craft` owns what to make and how to wire it.
+
 ### Some beats cannot be done with type at all
 
 The ladder above is about not decorating beats that do not need it. It is not
