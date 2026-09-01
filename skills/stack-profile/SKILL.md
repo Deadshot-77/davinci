@@ -9,6 +9,38 @@ user-invocable: false
 The profile at `.devteam/stack-profile.md` is read by every builder. A vague
 profile produces inconsistent code across agents that never see each other's work.
 
+## On an empty directory, find out what you may run first
+
+A profile that grants `npm run build` still cannot run it without
+`node_modules`, and `npm install` is usually not granted -- installing runs a
+package's own postinstall scripts, which is arbitrary code execution. So on a
+greenfield project the ordinary verification commands are inert, and the way you
+discover that matters.
+
+**Check at the start, not at the end.** One plain command:
+
+```
+npm ls --depth=0
+```
+
+If dependencies are absent and you may not install them, you have three moves and
+only the last is wrong:
+
+1. **Ask, and stop.** A blocked scaffold is a genuine blocker: return
+   `needs_input` with the exact denied commands and the options, before writing
+   a tree you cannot verify. This is the preferred move on a greenfield project.
+2. **Hand-write it and mark it unverified.** Legitimate when the shape is
+   unambiguous. Pin versions you confirmed with `npm view`, never from memory,
+   and state in `assumptions` that nothing was installed, built, or linted.
+3. **Report it as built and working.** Never. A scaffold nobody installed has
+   not been shown to run, and a profile that denied the proof is a blocked
+   check, not a passing one.
+
+A measured run did exactly this correctly: it detected that every package-manager
+command was denied, stopped at `needs_input`, and asked whether to open the
+permission layer or accept a hand-written scaffold. That is the behaviour to
+copy.
+
 ## Generate, do not author
 
 Where a real generator exists, run it. `create-next-app`, a framework CLI, a

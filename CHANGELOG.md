@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.29.1
+
+The greenfield gap, found by a measurement that was looking for something else.
+
+permissions.example.json grants npm run build, lint and test. All three need
+node_modules. npm install is not granted, and should not be: it runs a package's
+own postinstall scripts, which is the arbitrary code execution that node -e is
+refused for. So on an empty directory every verification command in the profile
+is inert, and an agent asked to scaffold cannot prove anything it writes.
+
+infra-architect discovered this the expensive way -- after writing the tree.
+It handled it correctly, stopping at needs_input and asking whether to open the
+permission layer or accept a hand-written scaffold, which is the designed
+pause-do-not-guess behaviour working unprompted. But discovering it last means
+the work is already done and unverifiable.
+
+stack-profile now checks first: one plain npm ls --depth=0 before writing
+anything, and three moves if dependencies are absent and cannot be installed --
+ask and stop, or hand-write it with versions confirmed by npm view and marked
+unverified, or report it as built and working, which is never acceptable. A
+scaffold nobody installed has not been shown to run, and a profile that denied
+the proof is a blocked check rather than a passing one.
+
+The profile documents the trade-off and the opt-in rather than quietly granting
+it, and recommends running the generator yourself before dispatching.
+
+One guard, four mutations, each confirmed to fail.
+
+
 ## 0.29.0
 
 Named reference sources, each introduced with the fence that keeps it from

@@ -667,3 +667,24 @@ test('the motion-feel gap is stated rather than papered over', () => {
   assert.match(skill, /do not claim to have\s+reviewed motion references you only ever saw still/,
     'motion-craft no longer admits it cannot watch the references that hold what it lacks');
 });
+
+test('a greenfield project is checked for runnability before it is written', () => {
+  // Measured: infra-architect was given a scaffolding task under a profile that
+  // grants npm run build but not npm install. Every verification command was
+  // inert because node_modules never existed, and the agent only discovered it
+  // after writing the tree. The grant is deliberate -- npm install runs
+  // postinstall scripts, which is the arbitrary execution node -e is refused
+  // for -- so the fix is to find out first and say so.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'stack-profile', 'SKILL.md'), 'utf8');
+  assert.match(skill, /Check at the start, not at the end/,
+    'the greenfield check can again be discovered after the work is written');
+  assert.match(skill, /Report it as built and working\.\*\* Never\./,
+    'an uninstalled scaffold could again be reported as working');
+
+  const profile = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', '..', 'permissions.example.json'), 'utf8'));
+  assert.match(profile['//scaffold'] || '', /postinstall/,
+    'the profile no longer says why install is withheld, so someone will grant it blind');
+  assert.ok(!profile.permissions.allow.some((e) => /npm (install|ci)\b/.test(e)),
+    'npm install grants arbitrary code execution through postinstall and must stay opt-in');
+});
