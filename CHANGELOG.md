@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.33.0
+
+A work ledger: runs resume, and work ships one slice at a time.
+
+Both problems were one absence. .devteam held a brief, a stack profile, a
+scope map and reports -- and no plan. The plan lived in tech-lead's context
+and died with the run, so nothing could say where a killed run had got to, and
+nothing knew what "next" was.
+
+Two files now, and the split is the mechanism. plan.md is the contract:
+written once at intake with the user, approved before anything is dispatched,
+never rewritten. progress.jsonl is an append-only journal. Durable-execution
+systems converge on this shape because a rewrite can lose or invent history
+and an append cannot -- and an interrupted run leaves a truthful record rather
+than a half-updated status field.
+
+Slices are vertical, walking skeleton first: the thinnest cut through every
+layer that actually builds and can be looked at. Horizontal layering defers
+every integration risk to the end, which is the failure the hour-long run
+already had.
+
+The drift control is the plan being an artifact rather than a memory. Research
+on long-horizon agents is consistent that step-by-step agents lose the goal --
+each locally-best move pulls away from it -- while plan-ahead agents hold, and
+the named failure modes are losing earlier decisions, declaring half-finished
+work done, and quietly changing what is being built. So no agent may add a
+slice, remove one, or change its criteria. Discovered work goes to
+observations, where a human decides.
+
+Resume does not trust the ledger. A status is a claim and the working tree is
+the fact, so the last done slice has its acceptance criteria re-run before
+anything continues, and a slice left "started" is re-entered rather than
+skipped -- a killed run may have written half its files.
+
+done requires evidence: the same commands and exit codes a report carries. A
+done with an empty evidence array is the half-finished-work failure with a
+tick beside it.
+
+Four guards, ten unit tests, eight mutations, each confirmed to fail.
+
+
 ## 0.32.0
 
 Leaked servers, found by trying to delete a directory.

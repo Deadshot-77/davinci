@@ -212,21 +212,32 @@ test('the entry command dispatches an agent this plugin actually ships', () => {
     : [];
   assert.ok(commands.length > 0, 'the plugin ships no entry command');
 
-  const shipped = new Set(fs.readdirSync(AGENTS_DIR)
+  // A `davinci:` reference names either an agent to dispatch or a skill to
+  // invoke, and both must exist. The command names work-ledger, which is a
+  // skill, so resolving only against agents would fail on a correct reference.
+  const shippedAgents = new Set(fs.readdirSync(AGENTS_DIR)
     .filter((f) => f.endsWith('.md'))
     .map((f) => f.slice(0, -3)));
+  const shipped = new Set([...shippedAgents,
+    ...fs.readdirSync(SKILLS_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory()).map((d) => d.name)]);
 
   const broken = [];
+  let dispatchesAnAgent = false;
   for (const file of commands) {
     const body = fs.readFileSync(path.join(dir, file), 'utf8');
     const named = [...body.matchAll(/`davinci:([a-z-]+)`/g)].map((m) => m[1]);
     assert.ok(named.length > 0, file + ' names no agent to dispatch');
-    for (const agent of named) {
-      if (!shipped.has(agent)) broken.push(file + ' -> davinci:' + agent);
+    for (const ref of named) {
+      if (!shipped.has(ref)) broken.push(file + ' -> davinci:' + ref);
+      if (shippedAgents.has(ref)) dispatchesAnAgent = true;
     }
   }
   assert.deepStrictEqual(broken, [],
-    'entry command(s) dispatch an agent that does not exist: ' + broken.join(', '));
+    'entry command(s) reference an agent or skill that does not exist: ' + broken.join(', '));
+  // The original point of this test: the documented way in must actually
+  // reach the team, not only load skills.
+  assert.ok(dispatchesAnAgent, 'no entry command dispatches any agent this plugin ships');
 });
 
 test('the entry command carries the user request through', () => {
@@ -746,4 +757,39 @@ test('SEO scope stops where the plugin runs out of evidence', () => {
     'the plugin no longer declines a widely-marketed file measured to do nothing');
   assert.match(seo, /the check does not run\*\*, and it says so/,
     'an unbuilt project could again be reported as passing its SEO check');
+});
+
+test('the entry command plans before it builds, and stops after one slice', () => {
+  // A run that builds everything takes an hour, cannot be interrupted, and
+  // gives nothing to look at until it is finished or broken. It also drifts:
+  // step-by-step agents lose the goal because each locally-best move pulls away
+  // from it, while plan-ahead agents hold. The plan has to be an artifact the
+  // agent re-reads, not a memory it is trusted to keep.
+  const dir = path.join(PLUGIN_ROOT, 'commands');
+  const build = fs.readFileSync(path.join(dir, 'build.md'), 'utf8');
+
+  assert.match(build, /is there a plan already\?/,
+    'the entry command no longer checks for an existing plan, so nothing can resume');
+  assert.match(build, /this is a resume/,
+    'a run with unfinished slices would be re-interviewed instead of continued');
+  assert.match(build, /which single\s+slice to build/,
+    'the entry command no longer dispatches one slice at a time');
+  assert.match(build, /\*\*Stop\.\*\*/,
+    'nothing stops the run at the checkpoint, which is the whole feature');
+  assert.match(build, /append-only/,
+    'nothing stops the journal being rewritten, which is how history gets invented');
+});
+
+test('the plan is a contract no agent may edit', () => {
+  // The entire drift control, and it only works if it is absolute. Work
+  // discovered mid-slice belongs in observations, where a human decides.
+  const ledger = fs.readFileSync(path.join(SKILLS_DIR, 'work-ledger', 'SKILL.md'), 'utf8');
+  assert.match(ledger, /No agent may add a slice, remove one, or change its criteria/,
+    'work-ledger no longer forbids the plan being grown mid-run');
+  assert.match(ledger, /`observations`/,
+    'nothing routes discovered work to the channel a human reads');
+  assert.match(ledger, /re-run its acceptance criteria\s+before continuing/,
+    'a resume would trust a status field over the working tree');
+  assert.match(ledger, /walking skeleton/,
+    'slicing guidance lost the rule that makes the first slice cheap and end-to-end');
 });

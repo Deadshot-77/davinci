@@ -9,6 +9,7 @@ tools: Read, Glob, Grep, Bash, TodoWrite, Agent(davinci:infra-architect, davinci
 disallowedTools: Write, Edit, NotebookEdit
 skills:
   - delegation-contract
+  - work-ledger
   - work-tiers
 ---
 
