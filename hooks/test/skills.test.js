@@ -1034,3 +1034,20 @@ test('a criterion that fails before the work is defective, and the plan is not e
   assert.match(ledger, /\*\*Do not edit\s+`plan\.md`\*\*/,
     'a criterion could be rewritten to something the agent can pass, which empties the plan of meaning');
 });
+
+test('setting up is a command, not a page of instructions', () => {
+  // Six plugin tools need absolute paths that differ on every machine. Asking
+  // a person to hand-write them into JSON is the first wall a new user hits,
+  // and it fails quietly: the run starts, finds tools it cannot execute, and
+  // honestly reports blocked checks.
+  const setup = path.join(PLUGIN_ROOT, 'commands', 'setup.md');
+  assert.ok(fs.existsSync(setup), 'there is no way to set the plugin up without hand-editing JSON');
+  const body = fs.readFileSync(setup, 'utf8');
+  assert.match(body, /setup\.mjs/, 'the command no longer runs the tool that does the work');
+  assert.match(body, /Explain, do not interrogate/,
+    'setup could become an interrogation of someone who wants a website');
+  assert.match(body, /Never leave them stuck on this/,
+    'a user unable to answer the one question would be blocked at the first step');
+  assert.match(body, /Ask them to hand-write a path, a glob, or a JSON file/,
+    'the rule against making a person write paths by hand is gone');
+});
