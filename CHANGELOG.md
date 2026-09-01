@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.29.0
+
+Named reference sources, each introduced with the fence that keeps it from
+becoming a shortcut to somebody else's answer.
+
+The failure this plugin has actually produced is convergence -- three runs on
+one project arriving at near-identical pages unaided. So a reference library is
+the highest-risk thing you can hand a designer, and the rule has to travel with
+the source rather than sit in a different section.
+
+frontend-craft gains published specifications: styles.refero.design carries
+design systems extracted from real products, readable with WebFetch, and the
+rules are the valuable part rather than the hex codes -- three radii is the
+entire radius vocabulary, hairline borders instead of shadows, a single accent
+CTA per view. Read two or three to learn what a category assumes, then decide
+about those assumptions. Never adopt one: shipping a studio site in Linear's
+system is the category average reached faster and with better production values.
+
+technique-research gains component libraries, fenced to mechanism. Published
+source answers how an effect is built faster than prose can. It is also
+optimised for one-paste adoption, and a component copied whole brings its
+author's type scale, spacing and colour logic with it -- none of which was
+decided for the page being built. Read them to learn how; never paste them to
+decide what.
+
+motion-craft gains an admission instead of a source. Nothing in the library
+teaches what good motion feels like -- timing, easing, the order things move in
+-- and the galleries holding that knowledge are video. The agent can only
+screenshot them, and one frame of an animation carries almost none of its
+timing, so it is told not to claim it reviewed what it only ever saw still.
+
+A hero-screenshot gallery was considered and declined. frontend-craft already
+warns that award galleries and trend lists are how everything ends up looking
+the same, and the competitive audit it runs instead is category-specific: on a
+recent job-board task the agent rendered four real scheduling products, named
+the convention all four shared, and departed from it deliberately.
+
+Two guards, five mutations, each confirmed to fail.
+
+
 ## 0.28.0
 
 Two numbers made the case: 529 lines of guidance on motion and generated

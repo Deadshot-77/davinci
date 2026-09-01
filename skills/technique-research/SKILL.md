@@ -43,6 +43,23 @@ and an attribute set naming its own plugin composition, its progress keyframes
 and its load timeout. The whole architecture was readable from markup in one
 query. None of it was in any article about the page.
 
+## Component libraries are mechanism, never design
+
+A published component — `21st.dev` and its like — is real source, and reading it
+is a legitimate way to learn how an effect is built. How is a shimmer actually
+constructed? What does the markup under a working scrub look like? That is the
+question this skill exists to answer, and source answers it faster than prose.
+
+**Read them to learn how. Never paste them to decide what.** These libraries are
+optimised for one-paste adoption, which makes them the fastest available route to
+a page that looks like every other page — the exact failure this plugin has
+already produced three times unaided. A component copied whole brings its
+author's type scale, spacing and colour logic with it, and none of that was
+decided for the page you are building.
+
+So: extract the technique, name it in your findings, and implement it inside the
+system the page already has.
+
 ## The trap that will catch you
 
 **A page can disable its own technique in your browser.** Feature detection,

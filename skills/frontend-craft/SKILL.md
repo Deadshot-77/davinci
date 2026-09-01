@@ -48,6 +48,29 @@ Do this when the work has a real visual surface and the tier is `standard` or
    category does the same way, so that when you do it too it is a decision
    rather than a default — and so that you can see what none of them is doing.
 
+### Published specifications, when you want the rules rather than the picture
+
+Rendering a competitor tells you what it looks like. Some systems have been
+written down, and reading the written form is faster and more precise than
+inferring it from a screenshot.
+
+`styles.refero.design` publishes design specifications extracted from real
+products — colours, type, spacing and component rules — one page per product,
+readable with `WebFetch`. The Linear entry, for instance, gives Acid Lime
+`#e4f222`, Inter Variable at 300/400/510/590, a 4px base on an 8/12/24/96
+ladder, and rules with reasons attached: *three radii is the entire radius
+vocabulary*, *0.5px hairline borders instead of shadows*, *a single accent CTA
+per view*.
+
+The rules are the valuable part, not the hex codes. Read two or three to learn
+what a category assumes about density, contrast and how much colour is allowed
+to do — then decide about those assumptions.
+
+**Never adopt one.** A specification is a description of somebody else's answer
+to somebody else's problem. Shipping a studio site in Linear's system is the
+same failure as shipping the category average, arrived at faster and with better
+production values.
+
 Looking at images answers *what does this look like*. When you need to know
 *how something works* — a motion technique, a load strategy, an effect you can
 see but not explain — that is a different pass with different tools, and

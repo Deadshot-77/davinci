@@ -92,6 +92,20 @@ memory and do not read an article about it. Invoke `davinci:technique-research`
 and go read a live implementation. These four skills are a starting set, not the
 boundary of what a page may do.
 
+## A gap worth knowing you have
+
+Nothing here teaches what good motion *feels* like — the timing, the easing, the
+order things move in. That knowledge is tacit and it is learned by watching real
+interfaces move, which galleries such as `60fps.design` collect.
+
+You cannot currently watch them. Screenshots are the only frame you get, and one
+frame of an animation carries almost none of its timing. So do not claim to have
+reviewed motion references you only ever saw still.
+
+What you can do instead: take timing from systems that have published it, keep
+durations short enough to feel like response rather than performance, and check
+your own work by looking at it rather than by reasoning about the numbers.
+
 ## What gives a motion page away
 
 The equivalents of banned defaults, for movement:

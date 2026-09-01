@@ -639,3 +639,31 @@ test('a cache is treated as a security boundary before a performance one', () =>
   assert.ok(backend.skills.includes('caching'),
     'the agent that serves data does not carry the caching standard');
 });
+
+test('a reference is read for what it names, never adopted whole', () => {
+  // The documented failure was never too few references -- it was convergence.
+  // Three runs produced near-identical pages unaided. A specification and a
+  // component library both shorten the path to somebody else's answer, so each
+  // one is introduced with the fence attached rather than beside it.
+  const craft = fs.readFileSync(path.join(SKILLS_DIR, 'frontend-craft', 'SKILL.md'), 'utf8');
+  assert.match(craft, /\*\*Never adopt one\.\*\*/,
+    'frontend-craft offers a specification source without the rule that stops it being copied');
+  assert.match(craft, /styles\.refero\.design/,
+    'the specification source is gone, so only screenshots remain');
+
+  const research = fs.readFileSync(path.join(SKILLS_DIR, 'technique-research', 'SKILL.md'), 'utf8');
+  assert.match(research, /Component libraries are mechanism, never design/,
+    'a component library could again be read as a design source');
+  assert.match(research, /Read them to learn how\. Never paste them to decide what\./,
+    'the fence on component libraries is gone');
+});
+
+test('the motion-feel gap is stated rather than papered over', () => {
+  // 60fps.design and its like hold what the skills cannot teach -- timing and
+  // choreography -- and the agent can only screenshot them. One frame of an
+  // animation carries almost none of its timing, so claiming to have reviewed
+  // them would be the same lie as reporting a screenshot never taken.
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'motion-craft', 'SKILL.md'), 'utf8');
+  assert.match(skill, /do not claim to have\s+reviewed motion references you only ever saw still/,
+    'motion-craft no longer admits it cannot watch the references that hold what it lacks');
+});

@@ -339,7 +339,7 @@ davinci/
 │  ├─ hooks.json                event wiring
 │  ├─ scope-map.json            who may write what
 │  ├─ lib/                      pure logic, unit tested
-│  └─ test/                     279 tests, zero dependencies
+│  └─ test/                     281 tests, zero dependencies
 └─ docs/                        design rationale and verification status
 ```
 
@@ -357,7 +357,7 @@ claude plugin validate .
 
 ## Status
 
-Increment 3. Seven agents, one entry command, both hooks, and 279 passing tests. Increment 2's
+Increment 3. Seven agents, one entry command, both hooks, and 281 passing tests. Increment 2's
 live end-to-end run verified the chain through `infra-architect` and
 `frontend-engineer` (below); increment 1's interactive run was never
 performed, and its hooks were verified only by direct invocation.
