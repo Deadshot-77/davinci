@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.47.0
+
+Department leads can hire.
+
+A lead wrote every line of its slice itself, on Opus, one file after another.
+Now frontend-engineer and backend-engineer can dispatch several implementer
+workers at once -- Sonnet, low effort, no web tools, no delegation of their own
+-- to write disjoint pieces concurrently, while the lead specifies the shape
+first and reads every file that comes back.
+
+Concurrent writers are the one place this system can corrupt its own output, so
+the partition is enforced rather than instructed. Workers hold no scope-map
+entry, because the paths they need are their lead's and a test asserts no path
+in that map has two owners. Their scope arrives per batch instead, in
+.devteam/assignments.json, and two properties are checked before any worker
+writes anything:
+
+  disjoint  -- no path appears in two assignments, so two workers can never
+               race on one file.
+  contained -- every path is inside the dispatching lead's own scope, so
+               spawning a worker is a way to work inside the scope map faster
+               rather than a way around it.
+
+A file failing either check governs nothing and no worker writes at all. An
+invalid partition must not be more permissive than a valid one, which is how a
+guard becomes a liability. The first worker to write an assignment claims it
+and a second is refused by name; claims retire when the batch name changes, so
+no one cleans up by hand.
+
+Two things this got wrong before the tests caught them. The lead could not
+write the assignments file at all -- it is in nobody's scope, so the whole
+mechanism was dead on arrival; it is now an exemption like the report file.
+And the first version granted that exemption to any agent with a non-empty
+scope, which handed it to the review gates on the strength of their scratch
+directories. The leads are named explicitly, and a test derives that list from
+whoever actually declares the worker tool so the two cannot drift.
+
+The judgement stays with the lead: three or more independent pieces before it
+is worth dispatching anyone, integration files never delegated, the conventions
+and a sibling to copy fixed once and repeated in every dispatch, and every file
+a worker wrote opened and read. Delegating the typing does not delegate the
+reviewing, and a defect passed upward costs a gate bounce and a re-dispatch --
+more than writing the file would have.
+
+414 tests; 18 new guards each mutated and proven to fail. Two of those
+mutations exposed assertions that could never fail: one read a frontmatter
+field the test helper does not return, the other matched prose in the body
+instead of the loaded skills list.
+
 ## 0.46.0
 
 What ran on Opus? Nobody knew.

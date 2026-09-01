@@ -8,6 +8,7 @@ const { decideBash } = require('./lib/bash.js');
 const { parseJson } = require('./lib/json.js');
 const { knownAgents } = require('./lib/agents.js');
 const { effectiveScopeMap } = require('./lib/scope-map.js');
+const { ASSIGNMENTS_PATH, CLAIMS_PATH } = require('./lib/assignments.js');
 
 function main() {
   let input;
@@ -57,14 +58,44 @@ function main() {
     foundation = undefined;
   }
 
+  // Read here so scope.js and assignments.js stay pure. A missing or corrupt
+  // file is passed through as absent, and assignments.js decides what that
+  // means -- which is "no worker writes", never "any worker writes".
+  function readJson(rel) {
+    try {
+      const p = path.join(cwd, rel);
+      return fs.existsSync(p) ? parseJson(fs.readFileSync(p, 'utf8')) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+  const workers = {
+    doc: readJson(ASSIGNMENTS_PATH),
+    claims: readJson(CLAIMS_PATH),
+  };
+
   const ti = (input && input.tool_input) || {};
   const isBashShaped = Object.prototype.hasOwnProperty.call(ti, 'command') ||
     Object.prototype.hasOwnProperty.call(ti, 'script');
   const known = knownAgents();
   const decision = isBashShaped
     ? decideBash(input, scopeMap, known)
-    : decideScope(input, scopeMap, known, foundation);
+    : decideScope(input, scopeMap, known, foundation, workers);
   if (!decision) process.exit(0);
+
+  // An allowed worker write carries the claim table to persist, so the next
+  // worker that reaches for the same assignment is refused. Failing to write
+  // it must not block a write the rules already permitted -- the cost of a
+  // lost claim is a race we warn about, and the cost of denying here is a
+  // stalled slice for a filesystem hiccup.
+  if (decision.claims) {
+    try {
+      fs.writeFileSync(path.join(cwd, CLAIMS_PATH), JSON.stringify(decision.claims, null, 2));
+    } catch (err) {
+      process.stderr.write('davinci: could not record assignment claim: ' + err.message + '\n');
+    }
+    process.exit(0);
+  }
 
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {

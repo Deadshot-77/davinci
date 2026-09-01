@@ -1190,3 +1190,60 @@ test('the model a dispatch chose is on the record', () => {
   assert.match(lead, /not the one that ran/,
     'the lead may now claim the field proves what executed, which it does not');
 });
+
+test('the agents that may write the batch file are exactly those that dispatch workers', () => {
+  // Two hand-maintained lists that must agree: WORKER_LEADS in scope.js decides
+  // who may write .devteam/assignments.json, and the Agent tool on an agent
+  // decides who can actually dispatch workers. Drift either way is silent -- a
+  // lead that cannot write the file it needs, or an agent governing workers it
+  // never spawns -- so this derives one from the other.
+  const { WORKER_LEADS, WORKERS } = require('../lib/scope.js');
+  const workerNames = [...WORKERS];
+  const dispatchers = readAgents()
+    .filter((a) => a.tools.some((t) => workerNames.some((w) => t.includes(w))))
+    .map((a) => a.name)
+    .sort();
+  assert.deepStrictEqual(dispatchers, [...WORKER_LEADS].sort(),
+    'WORKER_LEADS and the agents declaring the worker Agent tool have drifted apart');
+});
+
+test('a worker cannot dispatch anyone, and does not run on the expensive model', () => {
+  // Workers exist to be cheap and numerous. One that spawns its own workers
+  // makes the partition unverifiable -- assignments.json describes one level,
+  // and a second level would write inside a claim nobody checked.
+  const impl = readAgents().find((a) => a.name === 'implementer');
+  assert.ok(impl, 'the implementer agent is gone, so the leads dispatch an agent that does not exist');
+  assert.ok(!impl.tools.some((t) => /^Agent\b/.test(t) || /^Agent\(/.test(t)),
+    'implementer can dispatch agents, so worker nesting is unbounded and the partition cannot be checked');
+
+  // readAgents() does not expose model, so read it here. Asserting on a field
+  // it never returns is how this check silently passed against `model: opus`.
+  const front = fs.readFileSync(path.join(AGENTS_DIR, 'implementer.md'), 'utf8').split('\n---')[0];
+  const model = (front.match(/^model:[ \t]*(\S+)$/m) || [])[1];
+  assert.ok(model, 'implementer declares no model, so it falls to whatever the default is');
+  assert.notStrictEqual(model, 'opus',
+    'the cheap worker runs on the expensive model, which removes the reason to dispatch one');
+});
+
+test('both department leads carry the skill that tells them how to partition', () => {
+  // The Agent tool without the partitioning rules is the dangerous half on its
+  // own: concurrent writers and no guidance on keeping them off each other.
+  // Read the frontmatter skills list, not the body. Matching the body passes on
+  // the prose that merely mentions the skill by name, which is exactly what it
+  // did while the skill was not loaded at all.
+  const agents = readAgents();
+  for (const name of ['frontend-engineer', 'backend-engineer']) {
+    const a = agents.find((x) => x.name === name);
+    assert.ok(a, name + ' is missing');
+    assert.ok(a.skills.includes('dispatching-workers'),
+      name + ' can dispatch workers but does not load the skill that says how to partition their files; ' +
+      'it loads: ' + a.skills.join(', '));
+  }
+  const skill = fs.readFileSync(path.join(SKILLS_DIR, 'dispatching-workers', 'SKILL.md'), 'utf8');
+  assert.match(skill, /delegate the leaves and keep the joins/,
+    'the partitioning rule is gone, so a lead may hand two workers the same shared file');
+  assert.match(skill, /Open every file a worker wrote/,
+    'nothing requires the lead to read the code it delegated, which is the job it kept');
+  assert.match(skill, /in a single message/,
+    'workers would be dispatched one at a time, which throws away the entire saving');
+});

@@ -53,5 +53,6 @@
   ],
   "review-lens": [
     ".devteam/scratch/review-lens/**"
-  ]
+  ],
+  "implementer": []
 }
