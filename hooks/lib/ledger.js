@@ -21,6 +21,9 @@ const DELIVERS = /^\*\*Delivers:\*\*\s*(.+?)\s*$/;
 
 const TERMINAL = new Set(['done', 'blocked']);
 const STATUSES = new Set(['started', 'done', 'blocked', 'reverted']);
+// Plan-level events carry no slice. Both are things a later run must be able to
+// learn without re-doing the work that established them.
+const PLAN_EVENTS = new Set(['plan-approved', 'foundation-passed']);
 
 // Parses plan.md into ordered slices. Deliberately tolerant of surrounding
 // prose: the file is written for a person to read and approve.
@@ -82,7 +85,7 @@ function parseProgress(text) {
     // that died after writing plan.md but before the user saw it would
     // otherwise resume and start building a plan nobody agreed to.
     if (parsed.event) {
-      if (parsed.event !== 'plan-approved') {
+      if (!PLAN_EVENTS.has(parsed.event)) {
         errors.push(`progress.jsonl line ${i + 1} has unknown event "${parsed.event}".`);
         return;
       }
@@ -103,6 +106,16 @@ function parseProgress(text) {
 // from one is the "drove away on its own" failure in its earliest form.
 function planApproved(events) {
   return events.some((e) => e.event === 'plan-approved');
+}
+
+// The foundation is written once and gated once. Measured on a real run: one
+// slice cost nine dispatches, three of them laying and re-gating a stack
+// profile that already existed and had not changed. The rule that caused it
+// justified itself by saying the write hook blocks builders "while
+// stack-profile.md does not exist" -- a condition that stops being true the
+// moment it does exist, which the rule never checked.
+function foundationPassed(events) {
+  return events.some((e) => e.event === 'foundation-passed');
 }
 
 // Last event wins, so a blocked slice that was later finished reads as done.
@@ -149,7 +162,7 @@ function summarise(slices, events) {
 }
 
 module.exports = {
-  parsePlan, validatePlan, parseProgress, planApproved,
+  parsePlan, validatePlan, parseProgress, planApproved, foundationPassed,
   statusOf, evidenceFor, nextSlice, lastDone, summarise,
-  TERMINAL, STATUSES,
+  TERMINAL, STATUSES, PLAN_EVENTS,
 };

@@ -939,3 +939,18 @@ test('behaviour is pinned before it is changed', () => {
   assert.match(bf, /Generated files/,
     'nothing warns against editing generated output');
 });
+
+test('the foundation is laid once, not once per slice', () => {
+  // The rule said bounded and architectural briefs "always" run the
+  // foundation-first sequence, while justifying it on a condition -- the
+  // profile being absent -- that stops holding after the first slice.
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+  assert.match(lead, /Skip this step entirely when the journal already carries\s+`foundation-passed`/,
+    'every slice would re-lay a foundation that was written once');
+  assert.match(lead, /\{"event":"foundation-passed"\}/,
+    'nothing records that the foundation was gated, so no later run can tell');
+  assert.match(lead, /it is an\s+\*\*amendment\*\*/,
+    'a genuine foundation change would trigger a fresh survey rather than a targeted amendment');
+  assert.ok(!/architectural briefs always run the full foundation-first sequence/.test(lead),
+    'the always-clause is back, and it contradicts the skip rule above it');
+});

@@ -128,6 +128,11 @@ Append one line when a slice starts, and one when it ends:
 {"slice":"S1","status":"done","evidence":[{"cmd":"npm run build","exit_code":0}]}
 ```
 
+The journal also carries two plan-level events with no slice:
+`{"event":"plan-approved"}` and `{"event":"foundation-passed"}`. The second is
+what stops every slice re-laying a foundation that was written once — measured
+at three of nine dispatches on a single slice before it existed.
+
 `status` is `started`, `done`, `blocked` or `reverted`. A `reverted` slice
 is pending again — the checkpoint put the tree back and the work is to be done
 differently, not continued. **`done` requires evidence** — the

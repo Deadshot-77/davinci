@@ -168,3 +168,23 @@ test('a reverted slice becomes pending again, not done', async () => {
   assert.strictEqual(next.slice.id, 'S2', 'a rejected slice was skipped past');
   assert.strictEqual(next.resuming, false, 'a rejected slice starts fresh, it does not resume');
 });
+
+test('the foundation is recorded once so later slices need not re-lay it', async () => {
+  // Measured on a real run: one slice cost nine dispatches, three of them
+  // laying and re-gating a stack profile that already existed and had not
+  // changed. The rule that caused it justified itself by saying the write hook
+  // blocks builders "while stack-profile.md does not exist" -- a condition that
+  // stops being true the moment it does.
+  const { foundationPassed } = require('../lib/ledger.js');
+  assert.strictEqual(foundationPassed(parseProgress('').events), false);
+  assert.strictEqual(
+    foundationPassed(parseProgress('{"event":"plan-approved"}').events), false,
+    'approving a plan is not the same as gating a foundation');
+  assert.strictEqual(
+    foundationPassed(parseProgress('{"event":"foundation-passed"}').events), true);
+
+  // Both plan-level events coexist, and an invented one is still rejected.
+  const both = parseProgress('{"event":"plan-approved"}\n{"event":"foundation-passed"}');
+  assert.deepStrictEqual(both.errors, []);
+  assert.strictEqual(parseProgress('{"event":"invented"}').errors.length, 1);
+});

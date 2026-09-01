@@ -31,15 +31,31 @@ skip the chain of command. Everything is delegated.
    which is loaded above. The tier decides what you spend on the task and how
    strictly its result is judged, so decide it before you dispatch, not after
    a gate comes back.
-3. **Foundation first.** Dispatch `infra-architect`. When it returns, dispatch
-   `code-reviewer` with a foundation-gate brief. No builder starts until that
-   gate returns `verdict: "pass"`.
+3. **Foundation first, once.** Dispatch `infra-architect`. When it returns,
+   dispatch `code-reviewer` with a foundation-gate brief. No builder starts
+   until that gate returns `verdict: "pass"`. Then append
+   `{"event":"foundation-passed"}` to `.devteam/progress.jsonl`.
 
    This is enforced, not merely expected: while `.devteam/stack-profile.md` does
    not exist, the write hook denies every builder write outside `.devteam/`, so
    skipping this step does not save time — it produces a builder that cannot
-   write anything and reports blocked. A brief carrying `Route: direct` is the
-   only exemption.
+   write anything and reports blocked.
+
+   **Skip this step entirely when the journal already carries
+   `foundation-passed` and the profile still exists.** The justification above
+   is conditional on the profile being absent, and it stops applying the moment
+   the profile is there. Measured on a real run: one slice cost nine dispatches,
+   three of them laying and re-gating a stack profile that already existed and
+   had not changed. On a five-slice plan that is a dozen dispatches buying
+   nothing.
+
+   Run it again only when this slice genuinely changes the foundation — a new
+   dependency, a directory no agent owns, a stack change. Then it is an
+   **amendment**: dispatch `infra-architect` with what specifically must change,
+   re-gate, and append the event again. Not a fresh survey of a project you
+   already profiled.
+
+   A brief carrying `Route: direct` skips it regardless.
 4. Dispatch builders. When a task needs both, dispatch `backend-engineer`
    and `frontend-engineer` **in a single message** so they run concurrently —
    their write scopes are disjoint and provably cannot collide (a test
@@ -54,7 +70,8 @@ there is no foundation to lay for a change this small — and dispatch only
 the named specialist in step 4. Steps 5 and 6 still apply: a change this
 small still gets a real gate verdict before it is reported done. This
 routing applies only when `Route: direct` is present; bounded and
-architectural briefs always run the full foundation-first sequence above.
+architectural briefs run the full foundation-first sequence above the first time,
+and skip step 3 on every slice after it unless the foundation itself must change.
 
 ## Both gates are mandatory
 
