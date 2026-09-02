@@ -188,3 +188,37 @@ test('the foundation is recorded once so later slices need not re-lay it', async
   assert.deepStrictEqual(both.errors, []);
   assert.strictEqual(parseProgress('{"event":"invented"}').errors.length, 1);
 });
+
+test('a ruling that names a slice does not overwrite that slice status', () => {
+  // The hazard that made record events dangerous to admit: statusOf() walks
+  // events and assigns `status = e.status` for every entry naming the slice.
+  // A ruling carrying {"slice":"S1"} and no status would set S1 to undefined
+  // and lose it on the next resume. Record events stay out of that array.
+  const journal = [
+    '{"event":"plan-approved"}',
+    '{"slice":"S1","status":"started"}',
+    '{"slice":"S1","status":"done"}',
+    '{"event":"ruling","slice":"S1","decision":"ISR over static","why":"incumbent","cost_if_wrong":"one config line"}',
+  ].join('\n');
+  const { events, records, errors } = parseProgress(journal);
+  assert.deepStrictEqual(errors, [], 'a ruling was rejected by the journal parser');
+  assert.strictEqual(records.length, 1, 'the ruling was not recorded');
+  const slices = [{ id: 'S1', title: 't', delivers: 'd', criteria: ['c'] },
+                  { id: 'S2', title: 't', delivers: 'd', criteria: ['c'] }];
+  const next = nextSlice(slices, events);
+  assert.strictEqual(next && next.slice.id, 'S2',
+    'a ruling on S1 corrupted its status, so resume went back to a finished slice');
+});
+
+test('the journal accepts the record events a real run writes, and still rejects a typo', () => {
+  // A live run wrote scope-map-fixed, plan-amended and decision. The parser
+  // called all three unknown, so the file that makes resume work was carrying
+  // errors nobody surfaced.
+  for (const e of ['ruling', 'decision', 'plan-amended', 'scope-map-fixed', 'note']) {
+    const { errors } = parseProgress(JSON.stringify({ event: e }));
+    assert.deepStrictEqual(errors, [], `the journal rejects the record event "${e}"`);
+  }
+  const { errors } = parseProgress('{"event":"plan-aproved"}');
+  assert.ok(errors.length,
+    'the whitelist opened wide, so a misspelled plan-approved now means nothing silently');
+});

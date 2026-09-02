@@ -1247,3 +1247,45 @@ test('both department leads carry the skill that tells them how to partition', (
   assert.match(skill, /in a single message/,
     'workers would be dispatched one at a time, which throws away the entire saving');
 });
+
+test('a running slice rules on what it meets rather than stalling on it', () => {
+  // Adapted from superpowers' subagent-driven-development, which states it
+  // outright: a running plan does not wait on a human. Davinci stalled instead
+  // -- every ambiguity became needs_input bubbling through two agents, and the
+  // fix loop gave up after two rounds and handed the user a nearly-finished
+  // slice to route. The slice boundary stays the checkpoint; the middle of a
+  // slice stops being one.
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+
+  assert.match(lead, /Rulings, not stalls/,
+    'the lead no longer rules on what it meets, so every ambiguity is a round trip through three agents again');
+  assert.match(lead, /cost_if_wrong/,
+    'a ruling no longer records what it costs if wrong, which is what makes it safe to make unattended');
+  assert.match(lead, /Four things stop a slice, and only these/,
+    'the stop conditions are unbounded again, so anything can halt a running slice');
+  assert.match(lead, /irreversible or destructive/,
+    'the stop list lost the case that actually justifies stopping');
+});
+
+test('the fix loop escalates to five rounds instead of stopping at two', () => {
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+  assert.match(lead, /The fix loop runs to five/,
+    'the loop stops early again, handing back slices that were nearly finished');
+  assert.match(lead, /a model at least one tier above/,
+    'a stuck finding is retried on the same model that already failed it three times');
+  assert.match(lead, /adjudicate every open\s+finding/,
+    'tripping the breaker stops the run instead of ruling on what is left');
+});
+
+test('the lead scans a slice for conflicts before dispatching it', () => {
+  // 31 of one slice's 73 minutes went to a conflict fully visible beforehand:
+  // an approved criterion named a path under .devteam/, which is gitignored and
+  // which no agent may be assigned, so nobody could ever satisfy it.
+  const lead = fs.readFileSync(path.join(AGENTS_DIR, 'tech-lead.md'), 'utf8');
+  assert.match(lead, /Scan the slice for conflicts before the first dispatch/,
+    'nothing checks the slice against the scope map before work starts');
+  assert.match(lead, /The output is a table, not a verdict/,
+    'the scan can be satisfied by asserting it was clean rather than by running it');
+  assert.match(lead, /is not a scan you ran/,
+    'the sentence that makes an unrun scan indefensible is gone');
+});

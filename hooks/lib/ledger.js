@@ -24,6 +24,15 @@ const STATUSES = new Set(['started', 'done', 'blocked', 'reverted']);
 // Plan-level events carry no slice. Both are things a later run must be able to
 // learn without re-doing the work that established them.
 const PLAN_EVENTS = new Set(['plan-approved', 'foundation-passed']);
+// Events that record what happened rather than gate what happens next. A live
+// run wrote scope-map-fixed, plan-amended and decision, and the parser called
+// all three unknown -- so the journal that makes resume work was carrying
+// errors nobody surfaced. Rulings join them: a slice decides its own
+// ambiguities and writes down what it decided. The whitelist stays closed so a
+// typo'd plan-aproved still fails loudly instead of silently meaning nothing.
+const RECORD_EVENTS = new Set([
+  'ruling', 'decision', 'plan-amended', 'scope-map-fixed', 'note',
+]);
 
 // Parses plan.md into ordered slices. Deliberately tolerant of surrounding
 // prose: the file is written for a person to read and approve.
@@ -70,6 +79,7 @@ function validatePlan(slices) {
 // resume lands in the wrong place.
 function parseProgress(text) {
   const events = [];
+  const records = [];
   const errors = [];
   const lines = String(text || '').split('\n');
   lines.forEach((line, i) => {
@@ -85,6 +95,12 @@ function parseProgress(text) {
     // that died after writing plan.md but before the user saw it would
     // otherwise resume and start building a plan nobody agreed to.
     if (parsed.event) {
+      // Record events are history, not control flow. They are kept out of
+      // `events` deliberately: statusOf() walks that array and assigns
+      // `status = e.status` for every entry naming a slice, so a ruling
+      // carrying {"slice":"S1"} and no status would set S1's status to
+      // undefined and lose the slice on the next resume.
+      if (RECORD_EVENTS.has(parsed.event)) { records.push(parsed); return; }
       if (!PLAN_EVENTS.has(parsed.event)) {
         errors.push(`progress.jsonl line ${i + 1} has unknown event "${parsed.event}".`);
         return;
@@ -99,7 +115,7 @@ function parseProgress(text) {
     }
     events.push(parsed);
   });
-  return { events, errors };
+  return { events, records, errors };
 }
 
 // A plan nobody approved is a draft, whatever else the journal says. Building
@@ -164,5 +180,5 @@ function summarise(slices, events) {
 module.exports = {
   parsePlan, validatePlan, parseProgress, planApproved, foundationPassed,
   statusOf, evidenceFor, nextSlice, lastDone, summarise,
-  TERMINAL, STATUSES, PLAN_EVENTS,
+  TERMINAL, STATUSES, PLAN_EVENTS, RECORD_EVENTS,
 };

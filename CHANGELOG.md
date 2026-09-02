@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.48.0
+
+Rulings, not stalls. Adapted from superpowers.
+
+The complaint was time lost to the plugin fighting itself, so the comparison was
+worth making properly. Superpowers ships fourteen skills, zero agent
+definitions, zero enforcement hooks, and three small scripts. Its subagents are
+prompt files on disk dispatched as general-purpose. It has more instruction text
+than this plugin, not less -- 40k words against 26.5k -- and almost none of the
+machinery. Where the two converge, it converged first, and three of its rules
+map straight onto losses measured here.
+
+A running slice no longer waits on a human. Ambiguities, criteria that turn out
+to conflict, choices the brief did not anticipate: the lead decides them, writes
+a ruling into the journal with what it decided, why, and what it costs if wrong,
+and continues. Four things stop a slice and nothing else does -- an irreversible
+operation, a security-sensitive action, a side effect outside the project, and a
+plan so broken every path forward is a guess. Every ruling appears in the report
+at the slice boundary, where the user can see the list and revert any of it at
+the checkpoint. The stop that was worth having was always the one at the end of
+a slice; the ones in the middle asked which of two reasonable things to pick.
+
+The fix loop ran to two rounds and then stopped and reported upward, which hands
+back a slice that is nearly finished and makes the user the routing layer for a
+problem the loop never had a fair attempt at. It now runs to five: resume the
+same agent through round three, dispatch a fresh one on a stronger model at four
+and five, and when the breaker trips, adjudicate every open finding rather than
+stopping. Stop only if a load-bearing finding has no path forward that is not a
+guess.
+
+Slices are scanned for conflicts before the first dispatch. One live slice lost
+31 of its 73 minutes to a conflict fully visible beforehand: an approved
+criterion named a path under .devteam/, which is gitignored and which no agent
+may be assigned, so nobody could ever satisfy it. The scan checks every path
+against the scope map, every criterion against what would make it true, and
+every pair of tasks sharing a file. Its output is a table, not a verdict --
+"the scan is clean" without the rows is not a scan that was run.
+
+One thing this exposed on the way. The journal parser accepted exactly two
+events and called everything else unknown, while a real run had written
+scope-map-fixed, plan-amended and decision -- so the file that makes resume work
+was carrying errors nobody surfaced. Record events are now admitted and kept
+out of the control array, because statusOf() assigns a status for every entry
+naming a slice: a ruling carrying a slice and no status would have set that
+slice to undefined and lost it on the next resume. The whitelist stays closed,
+so a misspelled plan-approved still fails loudly instead of silently meaning
+nothing.
+
+419 tests; 11 new guards each mutated and proven to fail.
+
 ## 0.47.0
 
 Department leads can hire.

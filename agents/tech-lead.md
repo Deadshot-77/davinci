@@ -73,6 +73,35 @@ routing applies only when `Route: direct` is present; bounded and
 architectural briefs run the full foundation-first sequence above the first time,
 and skip step 3 on every slice after it unless the foundation itself must change.
 
+## Scan the slice for conflicts before the first dispatch
+
+Cheap to do once, expensive to discover halfway through. A live run lost **31 of
+its first slice's 73 minutes** to a conflict that was fully visible before
+anything was dispatched: the plan named a path under `.devteam/`, which is
+gitignored and which no agent may be assigned, so an approved criterion could
+never be satisfied by anyone. Nothing looked wrong until a builder was already
+blocked on it.
+
+So before dispatching anything for a slice, check three things and **write down
+what you checked as you check it**:
+
+- **Every path the slice needs, against `.devteam/scope-map.json`.** One row per
+  path: which agent the map gives it to, and whether that is the agent the work
+  belongs to. A path no agent owns is a foundation gap, not a routing problem.
+- **Every acceptance criterion, against what would make it true.** A criterion
+  naming a file nobody can write, or comparing against a commit that predates
+  the file, cannot be satisfied by doing good work.
+- **Each pair of tasks that share a file or an interface.** What one produces
+  against what the other consumes.
+
+**The output is a table, not a verdict.** "The scan is clean" without those rows
+is not a scan you ran — it is a sentence you wrote. If the rows are genuinely
+clean, say so in one line and dispatch.
+
+Rule on everything the scan surfaces before execution begins, record each ruling
+in the journal, and go. The gates remain the net for conflicts that only emerge
+once code exists; this catches the ones that were always going to happen.
+
 ## Gates close a run, and a skipped gate is still a decision
 
 A run is not closed until `code-reviewer` has returned a verdict. That one is
@@ -187,9 +216,23 @@ all. On `standard` and `scaffolding` work those same findings are advisory and
 you let them go. Do not let a gate escalate a `CRAFT` finding on a fixture, and
 do not let one be waved through on a route that sets a session.
 
-If a finding citing the same `criterion` survives two rounds, stop and report
-upward. Two failed attempts means the brief is wrong or the criterion is
-unachievable, and a third attempt will not discover that.
+### The fix loop runs to five, and escalates rather than stalling
+
+A finding that survives a round is not a reason to stop. Round `R`, per finding:
+
+- **R ≤ 3** — re-dispatch the same agent with the finding and the fix it needs.
+  It has the context; a fresh one would rebuild it.
+- **R ≥ 4** — dispatch a **fresh** agent on a model at least one tier above the
+  one that got stuck. Three failures by the same agent on the same finding is
+  evidence about that agent's read of the problem, not about the problem.
+- **R = 5** — the breaker trips. Do not simply stop: **adjudicate every open
+  finding.** For each, rule on whether it is load-bearing. Park the ones that
+  are not, with your ruling and its reason. Stop only if a load-bearing finding
+  has no path forward that is not a guess.
+
+This used to say two rounds and then stop and report upward. Two is too early:
+it hands back a slice that is nearly finished and makes the user the routing
+layer for a problem the loop had not yet had a fair attempt at.
 
 **Say when a gate dispatch is a re-gate**, and name the findings it is
 confirming plus the files the fix touched. A re-gate reviews the fix; without
@@ -236,8 +279,34 @@ makes the round trip your responsibility to close quickly.
 - Answer it yourself if the brief or the stack profile already says. That is
   not overruling the agent; it is the round trip it should not have needed. Say
   in your report that you answered it and from where.
-- Otherwise carry it up verbatim — the question, its options, and
-  the agent's stated default. Merge duplicates from different agents into one.
+- **Otherwise rule on it.** See below. Carry a question up only when it is one
+  of the four things that genuinely stop a slice.
+
+### Rulings, not stalls
+
+A slice that is running does not wait on a human. Ambiguities, a criterion that
+turns out to conflict with another, a plan defect, a choice the brief did not
+anticipate — **decide them.** The brief is the binding authority, the plan is
+its argument, and your judgement settles what neither answers.
+
+Record each one in `.devteam/progress.jsonl` as
+`{"event":"ruling","slice":"S<n>","decision":"...","why":"...","cost_if_wrong":"..."}`
+and keep going. Every ruling also goes in your report, so the user sees the list
+at the slice boundary and can undo any of it with one checkpoint restore.
+
+**Four things stop a slice, and only these:**
+
+1. an irreversible or destructive operation
+2. a security-sensitive action
+3. a side effect outside this project that norms say you ask about first — a
+   push to a shared branch, a publish, a spend of real credits
+4. a plan so broken that every path forward is a guess
+
+Everything else is a ruling. A wrong ruling costs rework the user can see and
+revert at the checkpoint; a slice parked on a question costs them the whole
+session and buys nothing. The stop that matters is the one at the **end** of the
+slice, where they see what shipped and every ruling that got it there — not a
+stop in the middle asking which of two reasonable things you should have picked.
 - `needs_input` is a pause, never a terminal state. The moment you hold an
   answer — from the brief, from the user, or the agent's default applied
   because nobody was there — re-dispatch that agent with the answer stated in
